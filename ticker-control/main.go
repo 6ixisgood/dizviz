@@ -4,26 +4,42 @@ import (
 	"flag"
 	"image"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"gopkg.in/yaml.v2"	
 	"time"
 
 	"github.com/sixisgoood/matrix-ticker/animations"
+	"github.com/sixisgoood/matrix-ticker/sports_data"
 	"github.com/sixisgoood/go-rpi-rgb-led-matrix"
 )
 
 
 var (
-	rows                     = flag.Int("led-rows", 32, "number of rows supported")
-	cols                     = flag.Int("led-cols", 32, "number of columns supported")
-	parallel                 = flag.Int("led-parallel", 1, "number of daisy-chained panels")
-	chain                    = flag.Int("led-chain", 2, "number of displays daisy-chained")
-	brightness               = flag.Int("brightness", 100, "brightness (0-100)")
-	hardware_mapping         = flag.String("led-gpio-mapping", "regular", "Name of GPIO mapping used.")
-	show_refresh             = flag.Bool("led-show-refresh", false, "Show refresh rate.")
-	inverse_colors           = flag.Bool("led-inverse", false, "Switch if your matrix has inverse colors on.")
-	disable_hardware_pulsing = flag.Bool("led-no-hardware-pulse", false, "Don't use hardware pin-pulse generation.")
+	configFilePath			= flag.String("config", "./config.yaml", "path to yaml config file")
+	rows                    = flag.Int("led-rows", 32, "number of rows supported")
+
 )
 
 var live_animation rgbmatrix.Animation
+
+type AppConfig struct {
+	Matrix struct { 
+		Rows					int		`yaml:"rows"`
+		Cols					int		`yaml:"cols"`
+		Parallel				int		`yaml:"parallel"`	
+		Chain					int		`yaml:"chain"`
+		Brightness				int		`yaml:"brightness"`
+		HardwareMapping			string	`yaml:"harware_mapping"`
+		ShowRefresh				bool	`yaml:"show_refresh"`
+		InverseColors			bool	`yaml:"inverse_colors"`
+		DisableHardwarePulsing	bool	`yaml:"disable_hardware_pulsing`
+	}	`yaml:"matrix"`
+	API	struct {
+		Username				string	`yaml:"username"`
+		Password				string  `yaml:"password"`
+	}	`yaml:"api"`
+}
 
 type RootAnimation struct {}
 
@@ -40,21 +56,41 @@ func SetLiveAnimation(new_animation rgbmatrix.Animation) {
 }
 
 func main() {
+	var appConfig AppConfig
+	flag.Parse()
+
+	data, err := ioutil.ReadFile(*configFilePath)
+	if err != nil {
+		log.Fatalf("Error loading config: '%v'", err)
+		return
+	}
+
+	if err := yaml.Unmarshal(data, &appConfig); err != nil {
+		log.Fatalf("Error unmarshaling app config: '%v'", err)
+		return
+	}
+
 	// configs
-	config := &rgbmatrix.DefaultConfig
-	config.Rows = *rows
-	config.Cols = *cols
-	config.Parallel = *parallel
-	config.ChainLength = *chain
-	config.Brightness = *brightness
-	config.HardwareMapping = *hardware_mapping
-	config.ShowRefreshRate = *show_refresh
-	config.InverseColors = *inverse_colors
-	config.DisableHardwarePulsing = *disable_hardware_pulsing
+	matrixConfig := &rgbmatrix.DefaultConfig
+	matrixConfig.Rows = appConfig.Matrix.Rows
+	matrixConfig.Cols = appConfig.Matrix.Cols
+	matrixConfig.Parallel = appConfig.Matrix.Parallel
+	matrixConfig.ChainLength = appConfig.Matrix.Chain
+	matrixConfig.Brightness = appConfig.Matrix.Brightness
+	matrixConfig.HardwareMapping = appConfig.Matrix.HardwareMapping
+	matrixConfig.ShowRefreshRate = appConfig.Matrix.ShowRefresh
+	matrixConfig.InverseColors = appConfig.Matrix.InverseColors
+	matrixConfig.DisableHardwarePulsing = appConfig.Matrix.DisableHardwarePulsing
+
+	// config subpackages
+	sports_data.ClientConfig = &sports_data.Config{
+		APIUsername: appConfig.API.Username,
+		APIPassword: appConfig.API.Password,
+	}
 
 	// setup matrix
 	fmt.Println("Starting Matrix\n")
-	m, err := rgbmatrix.NewRGBLedMatrix(config)
+	m, err := rgbmatrix.NewRGBLedMatrix(matrixConfig)
 	fatal(err)
 
 	tk := rgbmatrix.NewToolKit(m)

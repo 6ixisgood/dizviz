@@ -7,6 +7,7 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/sixisgoood/go-rpi-rgb-led-matrix v0.0.0-20180401002551-b26063b3169a
 	golang.org/x/image v0.4.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -19,7 +20,6 @@ require (
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
-
 
 // replace syntax
 // replace github.com/sixisgoood/go-rpi-rgb-led-matrix => <CLONED_DIR>

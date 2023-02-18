@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"encoding/json"
+	"log"
 
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font/gofont/goregular"
@@ -37,6 +38,7 @@ type AnimationRequest struct {
 }
 
 func HandleRequest(req []byte) {
+	log.Printf("Handle Request: %v", string(req))
 	var animation rgbmatrix.Animation
 	var animation_req AnimationRequest
 	json.Unmarshal(req, &animation_req)
@@ -63,7 +65,6 @@ func createTextScrollAnimation(req TextScrollConfigRequest) (*animations.TextScr
 		Dir:			image.Point{req.Direction[0], req.Direction[1]},
 		Text:			req.Text,
 	}
-
 
 	return animations.NewTextScrollAnimation(config)
 }

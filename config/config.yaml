@@ -1,0 +1,13 @@
+matrix:
+  rows: 32
+  cols: 64
+  parallel: 1
+  chain: 1
+  brightness: 100
+  hardware_mapping: regular
+  show_refresh: true
+  inverse_colors: false
+  disable_hardware_pulsing: true
+api:
+ username: <API_USER>
+ password: <API_PASS> 

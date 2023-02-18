@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"fmt"
+	"github.com/sixisgoood/matrix-ticker/content"
 )
 
 func Serve() {
@@ -16,17 +17,20 @@ func Serve() {
 		text := scanner.Text()
 		var text_bytes []byte
 
+		white := "[255,255,255,255]"
+		black := "[0,0,0,255]"
+		str := "{\"type\":\"textscroll\",\"config\":{\"size\":[64,32],\"textColor\":%s,\"bgColor\":%s,\"direction\":[1,0],\"font\":{\"size\":10,\"type\":\"normal\"},\"text\":\"%s\"}}"
+		content := getNHLContent()
+
 		switch text {
-			case "a": 
-			text_bytes = []byte("{\"type\":\"textscroll\",\"config\":{\"size\":[64,32],\"textColor\":[129,17,198,255],\"bgColor\":[0,0,0,255],\"direction\":[1,0],\"font\":{\"size\":10,\"type\":\"normal\"},\"text\":\"This is my text for the scrolling thing\"}}")	
-			case "b":
-			text_bytes = []byte("{\"type\":\"textscroll\",\"config\":{\"size\":[64,32],\"textColor\":[58,147,13,255],\"bgColor\":[0,0,0,255],\"direction\":[1,0],\"font\":{\"size\":10,\"type\":\"normal\"},\"text\":\"This is my text for the scrolling thing\"}}")	
-			case "c":
-			text_bytes = []byte("{\"type\":\"textscroll\",\"config\":{\"size\":[64,32],\"textColor\":[221,162,53,255],\"bgColor\":[0,0,0,255],\"direction\":[1,0],\"font\":{\"size\":10,\"type\":\"normal\"},\"text\":\"This is my text for the scrolling thing\"}}")	
 			default:
-			text_bytes = []byte("{\"type\":\"textscroll\",\"config\":{\"size\":[64,32],\"textColor\":[255,255,255,255],\"bgColor\":[0,0,0,255],\"direction\":[1,0],\"font\":{\"size\":10,\"type\":\"normal\"},\"text\":\"This is my text for the scrolling thing\"}}")
+			text_bytes = []byte(fmt.Sprintf(str, white, black, content))
 		}
 
 		go HandleRequest(text_bytes)
 	}
+}
+
+func getNHLContent() string {
+	return content.NHLDailyGamesTicker("2022-2023-regular", "20230216")	
 }
