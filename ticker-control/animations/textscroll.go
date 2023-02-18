@@ -2,9 +2,14 @@ package animations
 
 
 import (
+	"log"
 	"image"
 	"image/color"
 	"time"
+	"io/ioutil"
+	"fmt"
+	"path/filepath"
+	"runtime"
 
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font/gofont/goregular"
@@ -14,13 +19,15 @@ import (
 
 
 type TextScrollConfig struct {
-	Position  image.Point
-	Size      image.Point
-	BgColor   color.RGBA
-	TextColor color.RGBA 
-	TextFontFace  font.Face
-	Dir       image.Point
-	Text      string
+	Position  		image.Point
+	Size      		image.Point
+	BgColor   		color.RGBA
+	TextColor 		color.RGBA 
+	TextFontFace  	font.Face
+	TextFontSize	float64
+	TextFontName	string
+	Dir       		image.Point
+	Text      		string
 }
 
 type TextScrollAnimation struct {
@@ -31,6 +38,10 @@ type TextScrollAnimation struct {
 }
 
 func NewTextScrollAnimation(config TextScrollConfig) *TextScrollAnimation {
+	var font = loadFont(config.TextFontName)
+	var face = truetype.NewFace(font, &truetype.Options{Size: config.TextFontSize})
+	config.TextFontFace = face
+
 	return &TextScrollAnimation{
 		ctx:    gg.NewContext(config.Size.X, config.Size.Y),
 		stroke: 5,
@@ -84,6 +95,24 @@ func (a *TextScrollAnimation) updatePosition(size float64) {
 	}
 }
 
+
+func loadFont(fontName string) *truetype.Font {
+	// Read font file from disk
+	_, callerFile, _, _ := runtime.Caller(0)
+	callerDir := filepath.Dir(callerFile)
+	filePath := filepath.Join(callerDir, fmt.Sprintf("./fonts/%s.ttf", fontName))
+	fontBytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		log.Fatalf("Failed to read font file: %v", err)
+	}
+
+	// Parse font file into a truetype.Font
+	font, err := truetype.Parse(fontBytes)
+	if err != nil {
+		log.Fatalf("Failed to parse font file: %v", err)
+	}
+	return font
+}
 
 func fatal(err error) {
 	if err != nil {

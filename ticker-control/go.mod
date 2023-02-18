@@ -6,7 +6,7 @@ require (
 	github.com/fogleman/gg v1.3.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/sixisgoood/go-rpi-rgb-led-matrix v0.0.0-20180401002551-b26063b3169a
-	golang.org/x/image v0.4.0
+	golang.org/x/image v0.5.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 

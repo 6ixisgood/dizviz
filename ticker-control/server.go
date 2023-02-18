@@ -19,7 +19,7 @@ func Serve() {
 
 		white := "[255,255,255,255]"
 		black := "[0,0,0,255]"
-		str := "{\"type\":\"textscroll\",\"config\":{\"size\":[64,32],\"textColor\":%s,\"bgColor\":%s,\"direction\":[1,0],\"font\":{\"size\":10,\"type\":\"normal\"},\"text\":\"%s\"}}"
+		str := "{\"type\":\"textscroll\",\"config\":{\"size\":[64,32],\"textColor\":%s,\"bgColor\":%s,\"direction\":[1,0],\"font\":{\"name\": \"Ubuntu-Italic\", \"size\":10},\"text\":\"%s\"}}"
 		content := getNHLContent()
 
 		switch text {
