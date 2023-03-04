@@ -25,6 +25,7 @@ var (
 )
 
 func makeAPIRequest(url string) []byte {
+	log.Printf("Making API Requst to %v", url)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

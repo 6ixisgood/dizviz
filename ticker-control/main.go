@@ -18,6 +18,7 @@ import (
 var (
 	configFilePath			= flag.String("config", "./config.yaml", "path to yaml config file")
 	rows                    = flag.Int("led-rows", 32, "number of rows supported")
+	Games					= sports_data.DailyGamesNHLResponse{}
 
 )
 
@@ -53,6 +54,10 @@ func getRootAnimation() (*RootAnimation) {
 
 func SetLiveAnimation(new_animation rgbmatrix.Animation) {
 	live_animation = new_animation
+}
+
+func GetGames() sports_data.DailyGamesNHLResponse {
+	return Games
 }
 
 func main() {
@@ -97,13 +102,17 @@ func main() {
 	defer tk.Close()
 
 	// start the root animation
-	content := `<matrix sizex="64" sizey="32"></matrix>`
+	content := `<matrix sizex="256" sizey="128"></matrix>`
 	live_animation = animations.NewAnimation(content)
 	animation := getRootAnimation()
-	go tk.PlayAnimation(animation)
+	Serve()	
+	tk.PlayAnimation(animation)
+
+
+	// Games =  sports_data.FetchDailyNHLGamesInfo("2022-2023-regular", "20221012")
+
 
 	// start the server
-	Serve()	
 }
 
 

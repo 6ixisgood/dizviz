@@ -4,6 +4,7 @@ package animations
 import (
 	"log"
 	"image"
+	"os"
 	"image/color"
 	"time"
 	"io/ioutil"
@@ -13,9 +14,11 @@ import (
 	"runtime"
 	"reflect"
 	"strconv"
+	"net/http"
 
 	"github.com/golang/freetype/truetype"
 	"github.com/fogleman/gg"	
+	"github.com/nfnt/resize"
 )
 
 ////////////////////////////////
@@ -34,15 +37,18 @@ type Animation struct {
 func (a *Animation) Next() (image.Image, <-chan time.Time, error) {
 	a.Ctx.SetColor(color.RGBA{0,0,0,255})
 	a.Ctx.Clear()
+
+	
 	image := drawMatrix(a.Ctx, a.Mtx)
-	return image, time.After(time.Millisecond *50), nil
+
+	return image, time.After(time.Millisecond *1), nil
 }
 
 // Generate a new animations.Matrix type
 func NewAnimation(content string) *Animation{
 	log.Printf("Creating a new animation with content %v", content)
 	cnt := unmarshalContent(content)
-	ctx := gg.NewContext(64, 32)
+	ctx := gg.NewContext(256, 128)
 	return &Animation{
 		Ctx:		ctx, 
 		Mtx:		&cnt,
@@ -75,6 +81,14 @@ type Text struct {
 	Text			string			`xml:",chardata"`
 }
 
+type Image struct {
+	XMLName			xml.Name		`xml:"image"`
+	Sizex			uint			`xml:"sizex,attr"`
+	Sizey			uint			`xml:"sizey,attr"`
+	Url				string			`xml:"url,attr"`
+	FilePath		string			`xml:"filepath,attr"`
+}
+
 
 // Represents the overall Matrix you are drawing to. 
 // A matrix can contain many Contents
@@ -87,7 +101,7 @@ type Matrix struct {
 
 // Custom unmashaling for Matrix type in XML
 func (mtx *Matrix) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	log.Printf("Starting Unmarshalling")
+	log.Printf("Starting Unmarshalling of Matrix")
 	mtx.XMLName = start.Name
 	// grab any other attrs
 
@@ -144,7 +158,7 @@ type Content struct {
 
 // Some custom unmarhsing to handle the XML config
 func (cnt *Content) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	log.Printf("Starting Unmarshalling")
+	log.Printf("Starting Unmarshalling of Content")
 	cnt.XMLName = start.Name
 	// decode the start element
 	// if err := d.DecodeElement(cnt, &start); err != nil {
@@ -183,6 +197,8 @@ func (cnt *Content) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 			switch tt.Name.Local {
 			case "text":
 				i = new(Text)
+			case "image":
+				i = new(Image)
 			default:
 				log.Printf("Nothing")
 			}
@@ -234,6 +250,7 @@ func loadFont(fontName string) *truetype.Font {
 	return font
 }
 
+
 // Handle some errors for us
 func fatal(err error) {
 	if err != nil {
@@ -256,12 +273,62 @@ func drawText(ctx *gg.Context, t Text, pos image.Point) (int, int) {
 	ctx.DrawStringAnchored(t.Text, float64(pos.X), float64(pos.Y), 0, .9)
 
 	return int(sizeX), int(sizeY)
-
+ 
 }
 
+func fetchImageFromURL(url string) image.Image {
+	res, err := http.Get(url)
+	if err != nil {
+		log.Printf("Error fetching image from %v, %v", url, err)
+	}
+	defer res.Body.Close()
 
-func drawImage(ctx *gg.Context, i image.Image) {
-	// do nothing
+
+	img, _, err := image.Decode(res.Body)
+	if err != nil {
+		log.Printf("Error decoding image from %v, %v", url, err)
+	}
+
+	return img
+}
+
+func fetchImageFromPath(path string) image.Image {
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatalf("Failed to open the image file: %v", err)
+	}
+	defer file.Close()
+
+	// Decode the image
+	img, _, err := image.Decode(file)
+	if err != nil {
+		log.Fatalf("Failed to decode the image: %v", err)
+	}	
+
+
+	return img
+}
+
+func resizeImage(img image.Image, sizex uint, sizey uint) image.Image {
+	return resize.Resize(sizex, sizey, img, resize.Lanczos3)
+}
+
+func drawImage(ctx *gg.Context, i Image, pos image.Point) (int, int) {
+	// fetch the image if it has a url
+	var img image.Image
+	if i.Url != "" {
+		img = fetchImageFromURL(i.Url)
+	} else if i.FilePath != "" {
+		img = fetchImageFromPath(i.FilePath)
+	}
+
+	if i.Sizex != 0 {
+		img = resizeImage(img, i.Sizex, i.Sizey)
+	}
+
+	ctx.DrawImage(img, pos.X, pos.Y)
+	size := img.Bounds().Size()
+	return size.X, size.Y
 }
 
 // Draw an animation.Content in its own gg.Context
@@ -278,8 +345,8 @@ func drawContent(cnt *Content) image.Image {
 		switch i := item.(type) {
 		case *Text:
 			stepx, _ = drawText(ctx, *i, image.Point{cnt.Posx+curx, cnt.Posy+cury})
-		case *image.Image:
-			drawImage(ctx, *i)
+		case *Image:
+			stepx, _ = drawImage(ctx, *i, image.Point{cnt.Posx+curx, cnt.Posy+cury})
 		default:
 			log.Printf("Type '%v'", reflect.TypeOf(i))
 		}
