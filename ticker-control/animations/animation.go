@@ -21,6 +21,9 @@ import (
 	"github.com/nfnt/resize"
 )
 
+var (
+	imageCache = make(map[string]image.Image) // holds the images we've been using
+)
 ////////////////////////////////
 // Structs
 ////////////////////////////////
@@ -46,12 +49,16 @@ func (a *Animation) Next() (image.Image, <-chan time.Time, error) {
 
 // Generate a new animations.Matrix type
 func NewAnimation(content string) *Animation{
-	log.Printf("Creating a new animation with content %v", content)
-	cnt := unmarshalContent(content)
-	ctx := gg.NewContext(256, 128)
+	// log.Printf("Creating a new animation with content %v", content)
+	mtx := unmarshalContent(content)
+	ctx := gg.NewContext(mtx.Sizex, mtx.Sizey)
+
+	// clear the cache 
+	imageCache = make(map[string]image.Image)
+
 	return &Animation{
 		Ctx:		ctx, 
-		Mtx:		&cnt,
+		Mtx:		&mtx,
 	}
 }
 
@@ -104,6 +111,15 @@ func (mtx *Matrix) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	log.Printf("Starting Unmarshalling of Matrix")
 	mtx.XMLName = start.Name
 	// grab any other attrs
+	// grab other elements
+	for _, attr := range start.Attr {
+		switch attr.Name.Local {
+		case "sizex":
+			mtx.Sizex, _ = strconv.Atoi(attr.Value)
+		case "sizey":
+			mtx.Sizey, _ = strconv.Atoi(attr.Value)
+		}
+	}
 
 	// decode inner elements
 	for {
@@ -152,6 +168,8 @@ type Content struct {
 	Scroll			bool			`xml:"scroll,attr"`
 	Scrollx			int				`xml:"scrollx,attr"`
 	Scrolly			int				`xml:"scrolly,attr"`
+	Alignx			string			`xml:"alignx,attr"`
+	Aligny			string			`xml:"aligny,attr"`
 	Posx			int
 	Posy			int
 }
@@ -182,6 +200,10 @@ func (cnt *Content) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 			cnt.Scrollx, _ = strconv.Atoi(attr.Value)
 		case "scrolly":
 			cnt.Scrolly, _ = strconv.Atoi(attr.Value)
+		case "alignx":
+			cnt.Alignx  = attr.Value
+		case "aligny":
+			cnt.Aligny = attr.Value
 		}
 	}
 
@@ -262,7 +284,6 @@ func fatal(err error) {
 // Draw text to a screen
 // Pass it the gg.Context to write to, the text represented as an animations.Text and the starting position
 func drawText(ctx *gg.Context, t Text, pos image.Point) (int, int) {
-	// ctx.DrawStringAnchored(t.Text, 10, 10, .5, .5)
 	var font = loadFont(fmt.Sprintf("%s-%s", t.Font, t.FontStyle))
 	var face = truetype.NewFace(font, &truetype.Options{Size: t.FontSize})
 
@@ -270,11 +291,12 @@ func drawText(ctx *gg.Context, t Text, pos image.Point) (int, int) {
 	// set the color for the text and draw
 	ctx.SetColor(t.Color.RGBA)
 	sizeX, sizeY := ctx.MeasureString(t.Text)
-	ctx.DrawStringAnchored(t.Text, float64(pos.X), float64(pos.Y), 0, .9)
+	ctx.DrawStringAnchored(t.Text, float64(pos.X), float64(pos.Y), 0, .35)
 
 	return int(sizeX), int(sizeY)
  
 }
+
 
 func fetchImageFromURL(url string) image.Image {
 	res, err := http.Get(url)
@@ -293,6 +315,10 @@ func fetchImageFromURL(url string) image.Image {
 }
 
 func fetchImageFromPath(path string) image.Image {
+	if contents, ok := imageCache[path]; ok {
+		return contents
+	} 
+	// else fetch the file
 	file, err := os.Open(path)
 	if err != nil {
 		log.Fatalf("Failed to open the image file: %v", err)
@@ -304,6 +330,8 @@ func fetchImageFromPath(path string) image.Image {
 	if err != nil {
 		log.Fatalf("Failed to decode the image: %v", err)
 	}	
+
+	imageCache[path] = img
 
 
 	return img
@@ -326,7 +354,7 @@ func drawImage(ctx *gg.Context, i Image, pos image.Point) (int, int) {
 		img = resizeImage(img, i.Sizex, i.Sizey)
 	}
 
-	ctx.DrawImage(img, pos.X, pos.Y)
+	ctx.DrawImageAnchored(img, pos.X, pos.Y, 0, .5)
 	size := img.Bounds().Size()
 	return size.X, size.Y
 }
@@ -334,7 +362,12 @@ func drawImage(ctx *gg.Context, i Image, pos image.Point) (int, int) {
 // Draw an animation.Content in its own gg.Context
 // Return an image.Image representation of the Content
 func drawContent(cnt *Content) image.Image {
-	// log.Printf("Pos: %v, %v, %v, %v", cnt.Color, cnt.MtxPosx, cnt.MtxPosy, cnt)
+
+	if cnt.Aligny == "top" {
+		cnt.Posy = 0
+	} else if cnt.Aligny == "center" {
+		cnt.Posy = int(cnt.Sizey/2)
+	}
 
 	ctx := gg.NewContext(cnt.Sizex, cnt.Sizey)
 

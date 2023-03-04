@@ -10,15 +10,15 @@ import (
 	"time"
 
 	"github.com/sixisgoood/matrix-ticker/animations"
-	"github.com/sixisgoood/matrix-ticker/sports_data"
+	cd "github.com/sixisgoood/matrix-ticker/content_data"
 	"github.com/sixisgoood/go-rpi-rgb-led-matrix"
 )
 
 
 var (
 	configFilePath			= flag.String("config", "./config.yaml", "path to yaml config file")
-	rows                    = flag.Int("led-rows", 32, "number of rows supported")
-	Games					= sports_data.DailyGamesNHLResponse{}
+	Games					= cd.DailyGamesNHLResponse{}
+	Weather					= cd.WeatherForecastResponse{}
 
 )
 
@@ -34,11 +34,17 @@ type AppConfig struct {
 		HardwareMapping			string	`yaml:"harware_mapping"`
 		ShowRefresh				bool	`yaml:"show_refresh"`
 		InverseColors			bool	`yaml:"inverse_colors"`
-		DisableHardwarePulsing	bool	`yaml:"disable_hardware_pulsing`
+		DisableHardwarePulsing	bool	`yaml:"disable_hardware_pulsing"`
 	}	`yaml:"matrix"`
 	API	struct {
-		Username				string	`yaml:"username"`
-		Password				string  `yaml:"password"`
+		NHL struct {
+			Username				string	`yaml:"username"`
+			Password				string  `yaml:"password"`
+		}	`yaml:"nhl"`
+		Weather struct {
+			Key						string `yaml:"key"`
+		}	`yaml:"weather"`
+		
 	}	`yaml:"api"`
 }
 
@@ -56,8 +62,12 @@ func SetLiveAnimation(new_animation rgbmatrix.Animation) {
 	live_animation = new_animation
 }
 
-func GetGames() sports_data.DailyGamesNHLResponse {
+func GetGames() cd.DailyGamesNHLResponse {
 	return Games
+}
+
+func GetWeather() cd.WeatherForecastResponse {
+	return Weather
 }
 
 func main() {
@@ -88,9 +98,12 @@ func main() {
 	matrixConfig.DisableHardwarePulsing = appConfig.Matrix.DisableHardwarePulsing
 
 	// config subpackages
-	sports_data.ClientConfig = &sports_data.Config{
-		APIUsername: appConfig.API.Username,
-		APIPassword: appConfig.API.Password,
+	cd.NHLClientConfig = &cd.NHLRequestConfig{
+		APIUsername: appConfig.API.NHL.Username,
+		APIPassword: appConfig.API.NHL.Password,
+	}
+	cd.WeatherClientConfig = &cd.WeatherRequestConfig{
+		Key: appConfig.API.Weather.Key,
 	}
 
 	// setup matrix
@@ -105,14 +118,15 @@ func main() {
 	content := `<matrix sizex="256" sizey="128"></matrix>`
 	live_animation = animations.NewAnimation(content)
 	animation := getRootAnimation()
-	Serve()	
-	tk.PlayAnimation(animation)
+	go tk.PlayAnimation(animation)
 
 
-	// Games =  sports_data.FetchDailyNHLGamesInfo("2022-2023-regular", "20221012")
+	Games =  cd.FetchDailyNHLGamesInfo("2022-2023-regular", "20221012")
+	Weather = cd.FetchWeatherForecast("06105", "1")
 
 
 	// start the server
+	Serve()	
 }
 
 

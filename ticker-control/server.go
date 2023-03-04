@@ -1,13 +1,13 @@
 package main
 
 import (
-	// "bufio"
+	"bufio"
 	"bytes"
-	// "os"
-	// "fmt"
-	// "time"
-	// "log"
-	"github.com/sixisgoood/matrix-ticker/sports_data"
+	"os"
+	"fmt"
+	"time"
+	"log"
+	cd "github.com/sixisgoood/matrix-ticker/content_data"
 	"github.com/sixisgoood/matrix-ticker/animations"	
 	"text/template"
 )
@@ -23,7 +23,8 @@ type Config struct {
 
 type TemplateData struct {
 	Matrix		animations.Matrix
-	Games		sports_data.DailyGamesNHLResponse
+	Games		cd.DailyGamesNHLResponse
+	Weather		cd.WeatherForecastResponse
 	Config		Config	
 }
 
@@ -57,61 +58,83 @@ var(
 // 	</content>
 // </matrix>
 // `
-// 	content = `
-// {{ $DefaultImageSizex := .Config.DefaultImageSizex }}
-// {{ $DefaultImageSizey := .Config.DefaultImageSizey }}
-// {{ $DefaultFontSize := .Config.DefaultFontSize }}
-// {{ $DefaultFontType := .Config.DefaultFontType }}
-// {{ $DefaultFontStyle := .Config.DefaultFontStyle }}
-// {{ $DefaultFontColor := .Config.DefaultFontColor }}
-// <matrix sizex="{{ .Matrix.Sizex }}" sizey="{{ .Matrix.Sizey }}">
-// 	<content sizex="{{ .Matrix.Sizex }}" sizey="{{ .Matrix.Sizey }}" posx="0" posy="0" scrollx="-5">
-// 		{{ range .Games.Games }}
-// 		<image sizex="{{ $DefaultImageSizex }}" sizey="{{ $DefaultImageSizey }}" filepath="/home/andrew/Lab/matrix-ticker/ticker-control/sports_data/images/nhl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
-// 		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.AwayScoreTotal }}  </text>
-// 		<image sizex="{{ $DefaultImageSizex }}" sizey="{{ $DefaultImageSizey }}" filepath="/home/andrew/Lab/matrix-ticker/ticker-control/sports_data/images/nhl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
-// 		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.HomeScoreTotal }}  </text>
-// 		{{ if eq .Score.CurrentPeriodSecondsRemaining nil }}
-// 		{{ else }}
-// 		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.CurrentPeriodSecondsRemaining }}  </text>
-// 		{{ end }}
-// 		{{ if eq .Schedule.PlayedStatus "COMPLETED" }}
-// 		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">FINAL  </text>
-// 		{{ else if eq .Score.CurrentPeriod nil }}
-// 		{{ else }}
-// 		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.CurrentPeriod }}  </text>
-// 		{{ end }}
-// 		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">• </text>
-// 		{{ end }}
+	content = `
+{{ $MatrixSizex := 256 }}
+{{ $MatrixSizey := 128 }}
+{{ $DefaultImageSizex := 128 }}
+{{ $DefaultImageSizey := 64 }}
+{{ $DefaultFontSize := 48 }}
+{{ $DefaultFontType := "Roboto" }}
+{{ $DefaultFontStyle := "Regular" }}
+{{ $DefaultFontColor := "#ffffffff" }}
+<matrix sizex="{{ $MatrixSizex }}" sizey="{{ $MatrixSizey }}">
+	<content sizex="{{ $MatrixSizex }}" sizey="{{ $MatrixSizey }}" posx="0" posy="0" scrollx="-15" aligny="center">
+		{{ range .Games.Games }}
+		<image sizex="{{ $DefaultImageSizex }}" sizey="{{ $DefaultImageSizey }}" filepath="/home/andrew/Lab/matrix-ticker/ticker-control/content_data/images/nhl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
+		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.AwayScoreTotal }}  </text>
+		<image sizex="{{ $DefaultImageSizex }}" sizey="{{ $DefaultImageSizey }}" filepath="/home/andrew/Lab/matrix-ticker/ticker-control/content_data/images/nhl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
+		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.HomeScoreTotal }}  </text>
+		{{ if eq .Score.CurrentPeriodSecondsRemaining nil }}
+		{{ else }}
+		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.CurrentPeriodSecondsRemaining }}  </text>
+		{{ end }}
+		{{ if eq .Schedule.PlayedStatus "COMPLETED" }}
+		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">FINAL  </text>
+		{{ else if eq .Score.CurrentPeriod nil }}
+		{{ else }}
+		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.CurrentPeriod }}  </text>
+		{{ end }}
+		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">• </text>
+		{{ end }}
 
+	</content>
+</matrix>
+`
+// content = `
+// <matrix sizex="256" sizey="128">
+// 	<content sizex="256" sizey="128" posx="0" posy="0" scrollx="0">
+//  		<text font="Ubuntu" fontstyle="Regular" color="#FFFFFFFF" fontsize="20">FUCK</text>
+// 	</content>
+// </matrix>`
+// content = `
+// {{ $MatrixSizex := 256 }}
+// {{ $MatrixSizey := 128 }}
+// {{ $DefaultImageSizex := 128 }}
+// {{ $DefaultImageSizey := 64 }}
+// {{ $DefaultFontSize := 12 }}
+// {{ $DefaultFontType := "Roboto" }}
+// {{ $DefaultFontStyle := "Regular" }}
+// {{ $DefaultFontColor := "#ffffffff" }}
+// <matrix sizex="{{ $MatrixSizex }}" sizey="{{ $MatrixSizey }}">
+// 	<content sizex="{{ $MatrixSizex }}" sizey="32" posx="0" posy="0" scrollx="0" aligny="center">
+// 		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Weather.Location.Name }}, {{ .Weather.Location.Region}}  {{ .Weather.Location.Localtime }} {{ .Weather.Current.TempF }}°</text>
+// 	</content>
+// 	<content sizex="{{ $MatrixSizex }}" sizey="32" posx="0" posy="32" scrollx="0" aligny="center">
+// 	{{ with index .Weather.Forecast.Forecastday 0 }}
+// 		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">Low: {{ .Day.MintempF }}°  High: {{ .Day.MaxtempF }}° Rise: {{ .Astro.Sunrise }} Set: {{ .Astro.Sunset }} Phase: {{ .Astro.MoonPhase }}</text>
+// 	{{ end }}
 // 	</content>
 // </matrix>
 // `
-content = `
-<matrix sizex="256" sizey="128">
-	<content sizex="256" sizey="128" posx="0" posy="0" scrollx="-2">
- 		<text font="Ubuntu" fontstyle="Regular" color="#FFFFFFFF" fontsize="10">I hope that a study of very long sentences will arm you with strategies that are almost as diverse as the sentences themselves, such as: starting each clause with the same word, tilting with dependent clauses toward a revelation at the end, padding with parentheticals, showing great latitude toward standard punctuation, rabbit-trailing away from the initial subject, encapsulating an entire life, and lastly, as this sentence is, celebrating the list.</text>
-	</content>
-</matrix>`
 
 )
 
 func Serve() {
 
-	HandleRequest()
+	go HandleRequest()
 
-	// for {
-	// 	// "listening"
-	// 	scanner := bufio.NewScanner(os.Stdin)
-	// 	fmt.Println("Enter text: ")
-	// 	scanner.Scan()
-	// 	text := scanner.Text()
-	// 	log.Printf(text)
+	for {
+		// "listening"
+		scanner := bufio.NewScanner(os.Stdin)
+		fmt.Println("Enter text: ")
+		scanner.Scan()
+		text := scanner.Text()
+		log.Printf(text)
 
-	// 	time.Sleep(5 * time.Second)
+		time.Sleep(5 * time.Second)
 
-	// 	go HandleRequest()
-	// }
+		go HandleRequest()
+	}
 }
 
 
@@ -126,8 +149,9 @@ func HandleRequest() {
 	}
 
 	data := TemplateData{
-		Matrix: animations.Matrix{Sizex: 256, Sizey: 128},
+		Matrix: animations.Matrix{Sizex: 256, Sizey: 64},
 		Games:  GetGames(),
+		Weather: GetWeather(),
 		Config: config,
 	}
 
@@ -142,6 +166,8 @@ func HandleRequest() {
 	if err != nil {
 		panic(err)
 	}	
+
+
 
 	content := buf.String()
 	animation := animations.NewAnimation(content)
