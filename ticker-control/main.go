@@ -97,7 +97,8 @@ func main() {
 	defer tk.Close()
 
 	// start the root animation
-	live_animation = animations.QuickAnimation()
+	content := `<matrix sizex="64" sizey="32"></matrix>`
+	live_animation = animations.NewAnimation(content)
 	animation := getRootAnimation()
 	go tk.PlayAnimation(animation)
 
