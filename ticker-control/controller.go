@@ -1,68 +1,85 @@
 package main
 
 import (
-	// "image"
-	// "image/color"
-	// "encoding/json"
-	// "log"
-
-	// "github.com/sixisgoood/go-rpi-rgb-led-matrix"
-	// "github.com/sixisgoood/matrix-ticker/animations"
+	"log"
+	"image"
+	"time"
+	"encoding/xml"
+	c "github.com/sixisgoood/matrix-ticker/components"
 )
 
-type Request struct {
-	AnimationType	string				`json:"type"`
-	AnimationConfig map[string]string	`json:"config"`
+var (
+	animation = &Animation{
+		stopChan: make(chan struct{}),
+	}
+)
+
+type Animation struct {
+	view		c.View
+	template	c.Template
+	ticker		*time.Ticker
+	stopChan	chan struct{}
 }
 
 
-type Font struct {
-	Size		float64	`json:"size"`
-	Name		string  `json:"name"`
+func (a *Animation) ContinuousRefresh(notify <-chan time.Time) () {
+	a.Refresh()
+	for {
+		select {
+		// wait for the time period to pass to refresh
+		case <-notify:
+			a.Refresh()
+		// wait for the stop signal
+		case <-a.stopChan:
+			a.ticker.Stop()
+			return
+		}
+	}
 }
 
-type TextScrollConfigRequest struct {
-	Size		[]int		`json:"size"`	
-	TextColor	[]uint8		`json:"textColor"`	
-	BgColor		[]uint8		`json:"bgColor"`
-	Direction	[]int		`json:"direction"`	
-	Font		Font		`json:"font"`	
-	Text		string		`json:"text"`	
+func (a *Animation) Refresh() {
+	log.Printf("Refreshing the currently active view")
+	// refresh the view's data
+	a.view.Refresh()
+
+	// grab the view's updated template string
+	template := a.view.Template()
+
+	// unmarshall the updated template to c.Template
+	var t c.Template
+	err := xml.Unmarshal([]byte(template), &t)
+	if err != nil {
+		log.Fatalf("Unable to unmarshal xml content: '%v'", err)
+	}
+
+	// init the new template
+	t.Init()
+
+	// set this as the Animation's new c.Template
+	a.template = t
 }
 
-type AnimationRequest struct {
-	Type		string					`json:"type"`
-	Config		TextScrollConfigRequest	`json:"config"`
+func (a *Animation) Init(view string) {
+	// create a new view
+	a.view = c.RegisteredViews[view]()
+
+	// close the stop channel, stopping the refresh cycle if it's running
+	close(a.stopChan)
+
+	// initialize the new channel
+	a.stopChan = make(chan struct{})
+
+	a.ticker = time.NewTicker(10000 * time.Millisecond)
+	// start refreshing at given rate
+	go a.ContinuousRefresh(a.ticker.C)
 }
 
-// func HandleRequest(req []byte) {
-// 	log.Printf("Handle Request: %v", string(req))
-// 	var animation rgbmatrix.Animation
-// 	var animation_req AnimationRequest
-// 	json.Unmarshal(req, &animation_req)
+func (a *Animation) Next() (image.Image, <-chan time.Time, error) {
+	// render template to image.Image
+	im := a.template.Render()
+	return im, time.After(time.Millisecond * 1), nil
+}
 
-// 	if animation_req.Type == "textscroll" {
-// 		animation = createTextScrollAnimation(animation_req.Config)
-// 	} else {
-// 		// do nothing
-// 	}
-
-// 	SetLiveAnimation(animation)	
-// }
-
-
-// func createTextScrollAnimation(req TextScrollConfigRequest) (*animations.TextScrollAnimation) {
-// 	config := animations.TextScrollConfig{
-// 		Size: 			image.Point{req.Size[0], req.Size[1]},
-// 		BgColor:		color.RGBA{req.BgColor[0], req.BgColor[1], req.BgColor[2], req.BgColor[3]},
-// 		TextColor:		color.RGBA{req.TextColor[0], req.TextColor[1], req.TextColor[2], req.TextColor[3]},
-// 		TextFontName:	req.Font.Name,
-// 		TextFontSize:	req.Font.Size,
-// 		Dir:			image.Point{req.Direction[0], req.Direction[1]},
-// 		Text:			req.Text,
-// 	}
-
-// 	return animations.NewTextScrollAnimation(config)
-// }
-
-
+func GetAnimation() *Animation {
+	return animation
+}

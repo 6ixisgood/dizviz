@@ -1,0 +1,33 @@
+name: NHL Ticker
+
+template: |
+{{ $MatrixSizex := .Config.MatrixSizex }}
+{{ $MatrixSizey := .Config.MatrixSizey }}
+{{ $DefaultImageSizex := .Config.DefaultImageSizex }}
+{{ $DefaultImageSizey := .Config.DefaultImageSizey }}
+{{ $DefaultFontSize := .Config.DefaultFontSize }}
+{{ $DefaultFontType := .Config.DefaultFontType }}
+{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+{{ $DefaultFontColor := .Config.DefaultFontColor }}
+<matrix sizex="{{ $MatrixSizex }}" sizey="{{ $MatrixSizey }}">
+  <content sizex="{{ $MatrixSizex }}" sizey="{{ $MatrixSizey }}" posx="0" posy="0" scrollx="-15" aligny="center">
+    {{ range .Games.Games }}
+    <image sizex="{{ $DefaultImageSizex }}" sizey="{{ $DefaultImageSizey }}" filepath="/home/andrew/Lab/matrix-ticker/ticker-control/content_data/images/nhl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
+    <text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.AwayScoreTotal }}  </text>
+    <image sizex="{{ $DefaultImageSizex }}" sizey="{{ $DefaultImageSizey }}" filepath="/home/andrew/Lab/matrix-ticker/ticker-control/content_data/images/nhl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
+    <text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.HomeScoreTotal }}  </text>
+    {{ if eq .Score.CurrentPeriodSecondsRemaining nil }}
+    {{ else }}
+    <text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.CurrentPeriodSecondsRemaining }}  </text>
+    {{ end }}
+    {{ if eq .Schedule.PlayedStatus "COMPLETED" }}
+    <text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">FINAL  </text>
+    {{ else if eq .Score.CurrentPeriod nil }}
+    {{ else }}
+    <text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.CurrentPeriod }}  </text>
+    {{ end }}
+    <text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">• </text>
+    {{ end }}
+
+  </content>
+</matrix>

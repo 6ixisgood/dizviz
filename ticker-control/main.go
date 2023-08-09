@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v2"	
 	"time"
 
-	"github.com/sixisgoood/matrix-ticker/animations"
+	//"github.com/sixisgoood/matrix-ticker/components"
 	cd "github.com/sixisgoood/matrix-ticker/content_data"
 	"github.com/sixisgoood/go-rpi-rgb-led-matrix"
 )
@@ -17,6 +17,7 @@ import (
 
 var (
 	configFilePath			= flag.String("config", "./config.yaml", "path to yaml config file")
+	AppConfig				= ApplicationConfig{}
 	Games					= cd.DailyGamesNHLResponse{}
 	Weather					= cd.WeatherForecastResponse{}
 
@@ -24,7 +25,7 @@ var (
 
 var live_animation rgbmatrix.Animation
 
-type AppConfig struct {
+type ApplicationConfig struct {
 	Matrix struct { 
 		Rows					int		`yaml:"rows"`
 		Cols					int		`yaml:"cols"`
@@ -46,6 +47,7 @@ type AppConfig struct {
 		}	`yaml:"weather"`
 		
 	}	`yaml:"api"`
+	TemplateDir				string	`yaml:"template_dir`
 }
 
 type RootAnimation struct {}
@@ -62,6 +64,10 @@ func SetLiveAnimation(new_animation rgbmatrix.Animation) {
 	live_animation = new_animation
 }
 
+func GetApplicationConfig() ApplicationConfig {
+	return AppConfig 
+}
+
 func GetGames() cd.DailyGamesNHLResponse {
 	return Games
 }
@@ -71,7 +77,6 @@ func GetWeather() cd.WeatherForecastResponse {
 }
 
 func main() {
-	var appConfig AppConfig
 	flag.Parse()
 
 	data, err := ioutil.ReadFile(*configFilePath)
@@ -80,30 +85,30 @@ func main() {
 		return
 	}
 
-	if err := yaml.Unmarshal(data, &appConfig); err != nil {
+	if err := yaml.Unmarshal(data, &AppConfig); err != nil {
 		log.Fatalf("Error unmarshaling app config: '%v'", err)
 		return
 	}
 
 	// configs
 	matrixConfig := &rgbmatrix.DefaultConfig
-	matrixConfig.Rows = appConfig.Matrix.Rows
-	matrixConfig.Cols = appConfig.Matrix.Cols
-	matrixConfig.Parallel = appConfig.Matrix.Parallel
-	matrixConfig.ChainLength = appConfig.Matrix.Chain
-	matrixConfig.Brightness = appConfig.Matrix.Brightness
-	matrixConfig.HardwareMapping = appConfig.Matrix.HardwareMapping
-	matrixConfig.ShowRefreshRate = appConfig.Matrix.ShowRefresh
-	matrixConfig.InverseColors = appConfig.Matrix.InverseColors
-	matrixConfig.DisableHardwarePulsing = appConfig.Matrix.DisableHardwarePulsing
+	matrixConfig.Rows = AppConfig.Matrix.Rows
+	matrixConfig.Cols = AppConfig.Matrix.Cols
+	matrixConfig.Parallel = AppConfig.Matrix.Parallel
+	matrixConfig.ChainLength = AppConfig.Matrix.Chain
+	matrixConfig.Brightness = AppConfig.Matrix.Brightness
+	matrixConfig.HardwareMapping = AppConfig.Matrix.HardwareMapping
+	matrixConfig.ShowRefreshRate = AppConfig.Matrix.ShowRefresh
+	matrixConfig.InverseColors = AppConfig.Matrix.InverseColors
+	matrixConfig.DisableHardwarePulsing = AppConfig.Matrix.DisableHardwarePulsing
 
 	// config subpackages
 	cd.NHLClientConfig = &cd.NHLRequestConfig{
-		APIUsername: appConfig.API.NHL.Username,
-		APIPassword: appConfig.API.NHL.Password,
+		APIUsername: AppConfig.API.NHL.Username,
+		APIPassword: AppConfig.API.NHL.Password,
 	}
 	cd.WeatherClientConfig = &cd.WeatherRequestConfig{
-		Key: appConfig.API.Weather.Key,
+		Key: AppConfig.API.Weather.Key,
 	}
 
 	// setup matrix
@@ -115,18 +120,18 @@ func main() {
 	defer tk.Close()
 
 	// start the root animation
-	content := `<matrix sizex="256" sizey="128"></matrix>`
-	live_animation = animations.NewAnimation(content)
-	animation := getRootAnimation()
-	go tk.PlayAnimation(animation)
+	animation := GetAnimation()
+	log.Printf("Initializing the starting animation")
+	animation.Init("myview")
+	tk.PlayAnimation(animation)
 
 
-	Games =  cd.FetchDailyNHLGamesInfo("2022-2023-regular", "20221012")
-	Weather = cd.FetchWeatherForecast("06105", "1")
+	// Games =  cd.FetchDailyNHLGamesInfo("2022-2023-regular", "20221012")
+	// Weather = cd.FetchWeatherForecast("06105", "1")
 
 
-	// start the server
-	Serve()	
+	// // start the server
+	// Serve()	
 }
 
 
