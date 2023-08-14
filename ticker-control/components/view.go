@@ -9,8 +9,8 @@ import (
 
 
 var (
-	RegisteredViews = map[string]func() View{
-	    "myview":  MyViewCreate,
+	RegisteredViews = map[string]func(map[string]string) View{
+	    "nhl-daily-games":  NHLDailyGamesViewCreate,
 	} 
 )
 
@@ -19,33 +19,24 @@ type View interface{
 	Refresh()
 }
 
-type MyView struct {
+type NHLDailyGamesView struct {
+	Date		string
 	Games		cd.DailyGamesNHLResponse
 }
 
 
-func MyViewCreate() View {
-	return &MyView{}
+func NHLDailyGamesViewCreate(config map[string]string) View {
+	return &NHLDailyGamesView{
+		Date: config["date"],
+	}
 }
 
-func (m *MyView) Refresh() {
+func (v *NHLDailyGamesView) Refresh() {
 	// fetch the games
-	m.Games = cd.FetchDailyNHLGamesInfo("2022-2023-regular", "20221112")
+	v.Games = cd.FetchDailyNHLGamesInfo(v.Date)
 }
 
-// func (m *MyView) Template() string {
-// 	return `
-// 	<template sizeX="64" sizeY="64">
-// 		<scroller scrollX="-1" scrollY="0">
-// 			<template sizeX="500" sizeY="64">
-// 				<text font="Ubuntu" style="Regular" size="24" color="#ffffffff">Hi there! How are you?</text>
-// 	    	</template>
-// 	    </scroller>
-// 	</template>
-// 	`
-// }
-
-func (m *MyView) Template() string {
+func (v *NHLDailyGamesView) Template() string {
 	tmplStr := `
 		{{ $MatrixSizex := 64 }}
 		{{ $MatrixSizey := 64 }}
@@ -86,7 +77,7 @@ func (m *MyView) Template() string {
 	}
 
 	tmplData := map[string]interface{}{
-		"Games": m.Games,
+		"Games": v.Games,
 	} 
 
 

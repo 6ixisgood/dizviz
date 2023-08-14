@@ -59,9 +59,9 @@ func (a *Animation) Refresh() {
 	a.template = t
 }
 
-func (a *Animation) Init(view string) {
+func (a *Animation) Init(view string, config map[string]string) {
 	// create a new view
-	a.view = c.RegisteredViews[view]()
+	a.view = c.RegisteredViews[view](config)
 
 	// close the stop channel, stopping the refresh cycle if it's running
 	close(a.stopChan)

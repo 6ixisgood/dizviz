@@ -122,7 +122,10 @@ func main() {
 	// start the root animation
 	animation := GetAnimation()
 	log.Printf("Initializing the starting animation")
-	animation.Init("myview")
+	args := map[string]string{
+		"date": "20230110",
+	}
+	animation.Init("nhl-daily-games", args)
 	tk.PlayAnimation(animation)
 
 

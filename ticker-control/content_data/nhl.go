@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"strconv"
 	"io/ioutil"
 	"encoding/json"
 	"encoding/base64"
@@ -174,7 +175,20 @@ type DailyGamesNHLResponse struct {
 	} `json:"references"`
 }
 
-func FetchDailyNHLGamesInfo(season string, date string) DailyGamesNHLResponse{
+func FetchDailyNHLGamesInfo(date string) DailyGamesNHLResponse{
+	// determine the "season" to use
+	year, err := strconv.Atoi(date[:4])
+	checkErr(err)
+	month, err := strconv.Atoi(date[4:6])
+	checkErr(err)
+
+	var season string
+	if month > 6 {
+		season = fmt.Sprintf("%d-%d-regular", year, year+1)
+	} else {
+		season = fmt.Sprintf("%d-%d-regular", year-1, year)
+	}
+
 	url := fmt.Sprintf(dailyGamesNHLURL, season, date)
 	fmt.Sprintf(url)
 	res := makeAPIRequest(url)
@@ -185,4 +199,10 @@ func FetchDailyNHLGamesInfo(season string, date string) DailyGamesNHLResponse{
 	// json.Unmarshal([]byte(j), &respStruct)
 
 	return respStruct
+}
+
+func checkErr(e error) {
+	if (e != nil) {
+		log.Printf("Error: %s", e)
+	}
 }
