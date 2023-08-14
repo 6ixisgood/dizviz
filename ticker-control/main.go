@@ -124,7 +124,7 @@ func main() {
 	args := map[string]string{
 		"date": "20230910",
 	}
-	animation.Init("nfl-daily-games", args)
+	animation.Init("split-view", args)
 	tk.PlayAnimation(animation)
 
 

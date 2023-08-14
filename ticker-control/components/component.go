@@ -61,6 +61,7 @@ type Template struct {
 	XMLName			xml.Name		`xml:"template"`
 	SizeX			int				`xml:"sizeX,attr"`
 	SizeY			int				`xml:"sizeY,attr"`
+	Slot			int				`xml:"slot,attr"`
 	Components		[]Component		`xml:",any"`
 
 	ctx				*gg.Context
@@ -82,16 +83,16 @@ func (t *Template) Ready() bool {
 
 func (t *Template) ComponentWidth() int {
 	sizeX := 0
-	for _, c  := range t.Components {
+	for _, c := range t.Components {
 		sizeX += c.Width()
 	}
 	return sizeX
 }
 
 func (t *Template) Render() image.Image {
-	// if t.ctx == nil {
-	// 	t.ctx = gg.NewContext(t.SizeX, t.SizeY)
-	// }
+	if t.ctx == nil {
+		t.ctx = gg.NewContext(t.SizeX, t.SizeY)
+	}
 
 	t.ctx.SetColor(color.RGBA{0,0,0,255})
 	t.ctx.Clear()
@@ -136,6 +137,8 @@ func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 				i = new(Image)
 			case "scroller":
 				i = new(Scroller)
+			case "h-split":
+				i = new(HorizonalSplit)
 			default:
 				log.Printf("Invalid component type %s", tt.Name.Local)
 			}
@@ -246,6 +249,7 @@ func (s *Scroller) Init() {
 
 func (s *Scroller) Render() image.Image {
 	if s.ctx == nil {
+		log.Printf("RENDER SCROLL")
 		s.ctx = gg.NewContext(s.Slot.ComponentWidth(), 50)
 	}
 
@@ -270,7 +274,45 @@ func (s *Scroller) Render() image.Image {
 	return s.ctx.Image()	
 }
 
+type HorizonalSplit struct {
+	BaseComponent
 
+	XMLName			xml.Name		`xml:"h-split"`
+	Slots			[]Template		`xml:"template"`
+}
+
+func (s *HorizonalSplit) Init() {
+	for _, s := range s.Slots {
+		s.Init()
+	}
+
+}
+
+func (s *HorizonalSplit) Render() image.Image {
+	width := 0
+	for _, slot := range s.Slots {
+		slot.Render()
+		width = int(math.Max(float64(slot.ComponentWidth()), float64(width)))
+	}
+	height := 64
+	if s.ctx == nil {
+		s.ctx = gg.NewContext(width, height)
+	}
+
+	s.ctx.SetColor(color.RGBA{0,0,0,255})
+	s.ctx.Clear()
+
+	// render and draw the slots
+	var im image.Image
+	var y int
+	for _, slot := range s.Slots {
+		im = slot.Render()
+		s.ctx.DrawImage(im, s.PosX, y)
+		y += height/len(s.Slots)
+	}
+
+	return s.ctx.Image()	
+}
 
 
 

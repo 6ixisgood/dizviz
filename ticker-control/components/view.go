@@ -14,6 +14,7 @@ var (
 	RegisteredViews = map[string]func(map[string]string) View{
 	    "nhl-daily-games":  NHLDailyGamesViewCreate,
 	    "nfl-daily-games":	NFLDailyGamesViewCreate,
+	    "split-view":		SplitViewCreate,
 	} 
 )
 
@@ -186,6 +187,77 @@ func (v *NFLDailyGamesView) Template() string {
 
 	return content
 }
+
+// ---------------------------
+// NFL Daily Games
+// ---------------------------
+type SplitView struct {
+}
+
+
+func SplitViewCreate(config map[string]string) View {
+	return &SplitView{}
+}
+
+func (v *SplitView) Refresh() {
+	// pass
+}
+
+func (v *SplitView) Template() string {
+	tmplStr := `
+		{{ $MatrixSizex := 64 }}
+		{{ $MatrixSizey := 64 }}
+		{{ $DefaultImageSizex := 32 }}
+		{{ $DefaultImageSizey := 32 }}
+		{{ $DefaultFontSize := 24 }}
+		{{ $DefaultFontType := "Ubuntu" }}
+		{{ $DefaultFontStyle := "Regular" }}
+		{{ $DefaultFontColor := "#ffffffff" }}
+		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<h-split>
+				<template slot="1" sizeX="10000" sizeY="{{ $MatrixSizey }}">
+					<scroller scrollX="-1" scrollY="0">
+						<template sizeX="100000" sizeY="{{ $MatrixSizey }}">
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">This is the top line</text>
+						</template>
+					</scroller>
+				</template>
+				<template slot="2" sizeX="10000" sizeY="{{ $MatrixSizey }}">
+					<scroller scrollX="-1" scrollY="0">
+						<template sizeX="100000" sizeY="{{ $MatrixSizey }}">
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">This is the bottom line</text>
+						</template>
+					</scroller>
+				</template>
+			</h-split>
+		 </template>
+	`
+
+	tmpl, err := template.New("temp").Parse(tmplStr)
+	if err != nil {
+		panic(err)
+	}
+
+	tmplData := map[string]interface{}{} 
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, tmplData)
+	if err != nil {
+		panic(err)
+	}	
+
+	content := buf.String()
+
+	return content
+}
+
+
+
+
+
+
+
+// HELPERS
 
 func FormatDate(date time.Time) (string, error) {
 	fmt.Printf("%v", date)
