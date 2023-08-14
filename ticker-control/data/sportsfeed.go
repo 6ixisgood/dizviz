@@ -1,4 +1,4 @@
-package content_data
+package data
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-type NHLRequestConfig struct {
+type SportsFeedConfig struct {
 	APIUsername string
 	APIPassword string
 }
@@ -19,10 +19,11 @@ type NHLRequestConfig struct {
 const (
 	format = "json"
 	dailyGamesNHLURL	= "https://scrambled-api.mysportsfeeds.com/v2.1/pull/nhl/%s/date/%s/games.json"
+	dailyGamesNFLURL	= "https://scrambled-api.mysportsfeeds.com/v2.1/pull/nfl/%s/date/%s/games.json"
 )
 
 var (
-	NHLClientConfig 				= &NHLRequestConfig{}
+	SportsFeedClientConfig 				= &SportsFeedConfig{}
 )
 
 func makeAPIRequest(url string) []byte {
@@ -33,7 +34,7 @@ func makeAPIRequest(url string) []byte {
 		log.Fatalln(err)
 		return []byte("")
 	}
-	basicAuthEncoded := base64.StdEncoding.EncodeToString([]byte(NHLClientConfig.APIUsername + ":" + NHLClientConfig.APIPassword))
+	basicAuthEncoded := base64.StdEncoding.EncodeToString([]byte(SportsFeedClientConfig.APIUsername + ":" + SportsFeedClientConfig.APIPassword))
 	req.Header.Add("Authorization", "Basic " + basicAuthEncoded)
 
 	client := &http.Client{}
@@ -57,6 +58,9 @@ func makeAPIRequest(url string) []byte {
 
 }
 
+// -----------------------------------------
+// NHL
+// -----------------------------------------
 
 type DailyGamesNHLResponse struct {
 	LastUpdatedOn time.Time `json:"lastUpdatedOn"`
@@ -190,7 +194,6 @@ func FetchDailyNHLGamesInfo(date string) DailyGamesNHLResponse{
 	}
 
 	url := fmt.Sprintf(dailyGamesNHLURL, season, date)
-	fmt.Sprintf(url)
 	res := makeAPIRequest(url)
 	var respStruct DailyGamesNHLResponse
 	json.Unmarshal(res, &respStruct)
@@ -200,6 +203,115 @@ func FetchDailyNHLGamesInfo(date string) DailyGamesNHLResponse{
 
 	return respStruct
 }
+// -----------------------------------------
+// NFL 
+// -----------------------------------------
+
+type DailyGamesNFLResponse struct {
+	LastUpdatedOn time.Time `json:"lastUpdatedOn"`
+	Games         []struct {
+		Schedule struct {
+			ID        int         `json:"id"`
+			Week      int         `json:"week"`
+			StartTime time.Time   `json:"startTime"`
+			EndedTime interface{} `json:"endedTime"`
+			AwayTeam  struct {
+				ID           int    `json:"id"`
+				Abbreviation string `json:"abbreviation"`
+			} `json:"awayTeam"`
+			HomeTeam struct {
+				ID           int    `json:"id"`
+				Abbreviation string `json:"abbreviation"`
+			} `json:"homeTeam"`
+			Venue struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			} `json:"venue"`
+			VenueAllegiance          string        `json:"venueAllegiance"`
+			ScheduleStatus           string        `json:"scheduleStatus"`
+			OriginalStartTime        interface{}   `json:"originalStartTime"`
+			DelayedOrPostponedReason interface{}   `json:"delayedOrPostponedReason"`
+			PlayedStatus             string        `json:"playedStatus"`
+			Attendance               interface{}   `json:"attendance"`
+			Officials                []interface{} `json:"officials"`
+			Broadcasters             []string      `json:"broadcasters"`
+			Weather                  interface{}   `json:"weather"`
+		} `json:"schedule"`
+		Score struct {
+			CurrentQuarter                 interface{}   `json:"currentQuarter"`
+			CurrentQuarterSecondsRemaining interface{}   `json:"currentQuarterSecondsRemaining"`
+			CurrentIntermission            interface{}   `json:"currentIntermission"`
+			TeamInPossession               interface{}   `json:"teamInPossession"`
+			CurrentDown                    interface{}   `json:"currentDown"`
+			CurrentYardsRemaining          interface{}   `json:"currentYardsRemaining"`
+			LineOfScrimmage                interface{}   `json:"lineOfScrimmage"`
+			AwayScoreTotal                 interface{}   `json:"awayScoreTotal"`
+			HomeScoreTotal                 interface{}   `json:"homeScoreTotal"`
+			Quarters                       []interface{} `json:"quarters"`
+		} `json:"score"`
+	} `json:"games"`
+	References struct {
+		TeamReferences []struct {
+			ID           int    `json:"id"`
+			City         string `json:"city"`
+			Name         string `json:"name"`
+			Abbreviation string `json:"abbreviation"`
+			HomeVenue    struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			} `json:"homeVenue"`
+			TeamColoursHex      []string `json:"teamColoursHex"`
+			SocialMediaAccounts []struct {
+				MediaType string `json:"mediaType"`
+				Value     string `json:"value"`
+			} `json:"socialMediaAccounts"`
+			OfficialLogoImageSrc string `json:"officialLogoImageSrc"`
+		} `json:"teamReferences"`
+		VenueReferences []struct {
+			ID             int    `json:"id"`
+			Name           string `json:"name"`
+			City           string `json:"city"`
+			Country        string `json:"country"`
+			GeoCoordinates struct {
+				Latitude  float64 `json:"latitude"`
+				Longitude float64 `json:"longitude"`
+			} `json:"geoCoordinates"`
+			CapacitiesByEventType []struct {
+				EventType string `json:"eventType"`
+				Capacity  int    `json:"capacity"`
+			} `json:"capacitiesByEventType"`
+			PlayingSurface     string        `json:"playingSurface"`
+			BaseballDimensions []interface{} `json:"baseballDimensions"`
+			HasRoof            bool          `json:"hasRoof"`
+			HasRetractableRoof bool          `json:"hasRetractableRoof"`
+		} `json:"venueReferences"`
+	} `json:"references"`
+}
+
+
+func FetchDailyNFLGamesInfo(date string) DailyGamesNFLResponse{
+	// determine the "season" to use
+	year, err := strconv.Atoi(date[:4])
+	checkErr(err)
+	month, err := strconv.Atoi(date[4:6])
+	checkErr(err)
+
+	var season string
+	if month > 6 {
+		season = fmt.Sprintf("%d-%d-regular", year, year+1)
+	} else {
+		season = fmt.Sprintf("%d-%d-regular", year-1, year)
+	}
+
+	url := fmt.Sprintf(dailyGamesNFLURL, season, date)
+	res := makeAPIRequest(url)
+	var respStruct DailyGamesNFLResponse
+	json.Unmarshal(res, &respStruct)
+
+	return respStruct
+}
+
+
 
 func checkErr(e error) {
 	if (e != nil) {

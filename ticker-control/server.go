@@ -8,7 +8,7 @@ package main
 // 	"time"
 // 	"log"
 // 	"io/ioutil"
-// 	cd "github.com/sixisgoood/matrix-ticker/content_data"
+// 	cd "github.com/sixisgoood/matrix-ticker/data"
 // 	"github.com/sixisgoood/matrix-ticker/animations"	
 // 	"text/template"
 // 	"gopkg.in/yaml.v2"	
@@ -69,9 +69,9 @@ package main
 // <matrix sizex="{{ $MatrixSizex }}" sizey="{{ $MatrixSizey }}">
 // 	<content sizex="{{ $MatrixSizex }}" sizey="{{ $MatrixSizey }}" posx="0" posy="0" scrollx="-15" aligny="center">
 // 		{{ range .Games.Games }}
-// 		<image sizex="{{ $DefaultImageSizex }}" sizey="{{ $DefaultImageSizey }}" filepath="/home/andrew/Lab/matrix-ticker/ticker-control/content_data/images/nhl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
+// 		<image sizex="{{ $DefaultImageSizex }}" sizey="{{ $DefaultImageSizey }}" filepath="/home/andrew/Lab/matrix-ticker/ticker-control/data/images/nhl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
 // 		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.AwayScoreTotal }}  </text>
-// 		<image sizex="{{ $DefaultImageSizex }}" sizey="{{ $DefaultImageSizey }}" filepath="/home/andrew/Lab/matrix-ticker/ticker-control/content_data/images/nhl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
+// 		<image sizex="{{ $DefaultImageSizex }}" sizey="{{ $DefaultImageSizey }}" filepath="/home/andrew/Lab/matrix-ticker/ticker-control/data/images/nhl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
 // 		<text font="{{ $DefaultFontType }}" fontstyle="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" fontsize="{{ $DefaultFontSize }}">{{ .Score.HomeScoreTotal }}  </text>
 // 		{{ if eq .Score.CurrentPeriodSecondsRemaining nil }}
 // 		{{ else }}

@@ -1,4 +1,4 @@
-package content_data
+package data
 
 import (
 	"fmt"

@@ -9,8 +9,7 @@ import (
 	"gopkg.in/yaml.v2"	
 	"time"
 
-	//"github.com/sixisgoood/matrix-ticker/components"
-	cd "github.com/sixisgoood/matrix-ticker/content_data"
+	d "github.com/sixisgoood/matrix-ticker/data"
 	"github.com/sixisgoood/go-rpi-rgb-led-matrix"
 )
 
@@ -18,8 +17,8 @@ import (
 var (
 	configFilePath			= flag.String("config", "./config.yaml", "path to yaml config file")
 	AppConfig				= ApplicationConfig{}
-	Games					= cd.DailyGamesNHLResponse{}
-	Weather					= cd.WeatherForecastResponse{}
+	Games					= d.DailyGamesNHLResponse{}
+	Weather					= d.WeatherForecastResponse{}
 
 )
 
@@ -68,11 +67,11 @@ func GetApplicationConfig() ApplicationConfig {
 	return AppConfig 
 }
 
-func GetGames() cd.DailyGamesNHLResponse {
+func GetGames() d.DailyGamesNHLResponse {
 	return Games
 }
 
-func GetWeather() cd.WeatherForecastResponse {
+func GetWeather() d.WeatherForecastResponse {
 	return Weather
 }
 
@@ -103,11 +102,11 @@ func main() {
 	matrixConfig.DisableHardwarePulsing = AppConfig.Matrix.DisableHardwarePulsing
 
 	// config subpackages
-	cd.NHLClientConfig = &cd.NHLRequestConfig{
+	d.SportsFeedClientConfig = &d.SportsFeedConfig{
 		APIUsername: AppConfig.API.NHL.Username,
 		APIPassword: AppConfig.API.NHL.Password,
 	}
-	cd.WeatherClientConfig = &cd.WeatherRequestConfig{
+	d.WeatherClientConfig = &d.WeatherRequestConfig{
 		Key: AppConfig.API.Weather.Key,
 	}
 
@@ -123,14 +122,14 @@ func main() {
 	animation := GetAnimation()
 	log.Printf("Initializing the starting animation")
 	args := map[string]string{
-		"date": "20230110",
+		"date": "20230910",
 	}
-	animation.Init("nhl-daily-games", args)
+	animation.Init("nfl-daily-games", args)
 	tk.PlayAnimation(animation)
 
 
-	// Games =  cd.FetchDailyNHLGamesInfo("2022-2023-regular", "20221012")
-	// Weather = cd.FetchWeatherForecast("06105", "1")
+	// Games =  data.FetchDailyNHLGamesInfo("2022-2023-regular", "20221012")
+	// Weather = data.FetchWeatherForecast("06105", "1")
 
 
 	// // start the server
