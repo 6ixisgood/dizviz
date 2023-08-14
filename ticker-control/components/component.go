@@ -68,9 +68,16 @@ type Template struct {
 }
 
 func (t *Template) Init() {
+	ctxTmp := gg.NewContext(t.SizeX, t.SizeY)
+	t.ctx = ctxTmp 
+
 	for _, c  := range t.Components {
 		c.Init()
 	}
+}
+
+func (t *Template) Ready() bool {
+	return t.ctx != nil
 }
 
 func (t *Template) ComponentWidth() int {
@@ -82,9 +89,9 @@ func (t *Template) ComponentWidth() int {
 }
 
 func (t *Template) Render() image.Image {
-	if t.ctx == nil {
-		t.ctx = gg.NewContext(t.SizeX, t.SizeY)
-	}
+	// if t.ctx == nil {
+	// 	t.ctx = gg.NewContext(t.SizeX, t.SizeY)
+	// }
 
 	t.ctx.SetColor(color.RGBA{0,0,0,255})
 	t.ctx.Clear()
@@ -93,7 +100,6 @@ func (t *Template) Render() image.Image {
 	var cIm image.Image
 	for _, c  := range t.Components {
 		cIm = c.Render()
-
 		t.ctx.SetColor(color.RGBA{222, 255, 255, 255})
 		t.ctx.DrawImage(cIm, posX, 0)
 		posX += c.Width()

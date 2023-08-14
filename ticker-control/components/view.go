@@ -30,7 +30,7 @@ func MyViewCreate() View {
 
 func (m *MyView) Refresh() {
 	// fetch the games
-	m.Games = cd.FetchDailyNHLGamesInfo("2022-2023-regular", "20221012")
+	m.Games = cd.FetchDailyNHLGamesInfo("2022-2023-regular", "20221112")
 }
 
 // func (m *MyView) Template() string {
@@ -86,7 +86,7 @@ func (m *MyView) Template() string {
 	}
 
 	tmplData := map[string]interface{}{
-		"Games": cd.FetchDailyNHLGamesInfo("2022-2023-regular", "20221012"),
+		"Games": m.Games,
 	} 
 
 

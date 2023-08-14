@@ -76,6 +76,13 @@ func (a *Animation) Init(view string) {
 
 func (a *Animation) Next() (image.Image, <-chan time.Time, error) {
 	// render template to image.Image
+	for {
+		if !(a.template.Ready()) {
+			time.Sleep(100 * time.Millisecond)
+		} else {
+			break
+		}
+	}
 	im := a.template.Render()
 	return im, time.After(time.Millisecond * 1), nil
 }
