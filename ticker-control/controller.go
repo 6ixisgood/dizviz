@@ -5,7 +5,7 @@ import (
 	"image"
 	"time"
 	"encoding/xml"
-	c "github.com/sixisgoood/matrix-ticker/components"
+	comp "github.com/sixisgoood/matrix-ticker/components"
 )
 
 var (
@@ -15,8 +15,8 @@ var (
 )
 
 type Animation struct {
-	view		c.View
-	template	c.Template
+	view		comp.View
+	template	comp.Template
 	ticker		*time.Ticker
 	stopChan	chan struct{}
 }
@@ -45,8 +45,8 @@ func (a *Animation) Refresh() {
 	// grab the view's updated template string
 	template := a.view.Template()
 
-	// unmarshall the updated template to c.Template
-	var t c.Template
+	// unmarshall the updated template to comp.Template
+	var t comp.Template
 	err := xml.Unmarshal([]byte(template), &t)
 	if err != nil {
 		log.Fatalf("Unable to unmarshal xml content: '%v'", err)
@@ -55,13 +55,13 @@ func (a *Animation) Refresh() {
 	// init the new template
 	t.Init()
 
-	// set this as the Animation's new c.Template
+	// set this as the Animation's new comp.Template
 	a.template = t
 }
 
 func (a *Animation) Init(view string, config map[string]string) {
 	// create a new view
-	a.view = c.RegisteredViews[view](config)
+	a.view = comp.RegisteredViews[view](config)
 
 	// close the stop channel, stopping the refresh cycle if it's running
 	close(a.stopChan)

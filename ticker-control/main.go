@@ -11,6 +11,7 @@ import (
 
 	d "github.com/sixisgoood/matrix-ticker/data"
 	"github.com/sixisgoood/go-rpi-rgb-led-matrix"
+
 )
 
 
@@ -125,12 +126,13 @@ func main() {
 		"date": "20230910",
 	}
 	animation.Init("split-view", args)
-	tk.PlayAnimation(animation)
+	go tk.PlayAnimation(animation)
 
 
-	// Games =  data.FetchDailyNHLGamesInfo("2022-2023-regular", "20221012")
-	// Weather = data.FetchWeatherForecast("06105", "1")
-
+	// start the http server
+	server := NewAppServer()
+	server.InitializeRoutes()
+	server.Run("8081")
 
 	// // start the server
 	// Serve()	

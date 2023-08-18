@@ -209,7 +209,7 @@ func (v *SplitView) Template() string {
 		{{ $MatrixSizey := 64 }}
 		{{ $DefaultImageSizex := 32 }}
 		{{ $DefaultImageSizey := 32 }}
-		{{ $DefaultFontSize := 24 }}
+		{{ $DefaultFontSize := 12 }}
 		{{ $DefaultFontType := "Ubuntu" }}
 		{{ $DefaultFontStyle := "Regular" }}
 		{{ $DefaultFontColor := "#ffffffff" }}
@@ -223,6 +223,20 @@ func (v *SplitView) Template() string {
 					</scroller>
 				</template>
 				<template slot="2" sizeX="10000" sizeY="{{ $MatrixSizey }}">
+					<scroller scrollX="-1" scrollY="0">
+						<template sizeX="100000" sizeY="{{ $MatrixSizey }}">
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">This is the bottom line</text>
+						</template>
+					</scroller>
+				</template>
+				<template slot="3" sizeX="10000" sizeY="{{ $MatrixSizey }}">
+					<scroller scrollX="-1" scrollY="0">
+						<template sizeX="100000" sizeY="{{ $MatrixSizey }}">
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">This is the top line</text>
+						</template>
+					</scroller>
+				</template>
+				<template slot="4" sizeX="10000" sizeY="{{ $MatrixSizey }}">
 					<scroller scrollX="-1" scrollY="0">
 						<template sizeX="100000" sizeY="{{ $MatrixSizey }}">
 							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">This is the bottom line</text>
