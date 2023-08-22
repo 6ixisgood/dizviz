@@ -91,6 +91,7 @@ func (c *APIClient) Do(req *APIRequest) (*http.Response, error) {
 		<-c.rateLimiter
 
 		fullURL := c.options.BaseURL + req.Endpoint
+		log.Printf("Making %s request to %s", req.Method, fullURL)
 		httpReq, err := http.NewRequest(req.Method, fullURL, bytes.NewBuffer(req.Body))
 		if err != nil {
 			lastError = err
@@ -166,30 +167,4 @@ func ReadFileAndUnmarshal(path string, out interface{}) error {
 	}
 
 	return nil
-}
-
-func main() {
-	// Example usage of the APIClient.
-	clientOptions := APIClientOptions{
-		BaseURL:   "https://api.example.com",
-		Timeout:   5 * time.Second,
-		RateLimit: 500 * time.Millisecond,
-		Headers: map[string]string{
-			"User-Agent": "GoClient",
-		},
-	}
-
-	client := NewAPIClient(clientOptions)
-
-	request := &APIRequest{
-		Method:   http.MethodGet,
-		Endpoint: "/data",
-	}
-
-	var responseData map[string]interface{}
-	if err := client.DoAndUnmarshal(request, &responseData); err != nil {
-		log.Fatalf("Failed to retrieve and unmarshal data. Error: %v", err)
-	}
-
-	log.Println(responseData)
 }

@@ -21,50 +21,79 @@ var (
 	    "particle":			ParticlesViewCreate,
 	    "colorwave":		ColorWaveViewCreate,
 	} 
+	GeneralConfig = ViewGeneralConfig{}
 )
+
+func SetViewGeneralConfig(config ViewGeneralConfig) {
+	GeneralConfig = config
+}
 
 type View interface{
 	Template()		string
 	Refresh()
 }
 
+type ViewGeneralConfig struct {
+	MatrixRows			int
+	MatrixCols			int
+	ImageDir			string
+	CacheDir			string
+	DefaultImageSizeX	int
+	DefaultImageSizeY	int
+	DefaultFontSize		int
+	DefaultFontColor	string
+	DefaultFontStyle	string
+	DefaultFontType		string
+	SportsFeedUsername	string
+	SportsFeedPassword	string
+}
+
 // ---------------------------
 // NHL Daily Games
 // ---------------------------
 type NHLDailyGamesView struct {
-	Date		string
-	Games		d.DailyGamesNHLResponse
+	Date				string
+	SportsFeedClient	d.SportsFeed
+	Games				d.DailyGamesNHLResponse
 }
 
-
 func NHLDailyGamesViewCreate(config map[string]string) View {
+	client := d.NewSportsFeed("",
+		d.BasicAuthCredentials{
+			Username: GeneralConfig.SportsFeedUsername,
+			Password: GeneralConfig.SportsFeedPassword,
+		},
+	)
 	return &NHLDailyGamesView{
 		Date: config["date"],
+		SportsFeedClient: client,
 	}
 }
 
 func (v *NHLDailyGamesView) Refresh() {
 	// fetch the games
-	v.Games = d.FetchDailyNHLGamesInfo(v.Date)
+	v.Games = v.SportsFeedClient.FetchDailyNHLGamesInfo(v.Date)
 }
 
 func (v *NHLDailyGamesView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex := 64 }}
-		{{ $MatrixSizey := 64 }}
-		{{ $DefaultImageSizex := 32 }}
-		{{ $DefaultImageSizey := 32 }}
-		{{ $DefaultFontSize := 24 }}
-		{{ $DefaultFontType := "Ubuntu" }}
-		{{ $DefaultFontStyle := "Regular" }}
-		{{ $DefaultFontColor := "#ffffffff" }}
-		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+		{{ $MatrixSizex :=  .Config.MatrixRows }}
+		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+		{{ $DefaultFontSize := .Config.DefaultFontSize }}
+		{{ $DefaultFontType := .Config.DefaultFontType }}
+		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $ImageDir := .Config.ImageDir }}
+		{{ $CacheDir := .Config.CacheDir }}
+		<template sizeX="{{ $MatrixSizex  }}" sizeY="{{ $MatrixSizey }}">
 			<scroller scrollX="-1" scrollY="0">
-				<template sizeX="10000" sizeY="{{ $MatrixSizey }}">
+				<template sizeX="10000" sizeY="{{ $MatrixSizey}}">
 				    {{ range .Games.Games }}
-				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="/home/andrew/Lab/matrix-ticker/ticker-control/data/images/nhl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
+				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nhl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
 				    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.AwayScoreTotal }}  </text>
-				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="/home/andrew/Lab/matrix-ticker/ticker-control/data/images/nhl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
+				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nhl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
 				    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.HomeScoreTotal }}  </text>
 				    {{ if eq .Score.CurrentPeriodSecondsRemaining nil }}
 				    {{ else }}
@@ -91,6 +120,7 @@ func (v *NHLDailyGamesView) Template() string {
 	}
 
 	tmplData := map[string]interface{}{
+		"Config": GeneralConfig,
 		"Games": v.Games,
 	} 
 
@@ -111,45 +141,54 @@ func (v *NHLDailyGamesView) Template() string {
 // ---------------------------
 type NFLDailyGamesView struct {
 	Date		string
+	SportsFeedClient	d.SportsFeed
 	Games		d.DailyGamesNFLResponse
 }
 
-
 func NFLDailyGamesViewCreate(config map[string]string) View {
+	client := d.NewSportsFeed("",
+		d.BasicAuthCredentials{
+			Username: GeneralConfig.SportsFeedUsername,
+			Password: GeneralConfig.SportsFeedPassword,
+		},
+	)
 	return &NFLDailyGamesView{
 		Date: config["date"],
+		SportsFeedClient: client,
 	}
 }
 
 func (v *NFLDailyGamesView) Refresh() {
 	// fetch the games
-	v.Games = d.FetchDailyNFLGamesInfo(v.Date)
+	v.Games = v.SportsFeedClient.FetchDailyNFLGamesInfo(v.Date)
 }
 
 func (v *NFLDailyGamesView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex := 64 }}
-		{{ $MatrixSizey := 64 }}
-		{{ $DefaultImageSizex := 32 }}
-		{{ $DefaultImageSizey := 32 }}
-		{{ $DefaultFontSize := 24 }}
-		{{ $DefaultFontType := "Ubuntu" }}
-		{{ $DefaultFontStyle := "Regular" }}
-		{{ $DefaultFontColor := "#ffffffff" }}
+		{{ $MatrixSizex :=  .Config.MatrixRows }}
+		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+		{{ $DefaultFontSize := .Config.DefaultFontSize }}
+		{{ $DefaultFontType := .Config.DefaultFontType }}
+		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $ImageDir := .Config.ImageDir }}
+		{{ $CacheDir := .Config.CacheDir }}
 		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 			<scroller scrollX="-1" scrollY="0">
 				<template sizeX="10000" sizeY="{{ $MatrixSizey }}">
 				    {{ range .Games.Games }}
 
 				    {{ if eq .Schedule.PlayedStatus "UNPLAYED"}}
-					<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="/home/andrew/Lab/matrix-ticker/ticker-control/data/images/nfl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
+					<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}"> @ </text>
-				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="/home/andrew/Lab/matrix-ticker/ticker-control/data/images/nfl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
+				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Schedule.StartTime | FormatDate }} </text>
 				    {{ else }}
-				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="/home/andrew/Lab/matrix-ticker/ticker-control/data/images/nfl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
+				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
 				    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.AwayScoreTotal }}  </text>
-				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="/home/andrew/Lab/matrix-ticker/ticker-control/data/images/nfl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
+				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
 				    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.HomeScoreTotal }}  </text>
 				    {{ end}}
 
@@ -178,6 +217,7 @@ func (v *NFLDailyGamesView) Template() string {
 	}
 
 	tmplData := map[string]interface{}{
+		"Config": GeneralConfig,
 		"Games": v.Games,
 	} 
 
@@ -210,14 +250,16 @@ func (v *SplitView) Refresh() {
 
 func (v *SplitView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex := 64 }}
-		{{ $MatrixSizey := 64 }}
-		{{ $DefaultImageSizex := 32 }}
-		{{ $DefaultImageSizey := 32 }}
-		{{ $DefaultFontSize := 12 }}
-		{{ $DefaultFontType := "Ubuntu" }}
-		{{ $DefaultFontStyle := "Regular" }}
-		{{ $DefaultFontColor := "#ffffffff" }}
+		{{ $MatrixSizex :=  .Config.MatrixRows }}
+		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+		{{ $DefaultFontSize := .Config.DefaultFontSize }}
+		{{ $DefaultFontType := .Config.DefaultFontType }}
+		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $ImageDir := .Config.ImageDir }}
+		{{ $CacheDir := .Config.CacheDir }}
 		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 			<h-split>
 				<template slot="1" sizeX="10000" sizeY="{{ $MatrixSizey }}">
@@ -257,7 +299,9 @@ func (v *SplitView) Template() string {
 		panic(err)
 	}
 
-	tmplData := map[string]interface{}{} 
+	tmplData := map[string]interface{}{
+		"Config": GeneralConfig,
+	} 
 
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, tmplData)
@@ -285,13 +329,16 @@ func (v *RainbowView) Refresh() {
 
 func (v *RainbowView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex := 64 }}
-		{{ $MatrixSizey := 64 }}
-		{{ $DefaultImageSizex := 32 }}
-		{{ $DefaultImageSizey := 32 }}
-		{{ $DefaultFontSize := 12 }}
-		{{ $DefaultFontType := "Ubuntu" }}
-		{{ $DefaultFontStyle := "Regular" }}
+		{{ $MatrixSizex :=  .Config.MatrixRows }}
+		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+		{{ $DefaultFontSize := .Config.DefaultFontSize }}
+		{{ $DefaultFontType := .Config.DefaultFontType }}
+		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $ImageDir := .Config.ImageDir }}
+		{{ $CacheDir := .Config.CacheDir }}
 		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 			<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="{{ $DefaultFontSize }}">Rainbow!</rainbow-text>
 		 </template>
@@ -302,7 +349,9 @@ func (v *RainbowView) Template() string {
 		panic(err)
 	}
 
-	tmplData := map[string]interface{}{} 
+	tmplData := map[string]interface{}{
+		"Config": GeneralConfig,
+	} 
 
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, tmplData)
@@ -330,14 +379,16 @@ func (v *TrainView) Refresh() {
 
 func (v *TrainView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex := 64 }}
-		{{ $MatrixSizey := 64 }}
-		{{ $DefaultImageSizex := 32 }}
-		{{ $DefaultImageSizey := 32 }}
-		{{ $DefaultFontSize := 12 }}
-		{{ $DefaultFontType := "Ubuntu" }}
-		{{ $DefaultFontStyle := "Regular" }}
-		{{ $DefaultFontColor := "#ffffffff" }}
+		{{ $MatrixSizex :=  .Config.MatrixRows }}
+		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+		{{ $DefaultFontSize := .Config.DefaultFontSize }}
+		{{ $DefaultFontType := .Config.DefaultFontType }}
+		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $ImageDir := .Config.ImageDir }}
+		{{ $CacheDir := .Config.CacheDir }}
 		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 
 			<scenic-train sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}" color="{{ $DefaultFontColor }}"></scenic-train>
@@ -350,7 +401,9 @@ func (v *TrainView) Template() string {
 		panic(err)
 	}
 
-	tmplData := map[string]interface{}{} 
+	tmplData := map[string]interface{}{
+		"Config": GeneralConfig,
+	} 
 
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, tmplData)
@@ -378,14 +431,16 @@ func (v *PongView) Refresh() {
 
 func (v *PongView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex := 64 }}
-		{{ $MatrixSizey := 64 }}
-		{{ $DefaultImageSizex := 32 }}
-		{{ $DefaultImageSizey := 32 }}
-		{{ $DefaultFontSize := 12 }}
-		{{ $DefaultFontType := "Ubuntu" }}
-		{{ $DefaultFontStyle := "Regular" }}
-		{{ $DefaultFontColor := "#ffffffff" }}
+		{{ $MatrixSizex :=  .Config.MatrixRows }}
+		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+		{{ $DefaultFontSize := .Config.DefaultFontSize }}
+		{{ $DefaultFontType := .Config.DefaultFontType }}
+		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $ImageDir := .Config.ImageDir }}
+		{{ $CacheDir := .Config.CacheDir }}
 		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 			<pong sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}" color="{{ $DefaultFontColor }}" ballRadius="2" paddleHeight="15" paddleWidth="5"></pong>
 		 </template>
@@ -396,7 +451,9 @@ func (v *PongView) Template() string {
 		panic(err)
 	}
 
-	tmplData := map[string]interface{}{} 
+	tmplData := map[string]interface{}{
+		"Config": GeneralConfig,
+	} 
 
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, tmplData)
@@ -423,14 +480,16 @@ func (v *ParticlesView) Refresh() {
 
 func (v *ParticlesView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex := 64 }}
-		{{ $MatrixSizey := 64 }}
-		{{ $DefaultImageSizex := 32 }}
-		{{ $DefaultImageSizey := 32 }}
-		{{ $DefaultFontSize := 12 }}
-		{{ $DefaultFontType := "Ubuntu" }}
-		{{ $DefaultFontStyle := "Regular" }}
-		{{ $DefaultFontColor := "#ffffffff" }}
+		{{ $MatrixSizex :=  .Config.MatrixRows }}
+		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+		{{ $DefaultFontSize := .Config.DefaultFontSize }}
+		{{ $DefaultFontType := .Config.DefaultFontType }}
+		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $ImageDir := .Config.ImageDir }}
+		{{ $CacheDir := .Config.CacheDir }}
 		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 			<gravity-particles sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}"></gravity-particles>
 		 </template>
@@ -441,7 +500,9 @@ func (v *ParticlesView) Template() string {
 		panic(err)
 	}
 
-	tmplData := map[string]interface{}{} 
+	tmplData := map[string]interface{}{
+		"Config": GeneralConfig,
+	} 
 
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, tmplData)
@@ -468,14 +529,16 @@ func (v *ColorWaveView) Refresh() {
 
 func (v *ColorWaveView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex := 64 }}
-		{{ $MatrixSizey := 64 }}
-		{{ $DefaultImageSizex := 32 }}
-		{{ $DefaultImageSizey := 32 }}
-		{{ $DefaultFontSize := 12 }}
-		{{ $DefaultFontType := "Ubuntu" }}
-		{{ $DefaultFontStyle := "Regular" }}
-		{{ $DefaultFontColor := "#ffffffff" }}
+		{{ $MatrixSizex :=  .Config.MatrixRows }}
+		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+		{{ $DefaultFontSize := .Config.DefaultFontSize }}
+		{{ $DefaultFontType := .Config.DefaultFontType }}
+		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $ImageDir := .Config.ImageDir }}
+		{{ $CacheDir := .Config.CacheDir }}
 		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 			<colorwave sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}"></colorwave>
 		 </template>
@@ -486,7 +549,9 @@ func (v *ColorWaveView) Template() string {
 		panic(err)
 	}
 
-	tmplData := map[string]interface{}{} 
+	tmplData := map[string]interface{}{
+		"Config": GeneralConfig,
+	}  
 
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, tmplData)

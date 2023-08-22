@@ -8,6 +8,18 @@ matrix:
   show_refresh: true
   inverse_colors: false
   disable_hardware_pulsing: true
-api:
- username: <API_USER>
- password: <API_PASS> 
+default:
+  image_size_x: 32
+  image_size_y: 32
+  font_size: 24
+  font_color: "#ffffffff"
+  font_style: "Regular"
+  font_type: "Ubuntu"
+data:
+  images: <PATH_TO_IMAGES_ROOT>
+  cache: <PATH_TO_CACHE>
+  sportsfeed:
+    username: <API_USER>
+    password: <API_PASS> 
+  weather:
+    key: <API_KEY>

@@ -9,8 +9,6 @@ import (
 )
 
 type SleeperConfig struct {
-	APIUsername string
-	APIPassword string
 }
 
 

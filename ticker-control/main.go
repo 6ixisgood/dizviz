@@ -10,6 +10,7 @@ import (
 	"time"
 
 	d "github.com/sixisgoood/matrix-ticker/data"
+	comp "github.com/sixisgoood/matrix-ticker/components"
 	"github.com/sixisgoood/go-rpi-rgb-led-matrix"
 
 )
@@ -37,17 +38,26 @@ type ApplicationConfig struct {
 		InverseColors			bool	`yaml:"inverse_colors"`
 		DisableHardwarePulsing	bool	`yaml:"disable_hardware_pulsing"`
 	}	`yaml:"matrix"`
-	API	struct {
-		NHL struct {
+	Default struct {
+		ImageSizeX				int		`yaml:"image_size_x"`
+		ImageSizeY				int		`yaml:"image_size_y"`
+		FontSize				int		`yaml:"font_size"`
+		FontColor				string	`yaml:"font_color"`
+		FontStyle				string	`yaml:"font_style"`
+		FontType				string	`yaml:"font_type"`
+	}
+	Data struct {
+		ImageDir				string	`yaml:"images"`
+		CacheDir				string	`yaml:"cache"`
+		SportsFeed struct {
 			Username				string	`yaml:"username"`
 			Password				string  `yaml:"password"`
-		}	`yaml:"nhl"`
+		}	`yaml:"sportsfeed"`
 		Weather struct {
 			Key						string `yaml:"key"`
 		}	`yaml:"weather"`
 		
-	}	`yaml:"api"`
-	TemplateDir				string	`yaml:"template_dir`
+	}	`yaml:"data"`
 }
 
 type RootAnimation struct {}
@@ -102,15 +112,6 @@ func main() {
 	matrixConfig.InverseColors = AppConfig.Matrix.InverseColors
 	matrixConfig.DisableHardwarePulsing = AppConfig.Matrix.DisableHardwarePulsing
 
-	// config subpackages
-	d.SportsFeedClientConfig = &d.SportsFeedConfig{
-		APIUsername: AppConfig.API.NHL.Username,
-		APIPassword: AppConfig.API.NHL.Password,
-	}
-	d.WeatherClientConfig = &d.WeatherRequestConfig{
-		Key: AppConfig.API.Weather.Key,
-	}
-
 	// setup matrix
 	fmt.Println("Starting Matrix\n")
 	m, err := rgbmatrix.NewRGBLedMatrix(matrixConfig)
@@ -121,6 +122,20 @@ func main() {
 
 	// start the root animation
 	animation := GetAnimation()
+	comp.SetViewGeneralConfig(comp.ViewGeneralConfig{
+		MatrixRows: AppConfig.Matrix.Rows * AppConfig.Matrix.Parallel,
+		MatrixCols: AppConfig.Matrix.Cols,
+		ImageDir: AppConfig.Data.ImageDir,
+		CacheDir: AppConfig.Data.CacheDir,
+		SportsFeedUsername: AppConfig.Data.SportsFeed.Username,
+		SportsFeedPassword: AppConfig.Data.SportsFeed.Password,
+		DefaultImageSizeX: AppConfig.Default.ImageSizeX,
+		DefaultImageSizeY: AppConfig.Default.ImageSizeY,
+		DefaultFontSize: AppConfig.Default.FontSize,
+		DefaultFontColor: AppConfig.Default.FontColor,
+		DefaultFontStyle: AppConfig.Default.FontStyle,
+		DefaultFontType: AppConfig.Default.FontType,
+	})
 	log.Printf("Initializing the starting animation")
 	args := map[string]string{
 		"date": "20230910",
