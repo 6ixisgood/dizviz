@@ -15,6 +15,11 @@ var (
 	    "nhl-daily-games":  NHLDailyGamesViewCreate,
 	    "nfl-daily-games":	NFLDailyGamesViewCreate,
 	    "split-view":		SplitViewCreate,
+	    "rainbow":			RainbowViewCreate,
+	    "train":			TrainViewCreate,
+	    "pong":				PongViewCreate,
+	    "particle":			ParticlesViewCreate,
+	    "colorwave":		ColorWaveViewCreate,
 	} 
 )
 
@@ -266,7 +271,233 @@ func (v *SplitView) Template() string {
 }
 
 
+// Rainbow text testing
+type RainbowView struct {
+}
 
+
+func RainbowViewCreate(config map[string]string) View {
+	return &RainbowView{}
+}
+
+func (v *RainbowView) Refresh() {
+}
+
+func (v *RainbowView) Template() string {
+	tmplStr := `
+		{{ $MatrixSizex := 64 }}
+		{{ $MatrixSizey := 64 }}
+		{{ $DefaultImageSizex := 32 }}
+		{{ $DefaultImageSizey := 32 }}
+		{{ $DefaultFontSize := 12 }}
+		{{ $DefaultFontType := "Ubuntu" }}
+		{{ $DefaultFontStyle := "Regular" }}
+		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="{{ $DefaultFontSize }}">Rainbow!</rainbow-text>
+		 </template>
+	`
+
+	tmpl, err := template.New("temp").Parse(tmplStr)
+	if err != nil {
+		panic(err)
+	}
+
+	tmplData := map[string]interface{}{} 
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, tmplData)
+	if err != nil {
+		panic(err)
+	}	
+
+	content := buf.String()
+
+	return content
+}
+
+
+
+// Train view
+type TrainView struct {
+}
+
+func TrainViewCreate(config map[string]string) View {
+	return &TrainView{}
+}
+
+func (v *TrainView) Refresh() {
+}
+
+func (v *TrainView) Template() string {
+	tmplStr := `
+		{{ $MatrixSizex := 64 }}
+		{{ $MatrixSizey := 64 }}
+		{{ $DefaultImageSizex := 32 }}
+		{{ $DefaultImageSizey := 32 }}
+		{{ $DefaultFontSize := 12 }}
+		{{ $DefaultFontType := "Ubuntu" }}
+		{{ $DefaultFontStyle := "Regular" }}
+		{{ $DefaultFontColor := "#ffffffff" }}
+		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+
+			<scenic-train sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}" color="{{ $DefaultFontColor }}"></scenic-train>
+
+		 </template>
+	`
+
+	tmpl, err := template.New("temp").Parse(tmplStr)
+	if err != nil {
+		panic(err)
+	}
+
+	tmplData := map[string]interface{}{} 
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, tmplData)
+	if err != nil {
+		panic(err)
+	}	
+
+	content := buf.String()
+
+	return content
+}
+
+
+// Pong view
+type PongView struct {
+}
+
+
+func PongViewCreate(config map[string]string) View {
+	return &PongView{}
+}
+
+func (v *PongView) Refresh() {
+}
+
+func (v *PongView) Template() string {
+	tmplStr := `
+		{{ $MatrixSizex := 64 }}
+		{{ $MatrixSizey := 64 }}
+		{{ $DefaultImageSizex := 32 }}
+		{{ $DefaultImageSizey := 32 }}
+		{{ $DefaultFontSize := 12 }}
+		{{ $DefaultFontType := "Ubuntu" }}
+		{{ $DefaultFontStyle := "Regular" }}
+		{{ $DefaultFontColor := "#ffffffff" }}
+		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<pong sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}" color="{{ $DefaultFontColor }}" ballRadius="2" paddleHeight="15" paddleWidth="5"></pong>
+		 </template>
+	`
+
+	tmpl, err := template.New("temp").Parse(tmplStr)
+	if err != nil {
+		panic(err)
+	}
+
+	tmplData := map[string]interface{}{} 
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, tmplData)
+	if err != nil {
+		panic(err)
+	}	
+
+	content := buf.String()
+
+	return content
+}
+
+// Particles view
+type ParticlesView struct {
+}
+
+
+func ParticlesViewCreate(config map[string]string) View {
+	return &ParticlesView{}
+}
+
+func (v *ParticlesView) Refresh() {
+}
+
+func (v *ParticlesView) Template() string {
+	tmplStr := `
+		{{ $MatrixSizex := 64 }}
+		{{ $MatrixSizey := 64 }}
+		{{ $DefaultImageSizex := 32 }}
+		{{ $DefaultImageSizey := 32 }}
+		{{ $DefaultFontSize := 12 }}
+		{{ $DefaultFontType := "Ubuntu" }}
+		{{ $DefaultFontStyle := "Regular" }}
+		{{ $DefaultFontColor := "#ffffffff" }}
+		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<gravity-particles sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}"></gravity-particles>
+		 </template>
+	`
+
+	tmpl, err := template.New("temp").Parse(tmplStr)
+	if err != nil {
+		panic(err)
+	}
+
+	tmplData := map[string]interface{}{} 
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, tmplData)
+	if err != nil {
+		panic(err)
+	}	
+
+	content := buf.String()
+
+	return content
+}
+
+// ColorWave view
+type ColorWaveView struct {
+}
+
+
+func ColorWaveViewCreate(config map[string]string) View {
+	return &ColorWaveView{}
+}
+
+func (v *ColorWaveView) Refresh() {
+}
+
+func (v *ColorWaveView) Template() string {
+	tmplStr := `
+		{{ $MatrixSizex := 64 }}
+		{{ $MatrixSizey := 64 }}
+		{{ $DefaultImageSizex := 32 }}
+		{{ $DefaultImageSizey := 32 }}
+		{{ $DefaultFontSize := 12 }}
+		{{ $DefaultFontType := "Ubuntu" }}
+		{{ $DefaultFontStyle := "Regular" }}
+		{{ $DefaultFontColor := "#ffffffff" }}
+		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<colorwave sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}"></colorwave>
+		 </template>
+	`
+
+	tmpl, err := template.New("temp").Parse(tmplStr)
+	if err != nil {
+		panic(err)
+	}
+
+	tmplData := map[string]interface{}{} 
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, tmplData)
+	if err != nil {
+		panic(err)
+	}	
+
+	content := buf.String()
+
+	return content
+}
 
 
 

@@ -125,7 +125,7 @@ func main() {
 	args := map[string]string{
 		"date": "20230910",
 	}
-	animation.Init("split-view", args)
+	animation.Init("rainbow", args)
 	go tk.PlayAnimation(animation)
 
 
