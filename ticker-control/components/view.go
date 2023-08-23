@@ -143,6 +143,7 @@ type NFLDailyGamesView struct {
 	Date		string
 	SportsFeedClient	d.SportsFeed
 	Games		d.DailyGamesNFLResponse
+	Layout		string
 }
 
 func NFLDailyGamesViewCreate(config map[string]string) View {
@@ -152,8 +153,12 @@ func NFLDailyGamesViewCreate(config map[string]string) View {
 			Password: GeneralConfig.SportsFeedPassword,
 		},
 	)
+	if _, ok := config["layout"]; !ok {
+		config["layout"] = "flat"
+	}	
 	return &NFLDailyGamesView{
 		Date: config["date"],
+		Layout: config["layout"],
 		SportsFeedClient: client,
 	}
 }
@@ -164,50 +169,103 @@ func (v *NFLDailyGamesView) Refresh() {
 }
 
 func (v *NFLDailyGamesView) Template() string {
-	tmplStr := `
-		{{ $MatrixSizex :=  .Config.MatrixRows }}
-		{{ $MatrixSizey := .Config.MatrixCols }}
-		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
-		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
-		{{ $DefaultFontSize := .Config.DefaultFontSize }}
-		{{ $DefaultFontType := .Config.DefaultFontType }}
-		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
-		{{ $DefaultFontColor := .Config.DefaultFontColor }}
-		{{ $ImageDir := .Config.ImageDir }}
-		{{ $CacheDir := .Config.CacheDir }}
-		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-			<scroller scrollX="-1" scrollY="0">
-				<template sizeX="10000" sizeY="{{ $MatrixSizey }}">
-				    {{ range .Games.Games }}
+	var tmplStr string
 
-				    {{ if eq .Schedule.PlayedStatus "UNPLAYED"}}
-					<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}"> @ </text>
-				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Schedule.StartTime | FormatDate }} </text>
-				    {{ else }}
-				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
-				    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.AwayScoreTotal }}  </text>
-				    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
-				    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.HomeScoreTotal }}  </text>
-				    {{ end}}
+	if v.Layout == "flat" {
+		tmplStr = `
+			{{ $MatrixSizex :=  .Config.MatrixRows }}
+			{{ $MatrixSizey := .Config.MatrixCols }}
+			{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+			{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+			{{ $DefaultFontSize := .Config.DefaultFontSize }}
+			{{ $DefaultFontType := .Config.DefaultFontType }}
+			{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+			{{ $DefaultFontColor := .Config.DefaultFontColor }}
+			{{ $ImageDir := .Config.ImageDir }}
+			{{ $CacheDir := .Config.CacheDir }}
+			<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+				<scroller scrollX="-1" scrollY="0">
+					<template sizeX="10000" sizeY="{{ $MatrixSizey }}">
+					    {{ range .Games.Games }}
 
-				    {{ if eq .Score.CurrentQuarterSecondsRemaining nil }}
-				    {{ else }}
-				    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.CurrentQuarterSecondsRemaining }}  </text>
-				    {{ end }}
-				    {{ if eq .Schedule.PlayedStatus "COMPLETED" }}
-				    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">FINAL  </text>
-				    {{ else if eq .Score.CurrentQuarter nil }}
-				    {{ else }}
-				    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.CurrentQuarter }}  </text>
-				    {{ end }}
-				    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">• </text>
-				    {{ end }}
-				</template>
-			</scroller>
-		 </template>
-	`
+					    {{ if eq .Schedule.PlayedStatus "UNPLAYED"}}
+						<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
+						<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}"> @ </text>
+					    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
+						<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Schedule.StartTime | FormatDate }} </text>
+					    {{ else }}
+					    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
+					    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.AwayScoreTotal }}  </text>
+					    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
+					    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.HomeScoreTotal }}  </text>
+					    {{ end}}
+
+					    {{ if eq .Score.CurrentQuarterSecondsRemaining nil }}
+					    {{ else }}
+					    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.CurrentQuarterSecondsRemaining }}  </text>
+					    {{ end }}
+					    {{ if eq .Schedule.PlayedStatus "COMPLETED" }}
+					    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">FINAL  </text>
+					    {{ else if eq .Score.CurrentQuarter nil }}
+					    {{ else }}
+					    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.CurrentQuarter }}  </text>
+					    {{ end }}
+					    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">• </text>
+					    {{ end }}
+					</template>
+				</scroller>
+			 </template>
+		`
+	} else if v.Layout == "stack" {
+		tmplStr = `
+			{{ $MatrixSizex :=  .Config.MatrixRows }}
+			{{ $MatrixSizey := .Config.MatrixCols }}
+			{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+			{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+			{{ $DefaultFontSize := .Config.DefaultFontSize }}
+			{{ $DefaultFontType := .Config.DefaultFontType }}
+			{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+			{{ $DefaultFontColor := .Config.DefaultFontColor }}
+			{{ $ImageDir := .Config.ImageDir }}
+			{{ $CacheDir := .Config.CacheDir }}
+
+			<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+
+				<scroller scrollX="-1" scrollY="0">
+					<template sizeX="10000" sizeY="{{ $MatrixSizey }}">
+					    {{ range .Games.Games }}
+					    <h-split>
+							<template slot="1" sizeX="10000" sizeY="{{ $MatrixSizey }}">
+								<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
+								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.AwayScoreTotal }}  </text>
+
+								{{ if eq .Schedule.PlayedStatus "UNPLAYED"}}
+								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Schedule.StartTime | FormatDate }} </text>
+							    {{ end}}
+							    {{ if eq .Schedule.PlayedStatus "COMPLETED" }}
+							    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">FINAL  </text>
+							    {{ else if eq .Score.CurrentQuarter nil }}
+							    {{ else }}
+								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.CurrentQuarter }}  </text>
+							    {{ end }}
+
+							</template>
+							<template slot="2" sizeX="10000" sizeY="{{ $MatrixSizey }}">
+					    		<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
+								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.HomeScoreTotal }}  </text>
+
+								 {{ if eq .Score.CurrentQuarterSecondsRemaining nil }}
+							    {{ else }}
+							    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.CurrentQuarterSecondsRemaining }}  </text>
+							    {{ end }}
+							</template>
+						</h-split>
+						{{ end }}
+					</template>
+				</scroller>
+			 </template>
+		`
+	}
 
 	tmpl, err := template.New("temp").Funcs(template.FuncMap{
 		"FormatDate": FormatDate,
