@@ -602,7 +602,6 @@ type GravityParticles struct {
 	XMLName         xml.Name         `xml:"gravity-particles"`
 	Particles       []Particle
 	GravityPoints   []GravityParticle
-	Amplitude       float64
 }
 
 func (gp *GravityParticles) Init() {
@@ -667,12 +666,6 @@ func (gp *GravityParticles) Render() image.Image {
 		gp.ctx.Fill()
 	}
 
-	// Render gravity points and make them pulse
-	for _, g := range gp.GravityPoints {
-		gp.ctx.SetColor(g.Color)
-		gp.ctx.DrawCircle(g.X, g.Y, 10*(1+gp.Amplitude)) // Pulse size based on amplitude
-		gp.ctx.Fill()
-	}
 
 	return gp.ctx.Image()
 }
