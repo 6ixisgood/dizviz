@@ -32,6 +32,7 @@ func (a *Animation) ContinuousRefresh(notify <-chan time.Time) () {
 		// wait for the stop signal
 		case <-a.stopChan:
 			a.ticker.Stop()
+			a.template.Stop()
 			return
 		}
 	}
@@ -84,7 +85,7 @@ func (a *Animation) Next() (image.Image, <-chan time.Time, error) {
 		}
 	}
 	im := a.template.Render()
-	return im, time.After(time.Millisecond * 1), nil
+	return im, time.After(time.Millisecond * 10), nil
 }
 
 func GetAnimation() *Animation {

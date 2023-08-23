@@ -5,6 +5,7 @@ import (
 	"os"
 	"image"
 	"math"
+	"time"
 	"image/color"
 	"fmt"
 	"math/rand"
@@ -25,9 +26,14 @@ var (
 
 type Component interface {
 	Init()								// Ran before componenet is rendered
-	Render()			image.Image		// Render the component to an image.Image representation
-	Width()				int				// Return the width of the component. Used to help position components on the display
-	Height()			int				// Return the height of the compoent. Used to help position components on the display
+	Render()					image.Image		// Render the component to an image.Image representation
+	Width()						int				// Return the width of the component. Used to help position components on the display
+	Height()					int				// Return the height of the compoent. Used to help position components on the display
+	PrevImg()					image.Image		// return the previously rendered image
+	SetPrevImg(img image.Image)					// the the previously rendered iamge
+	TickerChan()				<-chan time.Time // return the channel for the ticker
+	Stop()										// Stop the ticker
+
 }
 
 type BaseComponent struct {
@@ -36,11 +42,24 @@ type BaseComponent struct {
 	PosX		int			`xml:"posX,attr"`
 	PosY		int			`xml:"posY,attr"`
 	ctx			*gg.Context
+	prevImg		image.Image
+	Ticker		*time.Ticker
+	rr			int			// render rate in milliseconds
 }
 
 func (bc *BaseComponent) Init() {
-	if (bc.ctx == nil) {
+	// create a context, if needed
+	if (bc.ctx == nil && bc.SizeX > 0 && bc.SizeY > 0) {
 		bc.ctx = gg.NewContext(bc.SizeX, bc.SizeY)
+	}
+	// set a render rate, if needed
+	if bc.rr == 0 {
+		bc.rr = 100
+	}
+
+	// set ticker for render rate
+	if bc.rr > 0 {
+		bc.Ticker = time.NewTicker(time.Duration(bc.rr) * time.Millisecond)
 	}
 }
 
@@ -56,12 +75,34 @@ func (bc *BaseComponent) Size() image.Point {
 	return image.Point{bc.ctx.Width(), bc.ctx.Height()}
 }
 
+func (bc *BaseComponent) TickerChan() <-chan time.Time{
+	if bc.Ticker != nil {
+		return bc.Ticker.C
+	} else {
+		return nil
+	}
+}
+
+func (bc *BaseComponent) Stop() {
+	// pass
+	if bc.Ticker != nil {
+		bc.Ticker.Stop()
+	}
+}
+
+func (bc *BaseComponent) PrevImg() image.Image {
+	return bc.prevImg
+}
+
+func (bc *BaseComponent) SetPrevImg(img image.Image) {
+	bc.prevImg = img
+}
+
 
 type Template struct {
 	XMLName			xml.Name		`xml:"template"`
 	SizeX			int				`xml:"sizeX,attr"`
 	SizeY			int				`xml:"sizeY,attr"`
-	Slot			int				`xml:"slot,attr"`
 	Components		[]Component		`xml:",any"`
 
 	ctx				*gg.Context
@@ -100,13 +141,33 @@ func (t *Template) Render() image.Image {
 	posX := 0
 	var cIm image.Image
 	for _, c  := range t.Components {
-		cIm = c.Render()
-		t.ctx.SetColor(color.RGBA{222, 255, 255, 255})
+		// chan to check if we should re-render or just grab last image
+		select {
+			case <-c.TickerChan():
+				// Ticker has ticked
+				cIm = c.Render()
+			default:
+				// Ticker has not ticked
+				cIm = c.PrevImg()
+				// check for nil
+				if cIm == nil {
+					cIm = c.Render()
+				}
+		}
+		// save the prev image for next time
+		c.SetPrevImg(cIm)
+		// draw the image to the context
 		t.ctx.DrawImage(cIm, posX, 0)
 		posX += c.Width()
 	}
 
 	return t.ctx.Image()
+}
+
+func (tmpl *Template) Stop() {
+	for _, c  := range tmpl.Components {
+		c.Stop()
+	}
 }
 
 func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
@@ -186,7 +247,10 @@ type Text struct {
 }
 
 func (t *Text) Init() {
+	t.rr = -1 // no need to rerender this once created
 	t.BaseComponent.Init()
+
+	t.ctx = gg.NewContext(0, 0)
 
 	// init the font and style
 	var font = loadFont(fmt.Sprintf("%s-%s", t.Font, t.FontStyle))
@@ -211,7 +275,9 @@ func (t *Text) Render() image.Image {
 	
 	t.ctx.DrawStringAnchored(t.Text, 0, 0, 0, 1)
 
-	return t.ctx.Image()
+	img := t.ctx.Image()
+
+	return img
 }
 
 type Image struct {
@@ -224,6 +290,8 @@ type Image struct {
 }
 
 func (i *Image) Init() {
+	i.rr = -1 // No need to rerender this once created
+	i.BaseComponent.Init()
 	// maybe fetch the image if needed here?	
 	i.img = fetchImageFromPath(i.Src)
 	if i.SizeX != 0 {
@@ -257,21 +325,21 @@ type Scroller struct {
 }
 
 func (s *Scroller) Init() {
+	s.rr = 10 // render this one a bit faster than most
+	s.BaseComponent.Init()
 	s.Slot.Init()
-
 }
 
 func (s *Scroller) Render() image.Image {
+	// render the slot
+	im := s.Slot.Render()
+
 	if s.ctx == nil {
-		log.Printf("RENDER SCROLL")
-		s.ctx = gg.NewContext(s.Slot.ComponentWidth(), 50)
+		s.ctx = gg.NewContext(s.Slot.ComponentWidth(), 64)
 	}
 
 	s.ctx.SetColor(color.RGBA{0,0,0,255})
-	s.ctx.Clear()
-
-	// render the slot
-	im := s.Slot.Render()
+	s.ctx.Clear()	
 
 	s.ctx.DrawImage(im, s.PosX, s.PosY)
 
@@ -296,6 +364,8 @@ type HorizonalSplit struct {
 }
 
 func (s *HorizonalSplit) Init() {
+	s.rr = 10 // rerender this one a bit more often
+	s.BaseComponent.Init()
 	for _, s := range s.Slots {
 		s.Init()
 	}
@@ -344,6 +414,7 @@ type AnimatedRainbowText struct {
 
 func (art *AnimatedRainbowText) Init() {
 	art.BaseComponent.Init()
+	art.ctx = gg.NewContext(100, 64)
 
 
 	var font = loadFont(fmt.Sprintf("%s-%s", art.Font, art.FontStyle))
@@ -352,8 +423,6 @@ func (art *AnimatedRainbowText) Init() {
 }
 
 func (art *AnimatedRainbowText) Render() image.Image {
-	art.ctx = gg.NewContext(100, 64)
-
 	art.ctx.SetColor(color.RGBA{0,0,0,255})
 	art.ctx.Clear()
 	rainbowColors := []color.RGBA{
