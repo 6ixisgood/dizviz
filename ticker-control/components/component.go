@@ -364,7 +364,7 @@ type HorizonalSplit struct {
 }
 
 func (s *HorizonalSplit) Init() {
-	s.rr = 10 // rerender this one a bit more often
+	s.rr = -1 // Should only have to render once
 	s.BaseComponent.Init()
 	for _, s := range s.Slots {
 		s.Init()
