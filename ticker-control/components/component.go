@@ -7,6 +7,11 @@ import (
 	"math"
 	"time"
 	"image/color"
+	"image/gif"
+	"image/color/palette"
+	"image/draw"
+	"bytes"
+	"strings"
 	"fmt"
 	"math/rand"
 	"encoding/xml"
@@ -17,7 +22,7 @@ import (
 	"github.com/golang/freetype/truetype"
 	"github.com/fogleman/gg"
 	"github.com/nfnt/resize"
-
+	d "github.com/sixisgoood/matrix-ticker/data"
 )
 
 var (
@@ -285,18 +290,69 @@ type Image struct {
 
 	XMLName			xml.Name		`xml:"image"`
 	Src				string			`xml:"src,attr"`
-
-	img				image.Image
+	Loop			bool			`xml:"loop,attr"`
+	frames			[]image.Image
+	currentFrame	int
 }
 
 func (i *Image) Init() {
-	i.rr = -1 // No need to rerender this once created
-	i.BaseComponent.Init()
-	// maybe fetch the image if needed here?	
-	i.img = fetchImageFromPath(i.Src)
-	if i.SizeX != 0 {
-		i.img = resizeImage(i.img, uint(i.SizeX), uint(i.SizeY))
-	}
+	i.rr = -1
+    i.BaseComponent.Init()
+
+
+    data, filePath, err := d.FetchFile(i.Src)
+    if err != nil {
+    	log.Fatal(err)
+    }
+
+	extension := strings.ToLower(filepath.Ext(filePath))
+
+    // Decode based on extension
+    if extension == ".gif" {
+        gifData, err := gif.DecodeAll(bytes.NewReader(data))
+        if err != nil {
+            log.Fatal(err)
+        }
+
+
+		// Background frame (you can customize this as per your needs)
+		bg := image.NewPaletted(gifData.Image[0].Bounds(), palette.Plan9)
+		
+		// Loop through each frame in the GIF
+		for ix, frame := range gifData.Image {
+			// Create a new frame that starts as a copy of the background
+			newFrame := image.NewPaletted(gifData.Image[0].Bounds(), palette.Plan9)
+			draw.Draw(newFrame, newFrame.Bounds(), bg, image.Point{}, draw.Over)
+
+			// Draw the new frame onto the background
+			draw.Draw(newFrame, frame.Bounds(), frame, image.Point{}, draw.Over)
+
+			// Append this complete frame to our slice
+			i.frames = append(i.frames, resizeImage(newFrame, uint(i.SizeX), uint(i.SizeY)))
+
+			// Update the background based on the disposal method
+			switch gifData.Disposal[ix] {
+			case gif.DisposalNone:
+				bg = newFrame
+			case gif.DisposalBackground:
+				// Reset to original background (or however you want to handle it)
+			}
+		}
+
+        // If the GIF should loop, reset the ticker accordingly
+        if i.Loop {
+            i.Ticker = time.NewTicker(time.Duration(gifData.Delay[0]) * 10 * time.Millisecond)
+        }
+    } else if extension == ".png" {
+        img, _, err := image.Decode(bytes.NewReader(data))
+        if err != nil {
+            log.Fatal(err)
+        }
+        i.frames = append(i.frames, resizeImage(img, uint(i.SizeX), uint(i.SizeY)))
+        // Handle PNG logic if needed (e.g., single-frame, no loop)
+    } else {
+        log.Fatal("Unsupported file extension")
+    }
 }
 
 func (i *Image) Width() int {
@@ -308,9 +364,11 @@ func (i *Image) Height() int {
 }
 
 func (i *Image) Render() image.Image {
-	return i.img
+	// Return the current frame and update the frame index
+	img := i.frames[i.currentFrame]
+	i.currentFrame = (i.currentFrame + 1) % len(i.frames)
+	return img
 }
-
 
 
 // Scroller Component

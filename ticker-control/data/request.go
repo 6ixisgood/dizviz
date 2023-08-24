@@ -6,12 +6,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"log"
 	"net/http"
 	"time"
+	"crypto/sha1"
+    "encoding/hex"
+	"path/filepath"
+	"strings"
 )
-
+    
 const (
 	defaultRateLimitDuration = time.Second
 	maxRetries               = 3
@@ -168,3 +173,65 @@ func ReadFileAndUnmarshal(path string, out interface{}) error {
 
 	return nil
 }
+
+
+// first checks in cache for file. Wil fetch from url if needed
+func FetchFile(file string) ([]byte, string, error){
+	var data []byte
+    var err error
+
+    cacheDir := "/home/andrew/Lab/matrix-ticker/ticker-control/data/cache/"  // Define your cache directory path here
+    var cachePath string
+
+    if strings.HasPrefix(file, "http://") || strings.HasPrefix(file, "https://") {
+    	// get set up to download the file
+	    extension := strings.ToLower(filepath.Ext(file))
+	    if extension == ".gifv" {
+	    	extension = ".gif"
+	    }
+
+	    // Create a hash of the URL to use as the filename
+	    h := sha1.New()
+	    h.Write([]byte(file))
+	    hash := hex.EncodeToString(h.Sum(nil))
+    	cachePath = filepath.Join(cacheDir, hash + extension)
+	} else {
+		// go directly to file
+		cachePath = file
+	}
+
+
+	// Check if the file already exists in the cache
+    if _, err := os.Stat(cachePath); os.IsNotExist(err) {
+	    // Download the file
+	    log.Printf("Downloading file from %s", file)
+        resp, err := http.Get(file)
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer resp.Body.Close()
+
+        data, err = ioutil.ReadAll(resp.Body)
+        if err != nil {
+            log.Fatal(err)
+        }
+
+	    // Save to cache
+	    err = os.WriteFile(cachePath, data, 0644)
+	    if err != nil {
+	        log.Fatal(err)
+	    } 
+	    log.Printf("Saved %s to %s", file, cachePath)
+
+    } else {
+        // Load from cache
+        data, err = ioutil.ReadFile(cachePath)
+        if err != nil {
+            log.Fatal(err)
+        }
+        log.Printf("Loaded %s from cache", file)
+    }
+
+    return data, cachePath, err
+}
+

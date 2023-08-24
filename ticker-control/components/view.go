@@ -20,6 +20,7 @@ var (
 	    "pong":				PongViewCreate,
 	    "particle":			ParticlesViewCreate,
 	    "colorwave":		ColorWaveViewCreate,
+	    "image-player":		ImagePlayerViewCreate,
 	} 
 	GeneralConfig = ViewGeneralConfig{}
 )
@@ -609,6 +610,62 @@ func (v *ColorWaveView) Template() string {
 
 	tmplData := map[string]interface{}{
 		"Config": GeneralConfig,
+	}  
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, tmplData)
+	if err != nil {
+		panic(err)
+	}	
+
+	content := buf.String()
+
+	return content
+}
+
+
+
+
+// Image Player view
+type ImagePlayerView struct {
+	Src		string
+}
+
+
+func ImagePlayerViewCreate(config map[string]string) View {
+	return &ImagePlayerView{
+		Src: config["src"],
+	}
+}
+
+func (v *ImagePlayerView) Refresh() {
+}
+
+func (v *ImagePlayerView) Template() string {
+	tmplStr := `
+		{{ $MatrixSizex :=  .Config.MatrixRows }}
+		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+		{{ $DefaultFontSize := .Config.DefaultFontSize }}
+		{{ $DefaultFontType := .Config.DefaultFontType }}
+		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $ImageDir := .Config.ImageDir }}
+		{{ $CacheDir := .Config.CacheDir }}
+		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<image sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}" src="{{ .Src }}" loop="true"></image>
+		 </template>
+	`
+
+	tmpl, err := template.New("temp").Parse(tmplStr)
+	if err != nil {
+		panic(err)
+	}
+
+	tmplData := map[string]interface{}{
+		"Config": GeneralConfig,
+		"Src": v.Src,
 	}  
 
 	var buf bytes.Buffer

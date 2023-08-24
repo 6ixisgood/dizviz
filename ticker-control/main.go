@@ -139,8 +139,9 @@ func main() {
 	log.Printf("Initializing the starting animation")
 	args := map[string]string{
 		"date": "20230910",
+		"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif",
 	}
-	animation.Init("rainbow", args)
+	animation.Init("image-player", args)
 	go tk.PlayAnimation(animation)
 
 
