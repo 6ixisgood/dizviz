@@ -15,6 +15,12 @@ import (
     "encoding/hex"
 	"path/filepath"
 	"strings"
+	"github.com/nfnt/resize"
+	"image"
+	"image/color/palette"
+	"image/draw"
+	"image/gif"
+	"image/png"
 )
     
 const (
@@ -174,13 +180,109 @@ func ReadFileAndUnmarshal(path string, out interface{}) error {
 	return nil
 }
 
+// Like FetchFile, but will resize images and redraw gifs
+func FetchImage(file string, x int, y int) ([]byte, string, error) {
+	// use FetchFile to get raw image
+	var rawData []byte
+	var rawFilePath string
+	var err error
 
-// first checks in cache for file. Wil fetch from url if needed
+	rawData, rawFilePath, err = FetchFile(file)
+	if (err != nil) {
+		log.Fatal(err)
+	}
+
+    cacheDir := "/home/pi/Matrix/matrix-ticker/ticker-control/data/cache/trans/"  // Define your cache directory path here
+
+	extension := strings.ToLower(filepath.Ext(rawFilePath))
+	baseName := strings.TrimSuffix(filepath.Base(rawFilePath), extension)
+	newPath := filepath.Join(cacheDir, fmt.Sprintf("%s_%dx%d%s", baseName, x, y, extension))
+
+	// check cache for already transformed image
+	_, err = os.Stat(newPath)
+	if err == nil {
+		log.Println("Transformed image already exists, fetch from cache")
+	} else {
+		log.Println("Transforming image...")
+
+		// Open a file to write the new GIF into
+		outFile, err := os.Create(newPath)
+		if err != nil {
+		    log.Fatal(err)
+		}
+		defer outFile.Close()
+
+		// Decode based on extension
+	    if extension == ".gif" {
+		    // redraw in full image frames
+	    	var redrawnGIF gif.GIF
+		    gifData, err := gif.DecodeAll(bytes.NewReader(rawData))
+	        if err != nil {
+	            log.Fatal(err)
+	        }
+	        redrawnGIF.Delay = gifData.Delay
+
+			// Background frame (you can customize this as per your needs)
+			bg := image.NewPaletted(gifData.Image[0].Bounds(), palette.Plan9)
+
+			// Loop through each frame in the GIF
+			for ix, frame := range gifData.Image {
+				// Create a new frame that starts as a copy of the background
+				newFrame := image.NewPaletted(gifData.Image[0].Bounds(), palette.Plan9)
+				draw.Draw(newFrame, newFrame.Bounds(), bg, image.Point{}, draw.Over)
+
+				// Draw the new frame onto the background
+				draw.Draw(newFrame, frame.Bounds(), frame, image.Point{}, draw.Over)
+
+				// resize
+				resizedImg := resize.Resize(uint(x), uint(y), newFrame, resize.Lanczos3)
+				// Convert the resized image.Image to *image.Paletted
+				bounds := resizedImg.Bounds()
+				palettedImage := image.NewPaletted(bounds, palette.Plan9)
+				draw.FloydSteinberg.Draw(palettedImage, bounds, resizedImg, image.Point{})
+				// append to gif images
+				redrawnGIF.Image = append(redrawnGIF.Image, palettedImage)
+
+				// Update the background based on the disposal method
+				switch gifData.Disposal[ix] {
+				case gif.DisposalNone:
+					bg = newFrame
+				case gif.DisposalBackground:
+					// Reset to original background (or however you want to handle it)
+					bg = image.NewPaletted(gifData.Image[0].Bounds(), palette.Plan9)
+				}
+			}
+
+			// Encode the new GIF and write to the file
+			err = gif.EncodeAll(outFile, &redrawnGIF)
+			if err != nil {
+			    log.Fatal(err)
+			}
+
+	    } else if extension == ".png" {
+	    	img, _, err := image.Decode(bytes.NewReader(rawData))
+	        if err != nil {
+	            log.Fatal(err)
+	        }
+	    	img = resize.Resize(uint(x), uint(y), img, resize.Lanczos3)
+	    	err = png.Encode(outFile, img)
+			if err != nil {
+			    log.Fatalf("Failed to encode image: %s", err)
+			}
+	    }
+		log.Println("Image Transformed")
+	}
+
+	return FetchFile(newPath)
+}
+
+
+// first checks in cache for file. Will fetch from url if needed
 func FetchFile(file string) ([]byte, string, error){
 	var data []byte
     var err error
 
-    cacheDir := "/home/andrew/Lab/matrix-ticker/ticker-control/data/cache/"  // Define your cache directory path here
+    cacheDir := "/home/pi/Matrix/matrix-ticker/ticker-control/data/cache/raw/"  // Define your cache directory path here
     var cachePath string
 
     if strings.HasPrefix(file, "http://") || strings.HasPrefix(file, "https://") {

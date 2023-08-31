@@ -8,8 +8,6 @@ import (
 	"time"
 	"image/color"
 	"image/gif"
-	"image/color/palette"
-	"image/draw"
 	"bytes"
 	"strings"
 	"fmt"
@@ -300,7 +298,7 @@ func (i *Image) Init() {
     i.BaseComponent.Init()
 
 
-    data, filePath, err := d.FetchFile(i.Src)
+    data, filePath, err := d.FetchImage(i.Src, i.SizeX, i.SizeY)
     if err != nil {
     	log.Fatal(err)
     }
@@ -314,42 +312,21 @@ func (i *Image) Init() {
             log.Fatal(err)
         }
 
-
-		// Background frame (you can customize this as per your needs)
-		bg := image.NewPaletted(gifData.Image[0].Bounds(), palette.Plan9)
-		
-		// Loop through each frame in the GIF
-		for ix, frame := range gifData.Image {
-			// Create a new frame that starts as a copy of the background
-			newFrame := image.NewPaletted(gifData.Image[0].Bounds(), palette.Plan9)
-			draw.Draw(newFrame, newFrame.Bounds(), bg, image.Point{}, draw.Over)
-
-			// Draw the new frame onto the background
-			draw.Draw(newFrame, frame.Bounds(), frame, image.Point{}, draw.Over)
-
-			// Append this complete frame to our slice
-			i.frames = append(i.frames, resizeImage(newFrame, uint(i.SizeX), uint(i.SizeY)))
-
-			// Update the background based on the disposal method
-			switch gifData.Disposal[ix] {
-			case gif.DisposalNone:
-				bg = newFrame
-			case gif.DisposalBackground:
-				// Reset to original background (or however you want to handle it)
-			}
-		}
+		for _, frame := range gifData.Image {
+            i.frames = append(i.frames, frame)
+        }
 
         // If the GIF should loop, reset the ticker accordingly
         if i.Loop {
             i.Ticker = time.NewTicker(time.Duration(gifData.Delay[0]) * 10 * time.Millisecond)
         }
     } else if extension == ".png" {
+    	// do we have it saved in this size yet?
         img, _, err := image.Decode(bytes.NewReader(data))
         if err != nil {
             log.Fatal(err)
         }
-        i.frames = append(i.frames, resizeImage(img, uint(i.SizeX), uint(i.SizeY)))
-        // Handle PNG logic if needed (e.g., single-frame, no loop)
+        i.frames = append(i.frames, img)
     } else {
         log.Fatal("Unsupported file extension")
     }
