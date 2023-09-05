@@ -19,6 +19,7 @@ import (
 	"image"
 	"image/color/palette"
 	"image/draw"
+	//"image/color"
 	"image/gif"
 	"image/png"
 )
@@ -192,7 +193,7 @@ func FetchImage(file string, x int, y int) ([]byte, string, error) {
 		log.Fatal(err)
 	}
 
-    cacheDir := "/home/pi/Matrix/matrix-ticker/ticker-control/data/cache/trans/"  // Define your cache directory path here
+    cacheDir := "/home/andrew/Lab/matrix-ticker/ticker-control/data/cache/trans/"  // Define your cache directory path here
 
 	extension := strings.ToLower(filepath.Ext(rawFilePath))
 	baseName := strings.TrimSuffix(filepath.Base(rawFilePath), extension)
@@ -222,24 +223,25 @@ func FetchImage(file string, x int, y int) ([]byte, string, error) {
 	        }
 	        redrawnGIF.Delay = gifData.Delay
 
-			// Background frame (you can customize this as per your needs)
-			bg := image.NewPaletted(gifData.Image[0].Bounds(), palette.Plan9)
+			// Background frame
+			bg := image.NewPaletted(gifData.Image[0].Bounds(), gifData.Image[0].Palette)
 
 			// Loop through each frame in the GIF
 			for ix, frame := range gifData.Image {
+				bounds := frame.Bounds()
 				// Create a new frame that starts as a copy of the background
-				newFrame := image.NewPaletted(gifData.Image[0].Bounds(), palette.Plan9)
+				newFrame := image.NewPaletted(gifData.Image[0].Bounds(), frame.Palette)
 				draw.Draw(newFrame, newFrame.Bounds(), bg, image.Point{}, draw.Over)
 
-				// Draw the new frame onto the background
-				draw.Draw(newFrame, frame.Bounds(), frame, image.Point{}, draw.Over)
+				// Draw the new frame onto the background, respecting the bounds
+				draw.Draw(newFrame, frame.Bounds(), frame, bounds.Min, draw.Over)
 
 				// resize
 				resizedImg := resize.Resize(uint(x), uint(y), newFrame, resize.Lanczos3)
 				// Convert the resized image.Image to *image.Paletted
-				bounds := resizedImg.Bounds()
-				palettedImage := image.NewPaletted(bounds, palette.Plan9)
-				draw.FloydSteinberg.Draw(palettedImage, bounds, resizedImg, image.Point{})
+				resizedBounds := resizedImg.Bounds()
+				palettedImage := image.NewPaletted(resizedBounds, frame.Palette)
+				draw.FloydSteinberg.Draw(palettedImage, resizedBounds, resizedImg, image.Point{})
 				// append to gif images
 				redrawnGIF.Image = append(redrawnGIF.Image, palettedImage)
 
@@ -282,7 +284,7 @@ func FetchFile(file string) ([]byte, string, error){
 	var data []byte
     var err error
 
-    cacheDir := "/home/pi/Matrix/matrix-ticker/ticker-control/data/cache/raw/"  // Define your cache directory path here
+    cacheDir := "/home/andrew/Lab/matrix-ticker/ticker-control/data/cache/raw/"  // Define your cache directory path here
     var cachePath string
 
     if strings.HasPrefix(file, "http://") || strings.HasPrefix(file, "https://") {
