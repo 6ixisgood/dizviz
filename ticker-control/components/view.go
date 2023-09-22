@@ -14,6 +14,7 @@ var (
 	RegisteredViews = map[string]func(map[string]string) View{
 	    "nhl-daily-games":  NHLDailyGamesViewCreate,
 	    "nfl-daily-games":	NFLDailyGamesViewCreate,
+	    "nfl-single-game":  NFLSingleGameViewCreate,
 	    "split-view":		SplitViewCreate,
 	    "rainbow":			RainbowViewCreate,
 	    "train":			TrainViewCreate,
@@ -293,7 +294,113 @@ func (v *NFLDailyGamesView) Template() string {
 }
 
 // ---------------------------
-// NFL Daily Games
+// NFL Single Game
+// ---------------------------
+type NFLSingleGameView struct {
+	Matchup		string
+	SportsFeedClient	d.SportsFeed
+	Game		d.NFLBoxScoreResponse
+	Layout		string
+}
+
+func NFLSingleGameViewCreate(config map[string]string) View {
+	client := d.NewSportsFeed("",
+		d.BasicAuthCredentials{
+			Username: GeneralConfig.SportsFeedUsername,
+			Password: GeneralConfig.SportsFeedPassword,
+		},
+	)
+
+	return &NFLSingleGameView{
+		Matchup: config["matchup"],
+		SportsFeedClient: client,
+	}
+}
+
+func (v *NFLSingleGameView) Refresh() {
+	// fetch the games
+	v.Game = v.SportsFeedClient.FetchNFLBoxScore(v.Matchup)
+}
+
+func (v *NFLSingleGameView) Template() string {
+	var tmplStr string
+
+	tmplStr = `
+		{{ $MatrixSizex :=  .Config.MatrixCols }}
+		{{ $MatrixSizey := .Config.MatrixRows }}
+		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+		{{ $DefaultFontSize := .Config.DefaultFontSize }}
+		{{ $DefaultFontType := .Config.DefaultFontType }}
+		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $ImageDir := .Config.ImageDir }}
+		{{ $CacheDir := .Config.CacheDir }}
+
+		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+		    <h-split sizeX="50" sizeY="{{ $MatrixSizey }}">
+				<template sizeX="50" sizeY="{{ $MatrixSizey }}">
+		    		<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Game.Game.AwayTeam.Abbreviation }}.png"></image>
+		    	</template>
+				<template sizeX="50" sizeY="{{ $MatrixSizey }}">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">   {{ .Game.Scoring.AwayScoreTotal }}  </text>
+				</template>
+			</h-split>
+
+
+			<h-split sizeX="28" sizeY="{{ $MatrixSizey }}">
+				<template sizeX="28" sizeY="{{ $MatrixSizey }}">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.CurrentQuarterSecondsRemaining }}</text>
+				</template>
+				<template sizeX="28" sizeY="{{ $MatrixSizey }}">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.CurrentQuarter }}/4</text>
+				</template>
+				<template sizeX="28" sizeY="{{ $MatrixSizey }}">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.CurrentDown }}&#38;{{ .Game.Scoring.CurrentYardsRemaining }}</text>
+				</template>
+				<template sizeX="28" sizeY="{{ $MatrixSizey }}">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.LineOfScrimmage }}</text>
+				</template>
+			</h-split>
+
+
+			<h-split sizeX="50" sizeY="{{ $MatrixSizey }}">
+				<template sizeX="50" sizeY="{{ $MatrixSizey }}">
+		    		<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Game.Game.HomeTeam.Abbreviation }}.png"></image>
+				</template>
+				<template sizeX="50" sizeY="{{ $MatrixSizey }}">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">   {{ .Game.Scoring.HomeScoreTotal }}  </text>
+				</template>
+			</h-split>
+		 </template>
+		`
+
+	tmpl, err := template.New("temp").Funcs(template.FuncMap{
+		"FormatDate": FormatDate,
+	}).Parse(tmplStr)
+	if err != nil {
+		panic(err)
+	}
+
+	tmplData := map[string]interface{}{
+		"Config": GeneralConfig,
+		"Game": v.Game,
+	} 
+
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, tmplData)
+	if err != nil {
+		panic(err)
+	}	
+
+	content := buf.String()
+
+	return content
+}
+
+// ---------------------------
+// Split View Test
 // ---------------------------
 type SplitView struct {
 }

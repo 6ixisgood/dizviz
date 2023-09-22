@@ -124,7 +124,7 @@ func main() {
 	animation := GetAnimation()
 	comp.SetViewGeneralConfig(comp.ViewGeneralConfig{
 		MatrixRows: AppConfig.Matrix.Rows * AppConfig.Matrix.Parallel,
-		MatrixCols: AppConfig.Matrix.Cols,
+		MatrixCols: AppConfig.Matrix.Cols * AppConfig.Matrix.Chain,
 		ImageDir: AppConfig.Data.ImageDir,
 		CacheDir: AppConfig.Data.CacheDir,
 		SportsFeedUsername: AppConfig.Data.SportsFeed.Username,
@@ -139,9 +139,10 @@ func main() {
 	log.Printf("Initializing the starting animation")
 	args := map[string]string{
 		"date": "20230910",
+		"matchup": "20230910-CIN-CLE",
 		"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif",
 	}
-	animation.Init("image-player", args)
+	animation.Init("nfl-single-game", args)
 	go tk.PlayAnimation(animation)
 
 
@@ -149,9 +150,6 @@ func main() {
 	server := NewAppServer()
 	server.InitializeRoutes()
 	server.Run("8081")
-
-	// // start the server
-	// Serve()	
 }
 
 
