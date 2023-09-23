@@ -15,6 +15,7 @@ var (
 	    "nhl-daily-games":  NHLDailyGamesViewCreate,
 	    "nfl-daily-games":	NFLDailyGamesViewCreate,
 	    "nfl-single-game":  NFLSingleGameViewCreate,
+	    "sleeper-matchups": SleeperMatchupsViewCreate,
 	    "split-view":		SplitViewCreate,
 	    "rainbow":			RainbowViewCreate,
 	    "train":			TrainViewCreate,
@@ -385,6 +386,119 @@ func (v *NFLSingleGameView) Template() string {
 	tmplData := map[string]interface{}{
 		"Config": GeneralConfig,
 		"Game": v.Game,
+	} 
+
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, tmplData)
+	if err != nil {
+		panic(err)
+	}	
+
+	content := buf.String()
+
+	return content
+}
+
+// ---------------------------
+// Sleeper Matchups
+// ---------------------------
+type SleeperMatchupsView struct {
+	League			string
+	Week			string
+	SleeperClient	d.Sleeper
+	CurrentMatchup	[]d.SleeperTeamFormatted
+	matchIndex		int
+}
+
+func SleeperMatchupsViewCreate(config map[string]string) View {
+	client := d.NewSleeper("")
+
+	return &SleeperMatchupsView{
+		League: config["league_id"],
+		Week: config["week"],
+		SleeperClient: client,
+	}
+}
+
+func (v *SleeperMatchupsView) Refresh() {
+	// fetch the matchups
+	matchups := v.SleeperClient.GetMatchupsFormatted(v.League, v.Week)
+	v.CurrentMatchup = matchups[v.matchIndex % len(matchups)]
+	fmt.Printf("\n\nScore %f, Wins %d, Losses %d", v.CurrentMatchup[0].Score, v.CurrentMatchup[0].Wins, v.CurrentMatchup[0].Losses)
+	for _, p := range v.CurrentMatchup[0].Players {
+		fmt.Printf("\n\n%s %f", p.Name,  p.Points)
+	}
+
+}
+
+func (v *SleeperMatchupsView) Template() string {
+	var tmplStr string
+
+	tmplStr = `
+		{{ $MatrixSizex :=  .Config.MatrixCols }}
+		{{ $MatrixSizey := .Config.MatrixRows }}
+		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+		{{ $DefaultFontSize := 6 }}
+		{{ $DefaultFontType := .Config.DefaultFontType }}
+		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $ImageDir := .Config.ImageDir }}
+		{{ $CacheDir := .Config.CacheDir }}
+
+		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+		    <h-split sizeX="64" sizeY="{{ $MatrixSizey }}">
+				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
+					<scroller scrollX="-1" scrollY="0">
+						<template sizeX="64" sizeY="{{ $MatrixSizey }}">
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">   {{ .Team1.Name }}  </text>
+						</template>
+					</scroller>
+				</template>
+				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">   {{ .Team1.Score }}  </text>
+				</template>
+				{{ range $index, $element := .Team1.Players }}
+				{{ if lt $index 3}}
+				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">  {{ printf "%s %.2f." $element.Name $element.Points }}</text>
+				</template>
+				{{ else }}
+				{{ end }}
+				{{ end }}
+			</h-split>
+
+			<h-split sizeX="64" sizeY="{{ $MatrixSizey }}">
+				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">   {{ .Team2.Name }}  </text>
+		    	</template>
+				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">   {{ .Team2.Score }}  </text>
+				</template>
+				{{ range $index, $element := .Team2.Players }}
+				{{ if lt $index 3}}
+				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">  {{ printf "%s %.2f." $element.Name $element.Points }}</text>
+				</template>
+				{{ else }}
+				{{ end }}
+				{{ end }}
+			</h-split>
+		 </template>
+		`
+
+	tmpl, err := template.New("temp").Funcs(template.FuncMap{
+		"FormatDate": FormatDate,
+	}).Parse(tmplStr)
+	if err != nil {
+		panic(err)
+	}
+
+	tmplData := map[string]interface{}{
+		"Config": GeneralConfig,
+		"Team1": v.CurrentMatchup[0],
+		"Team2": v.CurrentMatchup[1],
 	} 
 
 

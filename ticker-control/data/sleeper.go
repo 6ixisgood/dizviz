@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"runtime"
 	"path/filepath"
+	"sort"
 )
 
 type SleeperConfig struct {
@@ -146,11 +147,13 @@ type SleeperLeague struct {
 }
 
 type SleeperLeagueMatchup struct {
-	Starters     []string    `json:"starters"`
-	RosterID     int         `json:"roster_id"`
+	StartersPoints []float64 `json:"starters_points"`
+	Starters       []string  `json:"starters"`
+	RosterID       int       `json:"roster_id"`
+	Points         float64   `json:"points"`
+	PlayersPoints  map[string]float64 `json:"players_points"`
 	Players      []string    `json:"players"`
 	MatchupID    int         `json:"matchup_id"`
-	Points       float64     `json:"points"`
 	CustomPoints interface{} `json:"custom_points"`
 }
 
@@ -160,7 +163,7 @@ type SleeperPlayer struct {
 	College               interface{} `json:"college"`
 	SwishID               interface{} `json:"swish_id"`
 	FantasyPositions      interface{} `json:"fantasy_positions"`
-	Position              interface{} `json:"position"`
+	Position              string	  `json:"position"`
 	FullName              string      `json:"full_name"`
 	InjuryStatus          interface{} `json:"injury_status"`
 	BirthCity             interface{} `json:"birth_city"`
@@ -203,6 +206,86 @@ type SleeperPlayer struct {
 	NewsUpdated           interface{} `json:"news_updated"`
 }
 
+type SleeperLeagueUser struct {
+	UserID   string      `json:"user_id"`
+	Settings interface{} `json:"settings"`
+	Metadata struct {
+		UserMessagePn           string `json:"user_message_pn"`
+		TransactionWaiver       string `json:"transaction_waiver"`
+		TransactionTrade        string `json:"transaction_trade"`
+		TransactionFreeAgent    string `json:"transaction_free_agent"`
+		TransactionCommissioner string `json:"transaction_commissioner"`
+		TradeBlockPn            string `json:"trade_block_pn"`
+		TeamNameUpdate          string `json:"team_name_update"`
+		TeamName                string `json:"team_name"`
+		ShowMascots             string `json:"show_mascots"`
+		PlayerNicknameUpdate    string `json:"player_nickname_update"`
+		PlayerLikePn            string `json:"player_like_pn"`
+		MentionPn               string `json:"mention_pn"`
+		MascotMessage           string `json:"mascot_message"`
+		JoinVoicePn             string `json:"join_voice_pn"`
+		Avatar                  string `json:"avatar"`
+		AllowPn                 string `json:"allow_pn"`
+	} `json:"metadata"`
+	LeagueID    string      `json:"league_id"`
+	IsOwner     bool        `json:"is_owner"`
+	IsBot       bool        `json:"is_bot"`
+	DisplayName string      `json:"display_name"`
+	Avatar      interface{} `json:"avatar"`
+}
+
+type SleeperLeagueRoster struct {
+	Taxi     interface{} `json:"taxi"`
+	Starters []string    `json:"starters"`
+	Settings struct {
+		Wins               int `json:"wins"`
+		WaiverPosition     int `json:"waiver_position"`
+		WaiverBudgetUsed   int `json:"waiver_budget_used"`
+		TotalMoves         int `json:"total_moves"`
+		Ties               int `json:"ties"`
+		PptsDecimal        int `json:"ppts_decimal"`
+		Ppts               int `json:"ppts"`
+		Losses             int `json:"losses"`
+		FptsDecimal        int `json:"fpts_decimal"`
+		FptsAgainstDecimal int `json:"fpts_against_decimal"`
+		FptsAgainst        int `json:"fpts_against"`
+		Fpts               int `json:"fpts"`
+		Division           int `json:"division"`
+	} `json:"settings"`
+	RosterID  int         `json:"roster_id"`
+	Reserve   interface{} `json:"reserve"`
+	Players   []string    `json:"players"`
+	PlayerMap interface{} `json:"player_map"`
+	OwnerID   string      `json:"owner_id"`
+	Metadata  struct {
+		Streak    string `json:"streak"`
+		Record    string `json:"record"`
+	} `json:"metadata"`
+	LeagueID string      `json:"league_id"`
+	Keepers  interface{} `json:"keepers"`
+	CoOwners interface{} `json:"co_owners"`
+}
+
+type SleeperPlayerFormatted struct {
+	PlayerID			string
+	Name				string
+	Points				float64
+	Starter				bool
+	Position			string
+}
+
+
+type SleeperTeamFormatted struct {
+	UserID				string
+	RosterID			int
+	Name				string
+	Avatar 				string
+	Score				float64
+	Players				[]SleeperPlayerFormatted
+	Wins				int
+	Losses				int
+	Ties				int
+}
 
 
 type Sleeper struct {
@@ -237,11 +320,41 @@ func (d *Sleeper) GetLeague(id string) SleeperLeague {
 	return responseData
 }
 
-// Fetch the league matchups for a given week and id
-func (d *Sleeper) GetMatchups(id string, week string) []SleeperLeagueMatchup {
+// Fetch the league users for a given league id
+func (d *Sleeper) GetUsers(league_id string) []SleeperLeagueUser {
 	request := &APIRequest{
 		Method:   http.MethodGet,
-		Endpoint: fmt.Sprintf("/league/%s/matchups/%s", id, week),
+		Endpoint: fmt.Sprintf("/league/%s/users", league_id),
+	}
+
+	var responseData []SleeperLeagueUser
+	if err := d.Client.DoAndUnmarshal(request, &responseData); err != nil {
+		log.Fatalf("Failed to retrieve and unmarshal data. Error: %v", err)
+	}
+
+	return responseData
+}
+
+// Fetch the league rosters for a given league id
+func (d *Sleeper) GetRosters(league_id string) []SleeperLeagueRoster {
+	request := &APIRequest{
+		Method:   http.MethodGet,
+		Endpoint: fmt.Sprintf("/league/%s/rosters", league_id),
+	}
+
+	var responseData []SleeperLeagueRoster
+	if err := d.Client.DoAndUnmarshal(request, &responseData); err != nil {
+		log.Fatalf("Failed to retrieve and unmarshal data. Error: %v", err)
+	}
+
+	return responseData
+}
+
+// Fetch the league matchups for a given week and league id
+func (d *Sleeper) GetMatchups(league_id string, week string) []SleeperLeagueMatchup {
+	request := &APIRequest{
+		Method:   http.MethodGet,
+		Endpoint: fmt.Sprintf("/league/%s/matchups/%s", league_id, week),
 	}
 
 	var responseData []SleeperLeagueMatchup
@@ -271,4 +384,79 @@ func (d* Sleeper) GetPlayer(id string) SleeperPlayer {
 
 	return player
 
+}
+
+
+func (d* Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]SleeperTeamFormatted {
+	// get all users in league
+	userIDToTeam := make(map[string]*SleeperTeamFormatted)
+
+	for _, rawUser := range d.GetUsers(leagueID) {
+		team := SleeperTeamFormatted{
+			UserID: rawUser.UserID,
+			Name: rawUser.Metadata.TeamName,
+			Avatar: rawUser.Metadata.Avatar,
+		}
+		// add to dict for easier lookup
+		userIDToTeam[team.UserID] = &team
+	}
+
+	// get all rosters in a league
+	rosterIDToTeam := make(map[int]*SleeperTeamFormatted)
+
+	for _, rawRoster := range d.GetRosters(leagueID) {
+		team := userIDToTeam[rawRoster.OwnerID]
+		team.RosterID = rawRoster.RosterID
+		team.Wins = rawRoster.Settings.Wins
+		team.Losses = rawRoster.Settings.Losses
+		team.Ties = rawRoster.Settings.Ties
+		rosterIDToTeam[team.RosterID] = team
+	}
+
+	// get all matchup info for each roster
+	matchupToTeams := make(map[int][]SleeperTeamFormatted)
+
+	for _, rawMatchup := range d.GetMatchups(leagueID, week) {
+		team := rosterIDToTeam[rawMatchup.RosterID]
+
+		// add the current score total
+		team.Score = rawMatchup.Points
+
+		// add players and their scores
+		for id, points := range rawMatchup.PlayersPoints {
+			player := SleeperPlayerFormatted{
+				PlayerID: id,
+				Points: points,
+			}
+			// determine if starter
+			for _, starter := range rawMatchup.Starters {
+				if id == starter {
+					player.Starter = true
+				}
+			}
+			// fetch player details
+			pInfo := d.GetPlayer(id)
+			player.Name = fmt.Sprintf("%c. %s", pInfo.FirstName[0], pInfo.LastName)
+			player.Position = pInfo.Position
+
+			// add player to the team
+			team.Players = append(team.Players, player)
+		}
+		// sort players by top score
+		sort.Slice(team.Players, func(i, j int) bool {
+		  return team.Players[i].Points < team.Players[j].Points
+		})	
+
+
+		// add to last map
+		matchupToTeams[rawMatchup.MatchupID] = append(matchupToTeams[rawMatchup.MatchupID], *team)
+	}
+
+	// convert matchup map to list of lists for easier rendering in view
+	var matchups [][]SleeperTeamFormatted
+	for _, teams := range matchupToTeams {
+		matchups = append(matchups, teams)
+	}
+
+	return matchups
 }

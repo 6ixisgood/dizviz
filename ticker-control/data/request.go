@@ -57,6 +57,7 @@ type APIRequest struct {
 type APIClient struct {
 	options      APIClientOptions  // Configuration options.
 	rateLimiter  chan struct{}  // Rate limiter channel.
+	ticker		 *time.Ticker	// ticker to reset rate limit
 	httpClient   *http.Client   // Underlying HTTP client.
 }
 
@@ -86,11 +87,25 @@ func NewAPIClient(options APIClientOptions) *APIClient {
 	rateLimiter := make(chan struct{}, 1)
 	rateLimiter <- struct{}{}
 
-	return &APIClient{
+	client := &APIClient{
 		options:     options,
 		rateLimiter: rateLimiter,
+		ticker:		time.NewTicker(options.RateLimit),
 		httpClient:  &http.Client{Timeout: options.Timeout},
 	}
+
+	go client.refillTokens()
+
+	return client
+}
+
+func (c *APIClient) refillTokens() {
+    for range c.ticker.C {
+        select {
+        case c.rateLimiter <- struct{}{}:
+        default:
+        }
+    }
 }
 
 // Do sends the API request and returns the response.
