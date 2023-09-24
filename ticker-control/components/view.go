@@ -409,6 +409,7 @@ type SleeperMatchupsView struct {
 	SleeperClient	d.Sleeper
 	CurrentMatchup	[]d.SleeperTeamFormatted
 	matchIndex		int
+	Phase			int
 }
 
 func SleeperMatchupsViewCreate(config map[string]string) View {
@@ -418,15 +419,24 @@ func SleeperMatchupsViewCreate(config map[string]string) View {
 		League: config["league_id"],
 		Week: config["week"],
 		SleeperClient: client,
+		Phase: -1,
 	}
 }
 
 func (v *SleeperMatchupsView) Refresh() {
 	// fetch the matchups
 	matchups := v.SleeperClient.GetMatchupsFormatted(v.League, v.Week)
-	v.CurrentMatchup = matchups[v.matchIndex % len(matchups)]
-	v.matchIndex += 1
 
+	if v.Phase < 0 {
+		v.Phase = 0
+	} else if v.Phase >= 0 && v.Phase < 2 {
+		v.Phase += 1
+	} else if v.Phase == 2 {
+		v.Phase = 1
+		v.matchIndex = (v.matchIndex + 1) % len(matchups)
+	}
+
+	v.CurrentMatchup = matchups[v.matchIndex]
 }
 
 func (v *SleeperMatchupsView) Template() string {
@@ -437,29 +447,66 @@ func (v *SleeperMatchupsView) Template() string {
 		{{ $MatrixSizey := .Config.MatrixRows }}
 		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
 		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
-		{{ $DefaultFontSize := 10 }}
+		{{ $DefaultFontSize := 8 }}
 		{{ $DefaultFontType := .Config.DefaultFontType }}
 		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
 		{{ $DefaultFontColor := .Config.DefaultFontColor }}
 		{{ $ImageDir := .Config.ImageDir }}
 		{{ $CacheDir := .Config.CacheDir }}
 
+		{{ if eq .Phase 0 }}
+
+		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<h-split>
+				<template sizeX="{{ $MatrixSizex }}" sizeY="28">
+					<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12">   Bucket Hats</rainbow-text>
+				</template>
+				<template sizeX="{{ $MatrixSizex }}" sizeY="8">
+					<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12">        &#38;</rainbow-text>
+				</template>
+				<template sizeX="{{ $MatrixSizex }}" sizeY="28">
+					<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12">   Trap Music</rainbow-text>
+				</template>
+			</h-split>
+		</template>
+
+		{{ else if eq .Phase 1}}
+
+		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<h-split sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+				<template sizeX="{{ $MatrixSizex }}" sizeY="32">
+				    <h-split sizeX="{{ $MatrixSizex }}" sizeY="32">
+						<template sizeX="{{ $MatrixSizex }}" sizeY="32">
+							<text sizeX="55" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#FF4542FF" size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
+							<text sizeX="5" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#FF4542FF" size="{{ $DefaultFontSize }}">  </text>
+							<text sizeX="64" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#FF4542FF" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
+				    	</template>
+					</h-split>
+				</template>
+
+				<template sizeX="{{ $MatrixSizex }}" sizeY="32">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#F2FF00FF" size="16"> {{ .Team1.Score }} - {{ .Team2.Score }}  </text>
+				</template>
+			</h-split>
+		 </template>
+
+		{{ else if eq .Phase 2}}
+
 		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 		    <h-split sizeX="64" sizeY="{{ $MatrixSizey }}">
 				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
 					<scroller scrollX="-1" scrollY="0">
-						<template sizeX="64" sizeY="{{ $MatrixSizey }}">
-							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">   {{ .Team1.Name }}  </text>
+						<template sizeX="58" sizeY="{{ $MatrixSizey }}">
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#FF4542FF"  size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
+							<text sizeX="5" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#FF4542FF" size="{{ $DefaultFontSize }}">  </text>
 						</template>
 					</scroller>
 				</template>
-				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">   {{ .Team1.Score }}  </text>
-				</template>
 				{{ range $index, $element := .Team1.Players }}
-				{{ if lt $index 3}}
-				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">  {{ printf "%s %.2f." $element.Name $element.Points }}</text>
+				{{ if lt $index 4 }}
+				<template sizeX="60" sizeY="{{ $MatrixSizey }}">
+					<text sizeX="45" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+					<text sizeX="17" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#F2FF00FF" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
 				</template>
 				{{ else }}
 				{{ end }}
@@ -468,21 +515,20 @@ func (v *SleeperMatchupsView) Template() string {
 
 			<h-split sizeX="64" sizeY="{{ $MatrixSizey }}">
 				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">   {{ .Team2.Name }}  </text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#FF4542FF" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
 		    	</template>
-				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">   {{ .Team2.Score }}  </text>
-				</template>
 				{{ range $index, $element := .Team2.Players }}
-				{{ if lt $index 3}}
+				{{ if lt $index 4 }}
 				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">  {{ printf "%s %.2f." $element.Name $element.Points }}</text>
+					<text sizeX="45" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+					<text sizeX="17" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#F2FF00FF" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
 				</template>
 				{{ else }}
 				{{ end }}
 				{{ end }}
 			</h-split>
 		 </template>
+		 {{ end }}
 		`
 
 	tmpl, err := template.New("temp").Funcs(template.FuncMap{
@@ -496,6 +542,7 @@ func (v *SleeperMatchupsView) Template() string {
 		"Config": GeneralConfig,
 		"Team1": v.CurrentMatchup[0],
 		"Team2": v.CurrentMatchup[1],
+		"Phase": v.Phase,
 	} 
 
 

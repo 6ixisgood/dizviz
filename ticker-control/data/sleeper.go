@@ -289,6 +289,7 @@ type SleeperTeamFormatted struct {
 	Wins				int
 	Losses				int
 	Ties				int
+	MatchupID			int
 }
 
 
@@ -426,6 +427,8 @@ func (d* Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]Sleeper
 
 		// add the current score total
 		team.Score = rawMatchup.Points
+		// add matchup id to team
+		team.MatchupID = rawMatchup.MatchupID
 
 		// add players and their scores
 		for id, points := range rawMatchup.PlayersPoints {
@@ -450,8 +453,7 @@ func (d* Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]Sleeper
 		// sort players by top score
 		sort.Slice(team.Players, func(i, j int) bool {
 		  return team.Players[i].Points > team.Players[j].Points
-		})	
-
+		})
 
 		// add to last map
 		matchupToTeams[rawMatchup.MatchupID] = append(matchupToTeams[rawMatchup.MatchupID], *team)
@@ -462,6 +464,10 @@ func (d* Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]Sleeper
 	for _, teams := range matchupToTeams {
 		matchups = append(matchups, teams)
 	}
+	// sort teams by matchup
+	sort.Slice(matchups, func(i, j int) bool {
+	  return matchups[i][0].MatchupID < matchups[j][0].MatchupID
+	})	
 
 	return matchups
 }

@@ -268,9 +268,16 @@ func (t *Text) Init() {
 	w, h := t.ctx.MeasureString(t.Text)
 	w_i := int(math.Ceil(w))
 	h_i := int(math.Ceil(h))
+	if t.SizeX == 0 {
+		t.SizeX = w_i
+	}
+	if t.SizeY == 0 {
+		t.SizeY = h_i
+	}
+
 
 	// set up a new ctx
-	t.ctx = gg.NewContext(w_i, h_i)
+	t.ctx = gg.NewContext(t.SizeX, t.SizeY)
 
 
 	// Set up the freetype context
@@ -284,7 +291,7 @@ func (t *Text) Init() {
 	} else {
 	    log.Fatalf("Unexpected image type: %T", t.ctx.Image())
 	}
-	t.ftCtx.SetSrc(image.White) // set the color
+	t.ftCtx.SetSrc(image.NewUniform(t.Color.RGBA)) // set the color
 	t.ftCtx.SetHinting(fontpkg.HintingNone) 
 }
 
@@ -293,9 +300,8 @@ func (t *Text) Render() image.Image {
 	
 	// t.ctx.DrawStringAnchored(t.Text, 0, 0, 0, 1)
 
-	pt := freetype.Pt(0, 5)
+	pt := freetype.Pt(0, int(t.FontSize))
 	_, err := t.ftCtx.DrawString(t.Text, pt)
-	log.Printf("%v", t.Text)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -471,7 +477,7 @@ type AnimatedRainbowText struct {
 
 func (art *AnimatedRainbowText) Init() {
 	art.BaseComponent.Init()
-	art.ctx = gg.NewContext(100, 64)
+	art.ctx = gg.NewContext(200, 64)
 
 
 	var font = loadFont(fmt.Sprintf("%s-%s", art.Font, art.FontStyle))
