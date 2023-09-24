@@ -70,7 +70,7 @@ func (a *Animation) Init(view string, viewConfig map[string]string) {
 	// initialize the new channel
 	a.stopChan = make(chan struct{})
 
-	a.ticker = time.NewTicker(10000000 * time.Millisecond)
+	a.ticker = time.NewTicker(1000 * time.Millisecond)
 	// start refreshing at given rate
 	go a.ContinuousRefresh(a.ticker.C)
 }

@@ -425,10 +425,7 @@ func (v *SleeperMatchupsView) Refresh() {
 	// fetch the matchups
 	matchups := v.SleeperClient.GetMatchupsFormatted(v.League, v.Week)
 	v.CurrentMatchup = matchups[v.matchIndex % len(matchups)]
-	fmt.Printf("\n\nScore %f, Wins %d, Losses %d", v.CurrentMatchup[0].Score, v.CurrentMatchup[0].Wins, v.CurrentMatchup[0].Losses)
-	for _, p := range v.CurrentMatchup[0].Players {
-		fmt.Printf("\n\n%s %f", p.Name,  p.Points)
-	}
+	v.matchIndex += 1
 
 }
 
@@ -440,7 +437,7 @@ func (v *SleeperMatchupsView) Template() string {
 		{{ $MatrixSizey := .Config.MatrixRows }}
 		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
 		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
-		{{ $DefaultFontSize := 6 }}
+		{{ $DefaultFontSize := 10 }}
 		{{ $DefaultFontType := .Config.DefaultFontType }}
 		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
 		{{ $DefaultFontColor := .Config.DefaultFontColor }}

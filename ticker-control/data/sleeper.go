@@ -9,6 +9,10 @@ import (
 	"sort"
 )
 
+
+// cache
+var sleperPlayers map[string]SleeperPlayer
+
 type SleeperConfig struct {
 }
 
@@ -368,19 +372,20 @@ func (d *Sleeper) GetMatchups(league_id string, week string) []SleeperLeagueMatc
 // Get a player's info by id
 // Fetches data from a cached file 
 func (d* Sleeper) GetPlayer(id string) SleeperPlayer {
-	_, filePath, _, _ := runtime.Caller(0)
-	// Get the directory of the current file
-	basePath := filepath.Dir(filePath)
-	// Create the full path to the file you want to reference
-	absPath := filepath.Join(basePath, "./cache/sleeper_players.json")
+	if sleperPlayers == nil {
+		_, filePath, _, _ := runtime.Caller(0)
+		// Get the directory of the current file
+		basePath := filepath.Dir(filePath)
+		// Create the full path to the file you want to reference
+		absPath := filepath.Join(basePath, "./cache/sleeper_players.json")
 
-	var responseData map[string]SleeperPlayer
 
-	if err := ReadFileAndUnmarshal(absPath, &responseData); err != nil {
-		log.Printf("Error %v", err)
+		if err := ReadFileAndUnmarshal(absPath, &sleperPlayers); err != nil {
+			log.Printf("Error %v", err)
+		}
 	}
 
-	player := responseData[id]
+	player := sleperPlayers[id]
 
 	return player
 
@@ -444,7 +449,7 @@ func (d* Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]Sleeper
 		}
 		// sort players by top score
 		sort.Slice(team.Players, func(i, j int) bool {
-		  return team.Players[i].Points < team.Players[j].Points
+		  return team.Players[i].Points > team.Players[j].Points
 		})	
 
 

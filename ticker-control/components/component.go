@@ -17,9 +17,11 @@ import (
 	"runtime"
 	"io/ioutil"
 	"path/filepath"
+	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
 	"github.com/fogleman/gg"
 	"github.com/nfnt/resize"
+	fontpkg "golang.org/x/image/font"
 	d "github.com/sixisgoood/matrix-ticker/data"
 )
 
@@ -247,6 +249,8 @@ type Text struct {
 	FontSize		float64			`xml:"size,attr"`	
 	Color			RGBA			`xml:"color,attr"`
 	Text			string			`xml:",chardata"`
+
+	ftCtx			*freetype.Context
 }
 
 func (t *Text) Init() {
@@ -268,15 +272,33 @@ func (t *Text) Init() {
 	// set up a new ctx
 	t.ctx = gg.NewContext(w_i, h_i)
 
-	// set these again
-	t.ctx.SetFontFace(face)
-	t.ctx.SetColor(t.Color.RGBA)
+
+	// Set up the freetype context
+	t.ftCtx = freetype.NewContext()
+	t.ftCtx.SetDPI(72)
+	t.ftCtx.SetFont(font)
+	t.ftCtx.SetFontSize(t.FontSize)
+	t.ftCtx.SetClip(t.ctx.Image().Bounds())
+	if rgbaImg, ok := t.ctx.Image().(*image.RGBA); ok {
+    	t.ftCtx.SetDst(rgbaImg)
+	} else {
+	    log.Fatalf("Unexpected image type: %T", t.ctx.Image())
+	}
+	t.ftCtx.SetSrc(image.White) // set the color
+	t.ftCtx.SetHinting(fontpkg.HintingNone) 
 }
 
 
 func (t *Text) Render() image.Image {
 	
-	t.ctx.DrawStringAnchored(t.Text, 0, 0, 0, 1)
+	// t.ctx.DrawStringAnchored(t.Text, 0, 0, 0, 1)
+
+	pt := freetype.Pt(0, 5)
+	_, err := t.ftCtx.DrawString(t.Text, pt)
+	log.Printf("%v", t.Text)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	img := t.ctx.Image()
 
