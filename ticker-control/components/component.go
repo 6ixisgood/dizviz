@@ -8,6 +8,7 @@ import (
 	"time"
 	"image/color"
 	"image/gif"
+	// "image/png"
 	"bytes"
 	"strings"
 	"fmt"
@@ -250,6 +251,7 @@ type Text struct {
 	Color			RGBA			`xml:"color,attr"`
 	Text			string			`xml:",chardata"`
 
+	img         	*image.RGBA
 	ftCtx			*freetype.Context
 }
 
@@ -276,29 +278,24 @@ func (t *Text) Init() {
 	}
 
 
-	// set up a new ctx
+	// resize context
 	t.ctx = gg.NewContext(t.SizeX, t.SizeY)
-
+	// set up a blank image
+	t.img = image.NewRGBA(image.Rect(0, 0, t.SizeX, t.SizeY))
 
 	// Set up the freetype context
 	t.ftCtx = freetype.NewContext()
 	t.ftCtx.SetDPI(72)
 	t.ftCtx.SetFont(font)
 	t.ftCtx.SetFontSize(t.FontSize)
-	t.ftCtx.SetClip(t.ctx.Image().Bounds())
-	if rgbaImg, ok := t.ctx.Image().(*image.RGBA); ok {
-    	t.ftCtx.SetDst(rgbaImg)
-	} else {
-	    log.Fatalf("Unexpected image type: %T", t.ctx.Image())
-	}
+	t.ftCtx.SetClip(t.img.Bounds())
+	t.ftCtx.SetDst(t.img)
 	t.ftCtx.SetSrc(image.NewUniform(t.Color.RGBA)) // set the color
-	t.ftCtx.SetHinting(fontpkg.HintingNone) 
+	t.ftCtx.SetHinting(fontpkg.HintingFull) 
 }
 
 
 func (t *Text) Render() image.Image {
-	
-	// t.ctx.DrawStringAnchored(t.Text, 0, 0, 0, 1)
 
 	pt := freetype.Pt(0, int(t.FontSize))
 	_, err := t.ftCtx.DrawString(t.Text, pt)
@@ -306,9 +303,7 @@ func (t *Text) Render() image.Image {
 		log.Fatal(err)
 	}
 
-	img := t.ctx.Image()
-
-	return img
+	return t.img
 }
 
 type Image struct {
