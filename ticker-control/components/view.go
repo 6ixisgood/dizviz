@@ -17,6 +17,7 @@ var (
 	    "nfl-single-game":  NFLSingleGameViewCreate,
 	    "sleeper-matchups": SleeperMatchupsViewCreate,
 	    "split-view":		SplitViewCreate,
+	    "text":				TextViewCreate,
 	    "rainbow":			RainbowViewCreate,
 	    "train":			TrainViewCreate,
 	    "pong":				PongViewCreate,
@@ -80,8 +81,8 @@ func (v *NHLDailyGamesView) Refresh() {
 
 func (v *NHLDailyGamesView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex :=  .Config.MatrixRows }}
-		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $MatrixSizex := .Config.MatrixCols }}
+		{{ $MatrixSizey := .Config.MatrixRows }}
 		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
 		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
 		{{ $DefaultFontSize := .Config.DefaultFontSize }}
@@ -176,8 +177,8 @@ func (v *NFLDailyGamesView) Template() string {
 
 	if v.Layout == "flat" {
 		tmplStr = `
-			{{ $MatrixSizex :=  .Config.MatrixRows }}
-			{{ $MatrixSizey := .Config.MatrixCols }}
+			{{ $MatrixSizex := .Config.MatrixCols }}
+			{{ $MatrixSizey := .Config.MatrixRows }}
 			{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
 			{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
 			{{ $DefaultFontSize := .Config.DefaultFontSize }}
@@ -221,8 +222,8 @@ func (v *NFLDailyGamesView) Template() string {
 		`
 	} else if v.Layout == "stack" {
 		tmplStr = `
-			{{ $MatrixSizex :=  .Config.MatrixRows }}
-			{{ $MatrixSizey := .Config.MatrixCols }}
+			{{ $MatrixSizex := .Config.MatrixCols }}
+			{{ $MatrixSizey := .Config.MatrixRows }}
 			{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
 			{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
 			{{ $DefaultFontSize := .Config.DefaultFontSize }}
@@ -574,8 +575,8 @@ func (v *SplitView) Refresh() {
 
 func (v *SplitView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex :=  .Config.MatrixRows }}
-		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $MatrixSizex := .Config.MatrixCols }}
+		{{ $MatrixSizey := .Config.MatrixRows }}
 		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
 		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
 		{{ $DefaultFontSize := .Config.DefaultFontSize }}
@@ -653,8 +654,8 @@ func (v *RainbowView) Refresh() {
 
 func (v *RainbowView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex :=  .Config.MatrixRows }}
-		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $MatrixSizex := .Config.MatrixCols }}
+		{{ $MatrixSizey := .Config.MatrixRows }}
 		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
 		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
 		{{ $DefaultFontSize := .Config.DefaultFontSize }}
@@ -703,8 +704,8 @@ func (v *TrainView) Refresh() {
 
 func (v *TrainView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex :=  .Config.MatrixRows }}
-		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $MatrixSizex := .Config.MatrixCols }}
+		{{ $MatrixSizey := .Config.MatrixRows }}
 		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
 		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
 		{{ $DefaultFontSize := .Config.DefaultFontSize }}
@@ -755,8 +756,8 @@ func (v *PongView) Refresh() {
 
 func (v *PongView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex :=  .Config.MatrixRows }}
-		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $MatrixSizex := .Config.MatrixCols }}
+		{{ $MatrixSizey := .Config.MatrixRows }}
 		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
 		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
 		{{ $DefaultFontSize := .Config.DefaultFontSize }}
@@ -804,8 +805,8 @@ func (v *ParticlesView) Refresh() {
 
 func (v *ParticlesView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex :=  .Config.MatrixRows }}
-		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $MatrixSizex := .Config.MatrixCols }}
+		{{ $MatrixSizey := .Config.MatrixRows }}
 		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
 		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
 		{{ $DefaultFontSize := .Config.DefaultFontSize }}
@@ -853,8 +854,8 @@ func (v *ColorWaveView) Refresh() {
 
 func (v *ColorWaveView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex :=  .Config.MatrixRows }}
-		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $MatrixSizex := .Config.MatrixCols }}
+		{{ $MatrixSizey := .Config.MatrixRows }}
 		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
 		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
 		{{ $DefaultFontSize := .Config.DefaultFontSize }}
@@ -908,8 +909,8 @@ func (v *ImagePlayerView) Refresh() {
 
 func (v *ImagePlayerView) Template() string {
 	tmplStr := `
-		{{ $MatrixSizex :=  .Config.MatrixRows }}
-		{{ $MatrixSizey := .Config.MatrixCols }}
+		{{ $MatrixSizex := .Config.MatrixCols }}
+		{{ $MatrixSizey := .Config.MatrixRows }}
 		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
 		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
 		{{ $DefaultFontSize := .Config.DefaultFontSize }}
@@ -931,6 +932,60 @@ func (v *ImagePlayerView) Template() string {
 	tmplData := map[string]interface{}{
 		"Config": GeneralConfig,
 		"Src": v.Src,
+	}  
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, tmplData)
+	if err != nil {
+		panic(err)
+	}	
+
+	content := buf.String()
+
+	return content
+}
+
+
+// Text view
+type TextView struct {
+	Text		string
+}
+
+
+func TextViewCreate(config map[string]string) View {
+	return &TextView{
+		Text: config["text"],
+	}
+}
+
+func (v *TextView) Refresh() {
+}
+
+func (v *TextView) Template() string {
+	tmplStr := `
+		{{ $MatrixSizex := .Config.MatrixCols }}
+		{{ $MatrixSizey := .Config.MatrixRows }}
+		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
+		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
+		{{ $DefaultFontSize := .Config.DefaultFontSize }}
+		{{ $DefaultFontType := .Config.DefaultFontType }}
+		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
+		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $ImageDir := .Config.ImageDir }}
+		{{ $CacheDir := .Config.CacheDir }}
+		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
+		 </template>
+	`
+
+	tmpl, err := template.New("temp").Parse(tmplStr)
+	if err != nil {
+		panic(err)
+	}
+
+	tmplData := map[string]interface{}{
+		"Config": GeneralConfig,
+		"Text": v.Text,
 	}  
 
 	var buf bytes.Buffer
