@@ -39,14 +39,20 @@ type Component interface {
 	SetPrevImg(img image.Image)					// the the previously rendered iamge
 	TickerChan()				<-chan time.Time // return the channel for the ticker
 	Stop()										// Stop the ticker
-
+	SetParentSize(width int, height int)							// set the parent's size to use in calculations
 }
 
 type BaseComponent struct {
-	SizeX		int			`xml:"sizeX,attr"`
-	SizeY		int			`xml:"sizeY,attr"`
+	SizeX        string       `xml:"sizeX,attr"`
+	SizeY        string       `xml:"sizeY,attr"`
+	computedSizeX int
+	computedSizeY int
+	ParentWidth  int
+    ParentHeight int
 	PosX		int			`xml:"posX,attr"`
 	PosY		int			`xml:"posY,attr"`
+	AlignH			string			`xml:"alignH,attr"`
+	AlignV			string			`xml:"alignV,attr"`
 	ctx			*gg.Context
 	prevImg		image.Image
 	Ticker		*time.Ticker
@@ -54,9 +60,24 @@ type BaseComponent struct {
 }
 
 func (bc *BaseComponent) Init() {
+	// determine sizing
+	if strings.HasSuffix(bc.SizeX, "%") {
+		percentage, _ := strconv.Atoi(bc.SizeX[:len(bc.SizeX)-1])
+		bc.computedSizeX = int(bc.ParentWidth * percentage / 100)
+	} else {
+		bc.computedSizeX, _ = strconv.Atoi(bc.SizeX)
+	}
+
+	if strings.HasSuffix(bc.SizeY, "%") {
+		percentage, _ := strconv.Atoi(bc.SizeY[:len(bc.SizeY)-1])
+		bc.computedSizeY = int(bc.ParentHeight * percentage / 100)
+	} else {
+		bc.computedSizeY, _ = strconv.Atoi(bc.SizeY)
+	}
+
 	// create a context, if needed
-	if (bc.ctx == nil && bc.SizeX > 0 && bc.SizeY > 0) {
-		bc.ctx = gg.NewContext(bc.SizeX, bc.SizeY)
+	if (bc.ctx == nil && bc.computedSizeX > 0 && bc.computedSizeY > 0) {
+		bc.ctx = gg.NewContext(bc.computedSizeX, bc.computedSizeY)
 	}
 	// set a render rate, if needed
 	if bc.rr == 0 {
@@ -70,15 +91,20 @@ func (bc *BaseComponent) Init() {
 }
 
 func (bc *BaseComponent) Width() int {
-	return bc.ctx.Width()
+	return bc.computedSizeX
 }
 
 func (bc *BaseComponent) Height() int {
-	return bc.ctx.Height()
+	return bc.computedSizeY
 }
 
 func (bc *BaseComponent) Size() image.Point {
 	return image.Point{bc.ctx.Width(), bc.ctx.Height()}
+}
+
+func (bc *BaseComponent) SetParentSize(width int, height int) {
+    bc.ParentWidth = width
+    bc.ParentHeight = height
 }
 
 func (bc *BaseComponent) TickerChan() <-chan time.Time{
@@ -107,8 +133,12 @@ func (bc *BaseComponent) SetPrevImg(img image.Image) {
 
 type Template struct {
 	XMLName			xml.Name		`xml:"template"`
-	SizeX			int				`xml:"sizeX,attr"`
-	SizeY			int				`xml:"sizeY,attr"`
+	SizeX        string       `xml:"sizeX,attr"`
+	SizeY        string       `xml:"sizeY,attr"`
+	ParentWidth int
+    ParentHeight int
+	computedSizeX int
+	computedSizeY int
 	Components		[]Component		`xml:",any"`
 
 	ctx				*gg.Context
@@ -116,10 +146,28 @@ type Template struct {
 }
 
 func (t *Template) Init() {
-	ctxTmp := gg.NewContext(t.SizeX, t.SizeY)
+	// determine sizing
+	if strings.HasSuffix(t.SizeX, "%") {
+		percentage, _ := strconv.Atoi(t.SizeX[:len(t.SizeX)-1])
+		t.computedSizeX = int(t.ParentWidth * percentage / 100)
+	} else {
+		t.computedSizeX, _ = strconv.Atoi(t.SizeX)
+	}
+
+	if strings.HasSuffix(t.SizeY, "%") {
+		percentage, _ := strconv.Atoi(t.SizeY[:len(t.SizeY)-1])
+		t.computedSizeY = int(t.ParentHeight * percentage / 100)
+	} else {
+		t.computedSizeY, _ = strconv.Atoi(t.SizeY)
+	}
+
+	// create context with sizes
+	ctxTmp := gg.NewContext(t.computedSizeX, t.computedSizeY)
 	t.ctx = ctxTmp 
 
+
 	for _, c  := range t.Components {
+		c.SetParentSize(t.computedSizeX, t.computedSizeY)  // Set parent size on each child component
 		c.Init()
 	}
 }
@@ -136,9 +184,15 @@ func (t *Template) ComponentWidth() int {
 	return sizeX
 }
 
+func (t *Template) SetParentSize(width int, height int) {
+    t.ParentWidth = width
+    t.ParentHeight = height
+}
+
+
 func (t *Template) Render() image.Image {
 	if t.ctx == nil {
-		t.ctx = gg.NewContext(t.SizeX, t.SizeY)
+		t.ctx = gg.NewContext(t.computedSizeX, t.computedSizeY)
 	}
 
 	t.ctx.SetColor(color.RGBA{0,0,0,255})
@@ -183,9 +237,9 @@ func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 	for _, attr := range start.Attr {
 		switch attr.Name.Local {
 		case "sizeX":
-			tmpl.SizeX, _ = strconv.Atoi(attr.Value)
+			tmpl.SizeX  = attr.Value
 		case "sizeY":
-			tmpl.SizeY, _ = strconv.Atoi(attr.Value)
+			tmpl.SizeY  = attr.Value
 		}
 	}
 
@@ -205,7 +259,7 @@ func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 			case "scroller":
 				i = new(Scroller)
 			case "h-split":
-				i = new(HorizonalSplit)
+				i = new(HorizontalSplit)
 			case "rainbow-text":
 				i = new(AnimatedRainbowText)
 			case "spiral":
@@ -249,8 +303,6 @@ type Text struct {
 	FontStyle		string			`xml:"style,attr"`	
 	FontSize		float64			`xml:"size,attr"`	
 	Color			RGBA			`xml:"color,attr"`
-	AlignH			string			`xml:"alignH,attr"`
-	AlignV			string			`xml:"alignV,attr"`
 	Text			string			`xml:",chardata"`
 
 	textWidth		float64
@@ -274,18 +326,18 @@ func (t *Text) Init() {
 	t.textWidth, t.textHeight = t.ctx.MeasureString(t.Text)
 	w_i := int(math.Ceil(t.textWidth))
 	h_i := int(math.Ceil(t.textHeight))
-	if t.SizeX == 0 {
-		t.SizeX = w_i
+	if t.computedSizeX == 0 {
+		t.computedSizeX = w_i
 	}
-	if t.SizeY == 0 {
-		t.SizeY = h_i
+	if t.computedSizeY == 0 {
+		t.computedSizeY = h_i
 	}
 
 
 	// resize context
-	t.ctx = gg.NewContext(t.SizeX, t.SizeY)
+	t.ctx = gg.NewContext(t.computedSizeX, t.computedSizeY)
 	// set up a blank image
-	t.img = image.NewRGBA(image.Rect(0, 0, t.SizeX, t.SizeY))
+	t.img = image.NewRGBA(image.Rect(0, 0, t.computedSizeX, t.computedSizeY))
 
 	// Set up the freetype context
 	t.ftCtx = freetype.NewContext()
@@ -306,9 +358,9 @@ func (t *Text) Render() image.Image {
 	case "left":
 		x = 0
 	case "right":
-		x = float64(t.SizeX) - t.textWidth
+		x = float64(t.computedSizeX) - t.textWidth
 	case "center":
-		x = (float64(t.SizeX) - t.textWidth) / 2
+		x = (float64(t.computedSizeX) - t.textWidth) / 2
 	default:
 		// Default to left alignment if no valid alignment is provided
 		x = 0
@@ -320,9 +372,9 @@ func (t *Text) Render() image.Image {
 	case "top":
 		y = t.FontSize // Start at font size height for top alignment
 	case "bottom":
-		y = float64(t.SizeY) - (t.textHeight / 2)
+		y = float64(t.computedSizeY) - (t.textHeight / 2)
 	case "center":
-		y = (float64(t.SizeY) + t.FontSize) / 2 - (t.textHeight / 2)
+		y = (float64(t.computedSizeY) + t.FontSize) / 2 - (t.textHeight / 2)
 	default:
 		// Default to top alignment if no valid alignment is provided
 		y = t.FontSize
@@ -355,7 +407,7 @@ func (i *Image) Init() {
     i.BaseComponent.Init()
 
 
-    data, filePath, err := d.FetchImage(i.Src, i.SizeX, i.SizeY)
+    data, filePath, err := d.FetchImage(i.Src, i.computedSizeX, i.computedSizeY)
     if err != nil {
     	log.Fatal(err)
     }
@@ -387,14 +439,6 @@ func (i *Image) Init() {
     } else {
         log.Fatal("Unsupported file extension")
     }
-}
-
-func (i *Image) Width() int {
-	return i.SizeX
-}
-
-func (i *Image) Height() int {
-	return i.SizeY
 }
 
 func (i *Image) Render() image.Image {
@@ -448,23 +492,24 @@ func (s *Scroller) Render() image.Image {
 	return s.ctx.Image()	
 }
 
-type HorizonalSplit struct {
+type HorizontalSplit struct {
 	BaseComponent
 
 	XMLName			xml.Name		`xml:"h-split"`
-	Slots			[]Template		`xml:"template"`
+	Slots			[]*Template		`xml:"template"`
 }
 
-func (s *HorizonalSplit) Init() {
+func (s *HorizontalSplit) Init() {
 	s.rr = -1 // Should only have to render once
 	s.BaseComponent.Init()
-	for _, s := range s.Slots {
-		s.Init()
+	for _, slot := range s.Slots {
+		slot.SetParentSize(s.computedSizeX, s.computedSizeY)
+		slot.Init()
 	}
 
 }
 
-func (s *HorizonalSplit) Render() image.Image {
+func (s *HorizontalSplit) Render() image.Image {
 	width := 0
 	for _, slot := range s.Slots {
 		slot.Render()
