@@ -249,8 +249,12 @@ type Text struct {
 	FontStyle		string			`xml:"style,attr"`	
 	FontSize		float64			`xml:"size,attr"`	
 	Color			RGBA			`xml:"color,attr"`
+	AlignH			string			`xml:"alignH,attr"`
+	AlignV			string			`xml:"alignV,attr"`
 	Text			string			`xml:",chardata"`
 
+	textWidth		float64
+	textHeight		float64
 	img         	*image.RGBA
 	ftCtx			*freetype.Context
 }
@@ -267,9 +271,9 @@ func (t *Text) Init() {
 	t.ctx.SetFontFace(face)
 
 	// get the size of the string
-	w, h := t.ctx.MeasureString(t.Text)
-	w_i := int(math.Ceil(w))
-	h_i := int(math.Ceil(h))
+	t.textWidth, t.textHeight = t.ctx.MeasureString(t.Text)
+	w_i := int(math.Ceil(t.textWidth))
+	h_i := int(math.Ceil(t.textHeight))
 	if t.SizeX == 0 {
 		t.SizeX = w_i
 	}
@@ -291,13 +295,43 @@ func (t *Text) Init() {
 	t.ftCtx.SetClip(t.img.Bounds())
 	t.ftCtx.SetDst(t.img)
 	t.ftCtx.SetSrc(image.NewUniform(t.Color.RGBA)) // set the color
-	t.ftCtx.SetHinting(fontpkg.HintingFull) 
+	t.ftCtx.SetHinting(fontpkg.HintingNone) 
 }
 
 
 func (t *Text) Render() image.Image {
+	// Determine the starting x position based on horizontal alignment
+	var x float64
+	switch t.AlignH {
+	case "left":
+		x = 0
+	case "right":
+		x = float64(t.SizeX) - t.textWidth
+	case "center":
+		x = (float64(t.SizeX) - t.textWidth) / 2
+	default:
+		// Default to left alignment if no valid alignment is provided
+		x = 0
+	}
 
-	pt := freetype.Pt(0, int(t.FontSize))
+	// Determine the starting y position based on vertical alignment
+	var y float64
+	switch t.AlignV {
+	case "top":
+		y = t.FontSize // Start at font size height for top alignment
+	case "bottom":
+		y = float64(t.SizeY) - (t.textHeight / 2)
+	case "center":
+		y = (float64(t.SizeY) + t.FontSize) / 2 - (t.textHeight / 2)
+	default:
+		// Default to top alignment if no valid alignment is provided
+		y = t.FontSize
+	}
+
+	// Convert the point to fixed.Point26_6 format for freetype
+	pt := freetype.Pt(int(x), int(y))
+
+	// draw to the image
 	_, err := t.ftCtx.DrawString(t.Text, pt)
 	if err != nil {
 		log.Fatal(err)
