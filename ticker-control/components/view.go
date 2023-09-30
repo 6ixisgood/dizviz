@@ -339,41 +339,29 @@ func (v *NFLSingleGameView) Template() string {
 		{{ $ImageDir := .Config.ImageDir }}
 		{{ $CacheDir := .Config.CacheDir }}
 
-		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-		    <h-split sizeX="40%" sizeY="100%">
-				<template sizeX="100%" sizeY="50%">
+		<template justify="space-around" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<container sizeX="40%" sizeY="100%">
+				<template dir="col" justify="space-around" align="center"  sizeX="100%" sizeY="100%">
 		    		<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Game.Game.AwayTeam.Abbreviation }}.png"></image>
-		    	</template>
-				<template sizeX="100%" sizeY="50%">
-					<text sizeX="100%" sizeY="100%" font="{{ $DefaultFontType }}" alignH="center" alignV="center" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.AwayScoreTotal }}</text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.AwayScoreTotal }}</text>
 				</template>
-			</h-split>
+			</container>
 
+			<container sizeX="20%" sizeY="100%">
+				<template dir="col" justify="space-around" align="center" sizeX="100%" sizeY="100%">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.CurrentQuarterSecondsRemaining }}</text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.CurrentQuarter }}/4</text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.CurrentDown }}&#38;{{ .Game.Scoring.CurrentYardsRemaining }}</text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.LineOfScrimmage }}</text>
+				</template>
+			</container>
 
-			<h-split sizeX="20%" sizeY="100%">
-				<template sizeX="100%" sizeY="100%">
-					<text font="{{ $DefaultFontType }}" alignH="center" alignV="center" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.CurrentQuarterSecondsRemaining }}</text>
-				</template>
-				<template sizeX="100%" sizeY="100%">
-					<text font="{{ $DefaultFontType }}" alignH="center" alignV="center" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.CurrentQuarter }}/4</text>
-				</template>
-				<template sizeX="100%" sizeY="100%">
-					<text font="{{ $DefaultFontType }}" alignH="center" alignV="center" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.CurrentDown }}&#38;{{ .Game.Scoring.CurrentYardsRemaining }}</text>
-				</template>
-				<template sizeX="100%" sizeY="100%">
-					<text font="{{ $DefaultFontType }}" alignH="center" alignV="center" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.LineOfScrimmage }}</text>
-				</template>
-			</h-split>
-
-
-			<h-split sizeX="40%" sizeY="100%">
-				<template sizeX="100%" sizeY="50%">
+			<container sizeX="40%" sizeY="100%">
+				<template dir="col" justify="space-around"  align="center" sizeX="100%" sizeY="100%">
 		    		<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Game.Game.HomeTeam.Abbreviation }}.png"></image>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.HomeScoreTotal }}</text>
 				</template>
-				<template sizeX="100%" sizeY="50%">
-					<text sizeX="100%" sizeY="100%" font="{{ $DefaultFontType }}" alignH="center" alignV="center" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.HomeScoreTotal }}</text>
-				</template>
-			</h-split>
+			</container>
 		 </template>
 		`
 
@@ -973,15 +961,9 @@ func (v *TextView) Template() string {
 		{{ $DefaultFontColor := .Config.DefaultFontColor }}
 		{{ $ImageDir := .Config.ImageDir }}
 		{{ $CacheDir := .Config.CacheDir }}
-		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-			<h-split sizeX="100%" sizeY="100%">
-				<template slot="1" sizeX="100%" sizeY="100%">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">This is the top line</text>
-				</template>
-				<template slot="2" sizeX="100%" sizeY="100%">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">This is the bottom line</text>
-				</template>
-			</h-split>
+		<template dir="row" justify="space-between" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">One</text>
+			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">Two</text>
 		</template>
 	`
 

@@ -51,8 +51,7 @@ type BaseComponent struct {
     ParentHeight int
 	PosX		int			`xml:"posX,attr"`
 	PosY		int			`xml:"posY,attr"`
-	AlignH			string			`xml:"alignH,attr"`
-	AlignV			string			`xml:"alignV,attr"`
+
 	ctx			*gg.Context
 	prevImg		image.Image
 	Ticker		*time.Ticker
@@ -135,6 +134,9 @@ type Template struct {
 	XMLName			xml.Name		`xml:"template"`
 	SizeX        string       `xml:"sizeX,attr"`
 	SizeY        string       `xml:"sizeY,attr"`
+	Align			string			`xml:"align,attr"`
+	Justify			string			`xml:"justify,attr"`
+	Direction		string			`xml:"dir,attr"`
 	ParentWidth int
     ParentHeight int
 	computedSizeX int
@@ -189,6 +191,40 @@ func (t *Template) SetParentSize(width int, height int) {
     t.ParentHeight = height
 }
 
+func (t *Template) computeSpace(availableSpace int, itemCount int, mode string) int {
+    if mode == "space-between" && itemCount > 1 {
+        return availableSpace / (itemCount - 1)
+    } else if mode == "space-around" && itemCount > 0 {
+        return availableSpace / itemCount
+    }
+    return 0
+}
+
+func (t *Template) computePositionAndSpace(axis Axis, imListLen int, alignment string) (int, int) {
+    position := 0
+    space := 0
+    switch alignment {
+    case "center":
+        position = (axis.TemplateSize - axis.Length) / 2
+    case "end":
+        position = axis.TemplateSize - axis.Length
+    case "space-between":
+        space = t.computeSpace(axis.TemplateSize-axis.Length, imListLen, "space-between")
+    case "space-around":
+        position += t.computeSpace(axis.TemplateSize-axis.Length, imListLen, "space-around") / 2
+        space = t.computeSpace(axis.TemplateSize-axis.Length, imListLen, "space-around")
+    }
+
+    return position, space
+}
+
+type Axis struct {
+    Length       int
+    Max          int
+    TemplateSize int
+    Position     int
+    Space        int
+}
 
 func (t *Template) Render() image.Image {
 	if t.ctx == nil {
@@ -198,8 +234,10 @@ func (t *Template) Render() image.Image {
 	t.ctx.SetColor(color.RGBA{0,0,0,255})
 	t.ctx.Clear()
 
-	posX := 0
+	var componentLengthX, componentLengthY int
+	var componentMaxX, componentMaxY int
 	var cIm image.Image
+	var imList []image.Image
 	for _, c  := range t.Components {
 		// chan to check if we should re-render or just grab last image
 		select {
@@ -214,12 +252,45 @@ func (t *Template) Render() image.Image {
 					cIm = c.Render()
 				}
 		}
+
 		// save the prev image for next time
 		c.SetPrevImg(cIm)
-		// draw the image to the context
-		t.ctx.DrawImage(cIm, posX, 0)
-		posX += c.Width()
+		//  save the renderings to list and adjust width
+		imList = append(imList, cIm)	
+		componentLengthX += c.Width()
+		componentLengthY += c.Height()
+		componentMaxX = int(math.Max(float64(componentMaxX), float64(c.Width())))
+		componentMaxY = int(math.Max(float64(componentMaxY), float64(c.Height())))
 	}
+
+	var primary, secondary Axis
+    if t.Direction == "col" {
+        primary = Axis{TemplateSize: t.computedSizeY, Max: componentMaxY, Length: componentLengthY}
+        secondary = Axis{TemplateSize: t.computedSizeX, Max: componentMaxX, Length: componentLengthX}
+    } else {
+        primary = Axis{TemplateSize: t.computedSizeX, Max: componentMaxX, Length: componentLengthX}
+        secondary = Axis{TemplateSize: t.computedSizeY, Max: componentMaxY, Length: componentLengthY}
+    }
+
+    // Modularized positioning logic
+    primary.Position, primary.Space = t.computePositionAndSpace(primary, len(imList), t.Justify)
+	secondary.Position, _ = t.computePositionAndSpace(secondary, len(imList), t.Align)
+    for _, im := range imList {
+        bounds := im.Bounds()
+        if t.Direction == "col" {
+        	secondary.Length = bounds.Dx()
+    		secondary.Position, _ = t.computePositionAndSpace(secondary, len(imList), t.Align)
+	        t.ctx.DrawImage(im, secondary.Position, primary.Position)
+	        primary.Position += bounds.Dy()
+	    } else {
+			secondary.Length = bounds.Dy()
+    		secondary.Position, _ = t.computePositionAndSpace(secondary, len(imList), t.Align)
+	        t.ctx.DrawImage(im, primary.Position, secondary.Position)
+	        primary.Position += bounds.Dx()
+	    }
+        
+        primary.Position += primary.Space // Increment only if it's space-between or space-around.
+    }
 
 	return t.ctx.Image()
 }
@@ -240,6 +311,13 @@ func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 			tmpl.SizeX  = attr.Value
 		case "sizeY":
 			tmpl.SizeY  = attr.Value
+		case "justify":
+			tmpl.Justify  = attr.Value
+		case "align":
+			tmpl.Align  = attr.Value
+		case "dir":
+			tmpl.Direction  = attr.Value
+
 		}
 	}
 
@@ -252,6 +330,8 @@ func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 		switch tt := t.(type) {
 		case xml.StartElement:
 			switch tt.Name.Local {
+			case "container":
+				i = new(Container)
 			case "text":
 				i = new(Text)
 			case "image":
@@ -352,36 +432,8 @@ func (t *Text) Init() {
 
 
 func (t *Text) Render() image.Image {
-	// Determine the starting x position based on horizontal alignment
-	var x float64
-	switch t.AlignH {
-	case "left":
-		x = 0
-	case "right":
-		x = float64(t.computedSizeX) - t.textWidth
-	case "center":
-		x = (float64(t.computedSizeX) - t.textWidth) / 2
-	default:
-		// Default to left alignment if no valid alignment is provided
-		x = 0
-	}
-
-	// Determine the starting y position based on vertical alignment
-	var y float64
-	switch t.AlignV {
-	case "top":
-		y = t.FontSize // Start at font size height for top alignment
-	case "bottom":
-		y = float64(t.computedSizeY) - (t.textHeight / 2)
-	case "center":
-		y = (float64(t.computedSizeY) + t.FontSize) / 2 - (t.textHeight / 2)
-	default:
-		// Default to top alignment if no valid alignment is provided
-		y = t.FontSize
-	}
-
 	// Convert the point to fixed.Point26_6 format for freetype
-	pt := freetype.Pt(int(x), int(y))
+	pt := freetype.Pt(0, int(t.FontSize))
 
 	// draw to the image
 	_, err := t.ftCtx.DrawString(t.Text, pt)
@@ -535,6 +587,36 @@ func (s *HorizontalSplit) Render() image.Image {
 	return s.ctx.Image()	
 }
 
+
+type Container struct {
+	BaseComponent
+
+	XMLName			xml.Name		`xml:"container"`
+	Slot			*Template		`xml:"template"`
+}
+
+func (c *Container) Init() {
+	c.rr = -1 // Should only have to render once
+	c.BaseComponent.Init()
+	c.Slot.SetParentSize(c.computedSizeX, c.computedSizeY)
+	c.Slot.Init()
+
+}
+
+func (c *Container) Render() image.Image {
+	if c.ctx == nil {
+		c.ctx = gg.NewContext(c.computedSizeX, c.computedSizeY)
+	}
+
+	c.ctx.SetColor(color.RGBA{0,0,0,255})
+	c.ctx.Clear()
+
+	// render and draw the slots
+	im := c.Slot.Render()
+	c.ctx.DrawImage(im, 0, 0)
+
+	return c.ctx.Image()	
+}
 
 
 // Rainbow text
