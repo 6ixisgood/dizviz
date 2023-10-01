@@ -469,14 +469,16 @@ func (v *SleeperMatchupsView) Template() string {
 
 		<template justify="space-between" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 			<container sizeX="50%" sizeY="100%">
-				<template justify="space-around" align="cneter" sizeX="100%" sizeY="100%" dir="col">
+				<template justify="space-around" align="center" sizeX="100%" sizeY="100%" dir="col">
 					<text sizeX="55" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
+					<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ .Team1.Avatar }}"></image>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team1.Score }}</text>
 				</template>
 			</container>
 			<container sizeX="50%" sizeY="100%">
 				<template justify="space-around" align="center" sizeX="100%" sizeY="100%" dir="col">
 					<text sizeX="55" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
+					<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ .Team2.Avatar }}"></image>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team2.Score }}</text>
 				</template>
 			</container>

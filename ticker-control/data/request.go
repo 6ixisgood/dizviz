@@ -22,6 +22,7 @@ import (
 	//"image/color"
 	"image/gif"
 	"image/png"
+	"image/jpeg"
 )
     
 const (
@@ -286,6 +287,19 @@ func FetchImage(file string, x int, y int) ([]byte, string, error) {
 			if err != nil {
 			    log.Fatalf("Failed to encode image: %s", err)
 			}
+	    } else if extension == ".jpg" || extension == "jpeg" {
+	    	img, _, err := image.Decode(bytes.NewReader(rawData))
+		    if err != nil {
+		        log.Fatal(err)
+		    }
+		    // Resize the image
+		    img = resize.Resize(uint(x), uint(y), img, resize.Lanczos3)
+		    
+		    // Encode the image to the outFile as a JPEG
+		    err = jpeg.Encode(outFile, img, nil) // nil means use the default quality settings
+		    if err != nil {
+		        log.Fatalf("Failed to encode image: %s", err)
+		    }
 	    }
 		log.Println("Image Transformed")
 	}

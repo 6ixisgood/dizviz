@@ -481,7 +481,7 @@ func (i *Image) Init() {
         if i.Loop {
             i.Ticker = time.NewTicker(time.Duration(gifData.Delay[0]) * 10 * time.Millisecond)
         }
-    } else if extension == ".png" {
+    } else if extension == ".png" || extension == ".jpg" || extension == ".jpeg"  {
     	// do we have it saved in this size yet?
         img, _, err := image.Decode(bytes.NewReader(data))
         if err != nil {
