@@ -188,8 +188,8 @@ func (v *NFLDailyGamesView) Template() string {
 			{{ $ImageDir := .Config.ImageDir }}
 			{{ $CacheDir := .Config.CacheDir }}
 			<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-				<scroller scrollX="-1" scrollY="0">
-					<template sizeX="10000" sizeY="{{ $MatrixSizey }}">
+				<scroller scrollX="-1" scrollY="0" sizeX="10000" sizeY="100%">
+					<template align="center" sizeX="10000" sizeY="{{ $MatrixSizey }}">
 					    {{ range .Games.Games }}
 
 					    {{ if eq .Schedule.PlayedStatus "UNPLAYED"}}
@@ -235,36 +235,44 @@ func (v *NFLDailyGamesView) Template() string {
 
 			<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 
-				<scroller scrollX="-1" scrollY="0">
-					<template sizeX="10000" sizeY="{{ $MatrixSizey }}">
+				<scroller scrollX="-1" scrollY="0" sizeX="10000" sizeY="100%">
+					<template sizeX="100%" sizeY="100%">
 					    {{ range .Games.Games }}
-					    <h-split>
-							<template slot="1" sizeX="10000" sizeY="{{ $MatrixSizey }}">
-								<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.AwayScoreTotal }}  </text>
-
+					    <container sizeX="50" sizeY="100%">
+					    	<template dir="col" justify="center" sizeX="100%" sizeY="100%">
+					    		<container sizeX="100%" sizeY="50%"> 
+					    			<template justify="space-between" align="center" sizeX="100%" sizeY="100%">
+							    		<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.AwayTeam.Abbreviation }}.png"></image>
+										<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.AwayScoreTotal }}</text>
+									</template>
+								</container>
+					    		<container sizeX="100%" sizeY="50%"> 
+					    			<template justify="space-between" align="center" sizeX="100%" sizeY="100%">
+							    		<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
+										<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.HomeScoreTotal }}</text>
+									</template>
+								</container>
+					    	</template>
+					    </container>
+					    <container sizeX="50" sizeY="100%">
+					    	<template dir="col" justify="center" align="center" sizeX="100%" sizeY="100%">
 								{{ if eq .Schedule.PlayedStatus "UNPLAYED"}}
 								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Schedule.StartTime | FormatDate }} </text>
 							    {{ end}}
 							    {{ if eq .Schedule.PlayedStatus "COMPLETED" }}
-							    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">FINAL  </text>
+							    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">FINAL</text>
 							    {{ else if eq .Score.CurrentQuarter nil }}
 							    {{ else }}
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.CurrentQuarter }}  </text>
+								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.CurrentQuarter }}</text>
 							    {{ end }}
 
-							</template>
-							<template slot="2" sizeX="10000" sizeY="{{ $MatrixSizey }}">
-					    		<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Schedule.HomeTeam.Abbreviation }}.png"></image>
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.HomeScoreTotal }}  </text>
-
-								 {{ if eq .Score.CurrentQuarterSecondsRemaining nil }}
+								{{ if eq .Score.CurrentQuarterSecondsRemaining nil }}
 							    {{ else }}
-							    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.CurrentQuarterSecondsRemaining }}  </text>
+							    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Score.CurrentQuarterSecondsRemaining }}</text>
 							    {{ end }}
-							</template>
-						</h-split>
-						{{ end }}
+					    	</template>
+					    </container>
+					    {{ end }}
 					</template>
 				</scroller>
 			 </template>
@@ -338,12 +346,13 @@ func (v *NFLSingleGameView) Template() string {
 		{{ $DefaultFontColor := .Config.DefaultFontColor }}
 		{{ $ImageDir := .Config.ImageDir }}
 		{{ $CacheDir := .Config.CacheDir }}
+		{{ $ScoreFontSize := 14 }}
 
 		<template justify="space-around" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 			<container sizeX="40%" sizeY="100%">
 				<template dir="col" justify="space-around" align="center"  sizeX="100%" sizeY="100%">
 		    		<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Game.Game.AwayTeam.Abbreviation }}.png"></image>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.AwayScoreTotal }}</text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.Scoring.AwayScoreTotal }}</text>
 				</template>
 			</container>
 
@@ -359,7 +368,7 @@ func (v *NFLSingleGameView) Template() string {
 			<container sizeX="40%" sizeY="100%">
 				<template dir="col" justify="space-around"  align="center" sizeX="100%" sizeY="100%">
 		    		<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Game.Game.HomeTeam.Abbreviation }}.png"></image>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.HomeScoreTotal }}</text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.Scoring.HomeScoreTotal }}</text>
 				</template>
 			</container>
 		 </template>
@@ -440,84 +449,82 @@ func (v *SleeperMatchupsView) Template() string {
 		{{ $DefaultFontType := .Config.DefaultFontType }}
 		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
 		{{ $DefaultFontColor := .Config.DefaultFontColor }}
+		{{ $BenchedColor := "#FF4542FF" }}
+		{{ $ScoreColor := "#F2FF00FF" }}
+		{{ $PlayingColor := "#FFFFFFFF"}}
+		{{ $TeamNameColor := "#66CCFFFF"}}
 		{{ $ImageDir := .Config.ImageDir }}
 		{{ $CacheDir := .Config.CacheDir }}
 
 		{{ if eq .Phase 0 }}
 
-		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-			<h-split>
-				<template sizeX="{{ $MatrixSizex }}" sizeY="28">
-					<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12">   Bucket Hats</rainbow-text>
-				</template>
-				<template sizeX="{{ $MatrixSizex }}" sizeY="8">
-					<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12">        &#38;</rainbow-text>
-				</template>
-				<template sizeX="{{ $MatrixSizex }}" sizeY="28">
-					<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12">   Trap Music</rainbow-text>
-				</template>
-			</h-split>
+		<template dir="col" justify="center" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+
+			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">Bucket Hats</text>
+			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">&#38;</text>
+			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">Trap Music</text>
 		</template>
 
-		{{ else if eq .Phase 1}}
+		{{ else if eq .Phase 1 }}
 
-		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-			<h-split sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-				<template sizeX="{{ $MatrixSizex }}" sizeY="32">
-				    <h-split sizeX="{{ $MatrixSizex }}" sizeY="32">
-						<template sizeX="{{ $MatrixSizex }}" sizeY="32">
-							<text sizeX="55" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#FF4542FF" size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
-							<text sizeX="5" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#FF4542FF" size="{{ $DefaultFontSize }}">  </text>
-							<text sizeX="64" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#FF4542FF" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
-				    	</template>
-					</h-split>
+		<template justify="space-between" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<container sizeX="50%" sizeY="100%">
+				<template justify="space-around" align="cneter" sizeX="100%" sizeY="100%" dir="col">
+					<text sizeX="55" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team1.Score }}</text>
 				</template>
-
-				<template sizeX="{{ $MatrixSizex }}" sizeY="32">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#F2FF00FF" size="16"> {{ .Team1.Score }} - {{ .Team2.Score }}  </text>
+			</container>
+			<container sizeX="50%" sizeY="100%">
+				<template justify="space-around" align="center" sizeX="100%" sizeY="100%" dir="col">
+					<text sizeX="55" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team2.Score }}</text>
 				</template>
-			</h-split>
+			</container>
 		 </template>
 
-		{{ else if eq .Phase 2}}
+		{{ else if eq .Phase 2 }}
 
-		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-		    <h-split sizeX="64" sizeY="{{ $MatrixSizey }}">
-				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
-					<scroller scrollX="-1" scrollY="0">
-						<template sizeX="58" sizeY="{{ $MatrixSizey }}">
-							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#FF4542FF"  size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
-							<text sizeX="5" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#FF4542FF" size="{{ $DefaultFontSize }}">  </text>
+		<template justify="space-between" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+			<container sizeX="50%" sizeY="100%">
+				<template dir="col" sizeX="100%" sizeY="100%" justify="start" align="start">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
+
+					<scroller scrollX="0" scrollY="-1" sizeX="100%" sizeY="200">
+						<template rr="10" dir="col" sizeX="100%" sizeY="100%">
+							{{ range $index, $element := .Team1.Players }}
+							<container sizeX="100%" sizeY="5%">
+								<template sizeX="100%" sizeY="10">
+									<text sizeX="45" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+									<text sizeX="17" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ if $element.Starter }}{{ $ScoreColor }}{{ else }}{{ $BenchedColor }}{{ end }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+								</template>
+							</container>
+							{{ end }}
 						</template>
 					</scroller>
-				</template>
-				{{ range $index, $element := .Team1.Players }}
-				{{ if lt $index 4 }}
-				<template sizeX="60" sizeY="{{ $MatrixSizey }}">
-					<text sizeX="45" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
-					<text sizeX="17" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#F2FF00FF" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
-				</template>
-				{{ else }}
-				{{ end }}
-				{{ end }}
-			</h-split>
 
-			<h-split sizeX="64" sizeY="{{ $MatrixSizey }}">
-				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#FF4542FF" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
-		    	</template>
-				{{ range $index, $element := .Team2.Players }}
-				{{ if lt $index 4 }}
-				<template sizeX="64" sizeY="{{ $MatrixSizey }}">
-					<text sizeX="45" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
-					<text sizeX="17" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="#F2FF00FF" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
 				</template>
-				{{ else }}
-				{{ end }}
-				{{ end }}
-			</h-split>
-		 </template>
-		 {{ end }}
+			</container>
+			<container sizeX="50%" sizeY="100%">
+				<template dir="col" sizeX="100%" sizeY="100%" justify="start" align="start">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
+
+					<scroller scrollX="0" scrollY="-1" sizeX="100%" sizeY="200">
+						<template rr="10" dir="col" sizeX="100%" sizeY="100%">
+							{{ range $index, $element := .Team2.Players }}
+							<container sizeX="100%" sizeY="5%">
+								<template sizeX="100%" sizeY="10">
+									<text sizeX="45" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+									<text sizeX="17" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ if $element.Starter }}{{ $ScoreColor }}{{ else }}{{ $BenchedColor }}{{ end }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+								</template>
+							</container>
+							{{ end }}
+						</template>
+					</scroller>
+
+				</template>
+			</container>
+		</template>
+		{{ end }}
 		`
 
 	tmpl, err := template.New("temp").Funcs(template.FuncMap{

@@ -80,7 +80,7 @@ func (bc *BaseComponent) Init() {
 	}
 	// set a render rate, if needed
 	if bc.rr == 0 {
-		bc.rr = 100
+		bc.rr = 5
 	}
 
 	// set ticker for render rate
@@ -508,13 +508,14 @@ type Scroller struct {
 
 	XMLName			xml.Name		`xml:"scroller"`
 	ScrollX			int				`xml:"scrollX,attr"`
-	ScrollY			int				`xml:"scrollY,attr`
-	Slot			Template		`xml:"template"`
+	ScrollY			int				`xml:"scrollY,attr"`
+	Slot			*Template		`xml:"template"`
 }
 
 func (s *Scroller) Init() {
-	s.rr = 10 // render this one a bit faster than most
+	s.rr = 400 // render this one a bit faster than most
 	s.BaseComponent.Init()
+	s.Slot.SetParentSize(s.computedSizeX, s.computedSizeY)
 	s.Slot.Init()
 }
 
@@ -523,7 +524,7 @@ func (s *Scroller) Render() image.Image {
 	im := s.Slot.Render()
 
 	if s.ctx == nil {
-		s.ctx = gg.NewContext(s.Slot.ComponentWidth(), 64)
+		s.ctx = gg.NewContext(s.computedSizeX, s.computedSizeY)
 	}
 
 	s.ctx.SetColor(color.RGBA{0,0,0,255})
@@ -540,6 +541,7 @@ func (s *Scroller) Render() image.Image {
 			s.PosX = 0
 		}
 	}
+
 
 	return s.ctx.Image()	
 }
@@ -596,7 +598,7 @@ type Container struct {
 }
 
 func (c *Container) Init() {
-	c.rr = -1 // Should only have to render once
+	c.rr = 100 
 	c.BaseComponent.Init()
 	c.Slot.SetParentSize(c.computedSizeX, c.computedSizeY)
 	c.Slot.Init()
