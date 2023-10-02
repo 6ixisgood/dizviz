@@ -385,8 +385,6 @@ type Text struct {
 	Color			RGBA			`xml:"color,attr"`
 	Text			string			`xml:",chardata"`
 
-	textWidth		float64
-	textHeight		float64
 	img         	*image.RGBA
 	ftCtx			*freetype.Context
 }
@@ -403,9 +401,9 @@ func (t *Text) Init() {
 	t.ctx.SetFontFace(face)
 
 	// get the size of the string
-	t.textWidth, t.textHeight = t.ctx.MeasureString(t.Text)
-	w_i := int(math.Ceil(t.textWidth))
-	h_i := int(math.Ceil(t.textHeight))
+	w, h := t.ctx.MeasureString(t.Text)
+	w_i := int(math.Ceil(w))
+	h_i := int(math.Ceil(h))
 	if t.computedSizeX == 0 {
 		t.computedSizeX = w_i
 	}
@@ -635,7 +633,22 @@ type AnimatedRainbowText struct {
 
 func (art *AnimatedRainbowText) Init() {
 	art.BaseComponent.Init()
-	art.ctx = gg.NewContext(200, 64)
+	art.ctx = gg.NewContext(0, 0)
+
+	// get the size of the string
+	w, h := art.ctx.MeasureString(art.Text)
+	w_i := int(math.Ceil(w))
+	h_i := int(math.Ceil(h))
+	if art.computedSizeX == 0 {
+		art.computedSizeX = w_i
+	}
+	if art.computedSizeY == 0 {
+		art.computedSizeY = h_i
+	}
+
+
+	// resize context
+	art.ctx = gg.NewContext(art.computedSizeX, art.computedSizeY)
 
 
 	var font = loadFont(fmt.Sprintf("%s-%s", art.Font, art.FontStyle))

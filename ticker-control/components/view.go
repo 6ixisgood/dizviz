@@ -459,10 +459,9 @@ func (v *SleeperMatchupsView) Template() string {
 		{{ if eq .Phase 0 }}
 
 		<template dir="col" justify="center" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-
-			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">Bucket Hats</text>
-			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">&#38;</text>
-			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">Trap Music</text>
+			<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">Bucket Hats</rainbow-text>
+			<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">&#38;</rainbow-text>
+			<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">Trap Music</rainbow-text>
 		</template>
 
 		{{ else if eq .Phase 1 }}
@@ -470,14 +469,14 @@ func (v *SleeperMatchupsView) Template() string {
 		<template justify="space-between" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 			<container sizeX="50%" sizeY="100%">
 				<template justify="space-around" align="center" sizeX="100%" sizeY="100%" dir="col">
-					<text sizeX="55" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
+					<text sizeX="90%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
 					<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ .Team1.Avatar }}"></image>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team1.Score }}</text>
 				</template>
 			</container>
 			<container sizeX="50%" sizeY="100%">
 				<template justify="space-around" align="center" sizeX="100%" sizeY="100%" dir="col">
-					<text sizeX="55" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
+					<text sizeX="90%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
 					<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ .Team2.Avatar }}"></image>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team2.Score }}</text>
 				</template>
@@ -496,8 +495,8 @@ func (v *SleeperMatchupsView) Template() string {
 							{{ range $index, $element := .Team1.Players }}
 							<container sizeX="100%" sizeY="5%">
 								<template sizeX="100%" sizeY="10">
-									<text sizeX="45" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
-									<text sizeX="17" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ if $element.Starter }}{{ $ScoreColor }}{{ else }}{{ $BenchedColor }}{{ end }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+									<text sizeX="80%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+									<text sizeX="20%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ if $element.Starter }}{{ $ScoreColor }}{{ else }}{{ $BenchedColor }}{{ end }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
 								</template>
 							</container>
 							{{ end }}
@@ -515,8 +514,8 @@ func (v *SleeperMatchupsView) Template() string {
 							{{ range $index, $element := .Team2.Players }}
 							<container sizeX="100%" sizeY="5%">
 								<template sizeX="100%" sizeY="10">
-									<text sizeX="45" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
-									<text sizeX="17" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ if $element.Starter }}{{ $ScoreColor }}{{ else }}{{ $BenchedColor }}{{ end }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+									<text sizeX="80%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+									<text sizeX="20%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ if $element.Starter }}{{ $ScoreColor }}{{ else }}{{ $BenchedColor }}{{ end }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
 								</template>
 							</container>
 							{{ end }}
