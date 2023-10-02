@@ -290,10 +290,10 @@ func (s *SportsFeed) FetchDailyNFLGamesInfo(date string) DailyGamesNFLResponse{
 type NFLBoxScoreResponse struct {
 	LastUpdatedOn time.Time `json:"lastUpdatedOn"`
 	Game          struct {
-		ID        int       `json:"id"`
-		Week      int       `json:"week"`
-		StartTime time.Time `json:"startTime"`
-		EndedTime time.Time `json:"endedTime"`
+		ID        int         `json:"id"`
+		Week      int         `json:"week"`
+		StartTime time.Time   `json:"startTime"`
+		EndedTime interface{} `json:"endedTime"`
 		AwayTeam  struct {
 			ID           int    `json:"id"`
 			Abbreviation string `json:"abbreviation"`
@@ -306,36 +306,78 @@ type NFLBoxScoreResponse struct {
 			ID   int    `json:"id"`
 			Name string `json:"name"`
 		} `json:"venue"`
-		VenueAllegiance          string      `json:"venueAllegiance"`
-		ScheduleStatus           string      `json:"scheduleStatus"`
-		OriginalStartTime        interface{} `json:"originalStartTime"`
-		DelayedOrPostponedReason interface{} `json:"delayedOrPostponedReason"`
-		PlayedStatus             string      `json:"playedStatus"`
-		Attendance               int         `json:"attendance"`
-		Officials                []struct {
-			ID        int    `json:"id"`
-			Title     string `json:"title"`
-			FirstName string `json:"firstName"`
-			LastName  string `json:"lastName"`
-		} `json:"officials"`
-		Broadcasters []string    `json:"broadcasters"`
-		Weather      interface{} `json:"weather"`
+		VenueAllegiance          string        `json:"venueAllegiance"`
+		ScheduleStatus           string        `json:"scheduleStatus"`
+		OriginalStartTime        interface{}   `json:"originalStartTime"`
+		DelayedOrPostponedReason interface{}   `json:"delayedOrPostponedReason"`
+		PlayedStatus             string        `json:"playedStatus"`
+		Attendance               interface{}   `json:"attendance"`
+		Officials                []interface{} `json:"officials"`
+		Broadcasters             []string      `json:"broadcasters"`
+		Weather                  struct {
+			Type        string `json:"type"`
+			Description string `json:"description"`
+			Wind        struct {
+				Speed struct {
+					MilesPerHour      int `json:"milesPerHour"`
+					KilometersPerHour int `json:"kilometersPerHour"`
+				} `json:"speed"`
+				Direction struct {
+					Degrees int    `json:"degrees"`
+					Label   string `json:"label"`
+				} `json:"direction"`
+			} `json:"wind"`
+			Temperature struct {
+				Fahrenheit int `json:"fahrenheit"`
+				Celsius    int `json:"celsius"`
+			} `json:"temperature"`
+			Precipitation struct {
+				Type    interface{} `json:"type"`
+				Percent interface{} `json:"percent"`
+				Amount  struct {
+					Millimeters interface{} `json:"millimeters"`
+					Centimeters interface{} `json:"centimeters"`
+					Inches      interface{} `json:"inches"`
+					Feet        interface{} `json:"feet"`
+				} `json:"amount"`
+			} `json:"precipitation"`
+			HumidityPercent int `json:"humidityPercent"`
+		} `json:"weather"`
 	} `json:"game"`
 	Scoring struct {
-		CurrentQuarter                 int `json:"currentQuarter"`
-		CurrentQuarterSecondsRemaining int `json:"currentQuarterSecondsRemaining"`
-		CurrentIntermission            int `json:"currentIntermission"`
-		TeamInPossession               interface{} `json:"teamInPossession"`
-		CurrentDown                    int `json:"currentDown"`
-		CurrentYardsRemaining          int `json:"currentYardsRemaining"`
-		LineOfScrimmage                int `json:"lineOfScrimmage"`
-		AwayScoreTotal                 int         `json:"awayScoreTotal"`
-		HomeScoreTotal                 int         `json:"homeScoreTotal"`
-		Quarters                       []struct {
-			QuarterNumber int           `json:"quarterNumber"`
-			AwayScore     int           `json:"awayScore"`
-			HomeScore     int           `json:"homeScore"`
-			ScoringPlays  []interface{} `json:"scoringPlays"`
+		CurrentQuarter                 int         `json:"currentQuarter"`
+		CurrentQuarterSecondsRemaining int         `json:"currentQuarterSecondsRemaining"`
+		CurrentIntermission            interface{} `json:"currentIntermission"`
+		TeamInPossession               struct {
+			ID           int    `json:"id"`
+			Abbreviation string `json:"abbreviation"`
+		} `json:"teamInPossession"`
+		CurrentDown           int `json:"currentDown"`
+		CurrentYardsRemaining int `json:"currentYardsRemaining"`
+		LineOfScrimmage       struct {
+			Team struct {
+				ID           int    `json:"id"`
+				Abbreviation string `json:"abbreviation"`
+			} `json:"team"`
+			YardLine int `json:"yardLine"`
+		} `json:"lineOfScrimmage"`
+		AwayScoreTotal int `json:"awayScoreTotal"`
+		HomeScoreTotal int `json:"homeScoreTotal"`
+		Quarters       []struct {
+			QuarterNumber int `json:"quarterNumber"`
+			AwayScore     int `json:"awayScore"`
+			HomeScore     int `json:"homeScore"`
+			ScoringPlays  []struct {
+				QuarterSecondsElapsed int `json:"quarterSecondsElapsed"`
+				Team                  struct {
+					ID           int    `json:"id"`
+					Abbreviation string `json:"abbreviation"`
+				} `json:"team"`
+				ScoreChange     int    `json:"scoreChange"`
+				AwayScore       int    `json:"awayScore"`
+				HomeScore       int    `json:"homeScore"`
+				PlayDescription string `json:"playDescription"`
+			} `json:"scoringPlays"`
 		} `json:"quarters"`
 	} `json:"scoring"`
 	Stats struct {
@@ -548,30 +590,6 @@ type NFLBoxScoreResponse struct {
 					JerseyNumber int    `json:"jerseyNumber"`
 				} `json:"player"`
 				PlayerStats []struct {
-					Rushing struct {
-						RushAttempts    int     `json:"rushAttempts"`
-						RushYards       int     `json:"rushYards"`
-						RushAverage     float64 `json:"rushAverage"`
-						RushTD          int     `json:"rushTD"`
-						RushLng         int     `json:"rushLng"`
-						Rush1StDowns    int     `json:"rush1stDowns"`
-						Rush1StDownsPct float64 `json:"rush1stDownsPct"`
-						Rush20Plus      int     `json:"rush20Plus"`
-						Rush40Plus      int     `json:"rush40Plus"`
-						RushFumbles     int     `json:"rushFumbles"`
-					} `json:"rushing"`
-					Receiving struct {
-						Targets     int     `json:"targets"`
-						Receptions  int     `json:"receptions"`
-						RecYards    int     `json:"recYards"`
-						RecAverage  float64 `json:"recAverage"`
-						RecTD       int     `json:"recTD"`
-						RecLng      int     `json:"recLng"`
-						Rec1StDowns int     `json:"rec1stDowns"`
-						Rec20Plus   int     `json:"rec20Plus"`
-						Rec40Plus   int     `json:"rec40Plus"`
-						RecFumbles  int     `json:"recFumbles"`
-					} `json:"receiving"`
 					Tackles struct {
 						TackleSolo     int     `json:"tackleSolo"`
 						TackleTotal    int     `json:"tackleTotal"`
@@ -624,6 +642,67 @@ type NFLBoxScoreResponse struct {
 						PrFC     int     `json:"prFC"`
 						PrFum    int     `json:"prFum"`
 					} `json:"puntReturns"`
+					FieldGoals struct {
+						FgBlk        int     `json:"fgBlk"`
+						FgMade       int     `json:"fgMade"`
+						FgAtt        int     `json:"fgAtt"`
+						FgPct        float64 `json:"fgPct"`
+						FgMade119    int     `json:"fgMade1_19"`
+						FgAtt119     int     `json:"fgAtt1_19"`
+						Fg119Pct     float64 `json:"fg1_19Pct"`
+						FgMade2029   int     `json:"fgMade20_29"`
+						FgAtt2029    int     `json:"fgAtt20_29"`
+						Fg2029Pct    float64 `json:"fg20_29Pct"`
+						FgMade3039   int     `json:"fgMade30_39"`
+						FgAtt3039    int     `json:"fgAtt30_39"`
+						Fg3039Pct    float64 `json:"fg30_39Pct"`
+						FgMade4049   int     `json:"fgMade40_49"`
+						FgAtt4049    int     `json:"fgAtt40_49"`
+						Fg4049Pct    float64 `json:"fg40_49Pct"`
+						FgMade50Plus int     `json:"fgMade50Plus"`
+						FgAtt50Plus  int     `json:"fgAtt50Plus"`
+						Fg50PlusPct  float64 `json:"fg50PlusPct"`
+						FgLng        int     `json:"fgLng"`
+					} `json:"fieldGoals"`
+					ExtraPointAttempts struct {
+						XpBlk      int     `json:"xpBlk"`
+						XpMade     int     `json:"xpMade"`
+						XpAtt      int     `json:"xpAtt"`
+						XpPct      float64 `json:"xpPct"`
+						FgAndXpPts int     `json:"fgAndXpPts"`
+					} `json:"extraPointAttempts"`
+					Kickoffs struct {
+						Kickoffs    int     `json:"kickoffs"`
+						KoYds       int     `json:"koYds"`
+						KoOOB       int     `json:"koOOB"`
+						KoAvg       float64 `json:"koAvg"`
+						KoTB        int     `json:"koTB"`
+						KoRet       int     `json:"koRet"`
+						KoRetYds    int     `json:"koRetYds"`
+						KoRetAvgYds float64 `json:"koRetAvgYds"`
+						KoTD        int     `json:"koTD"`
+						KoOS        int     `json:"koOS"`
+						KoOSR       int     `json:"koOSR"`
+					} `json:"kickoffs"`
+					Punting struct {
+						Punts       int     `json:"punts"`
+						PuntYds     int     `json:"puntYds"`
+						PuntNetYds  int     `json:"puntNetYds"`
+						PuntLng     int     `json:"puntLng"`
+						PuntAvg     float64 `json:"puntAvg"`
+						PuntNetAvg  float64 `json:"puntNetAvg"`
+						PuntBlk     int     `json:"puntBlk"`
+						PuntOOB     int     `json:"puntOOB"`
+						PuntDown    int     `json:"puntDown"`
+						PuntIn20    int     `json:"puntIn20"`
+						PuntIn20Pct float64 `json:"puntIn20Pct"`
+						PuntTB      int     `json:"puntTB"`
+						PuntTBPct   float64 `json:"puntTBPct"`
+						PuntFC      int     `json:"puntFC"`
+						PuntRet     int     `json:"puntRet"`
+						PuntRetYds  int     `json:"puntRetYds"`
+						PuntRetAvg  float64 `json:"puntRetAvg"`
+					} `json:"punting"`
 					Miscellaneous struct {
 						GamesStarted int `json:"gamesStarted"`
 					} `json:"miscellaneous"`
@@ -959,10 +1038,10 @@ type NFLBoxScoreResponse struct {
 			Weight              int           `json:"weight"`
 			BirthDate           string        `json:"birthDate"`
 			Age                 int           `json:"age"`
-			BirthCity           string        `json:"birthCity"`
-			BirthCountry        string        `json:"birthCountry"`
+			BirthCity           interface{}   `json:"birthCity"`
+			BirthCountry        interface{}   `json:"birthCountry"`
 			Rookie              bool          `json:"rookie"`
-			HighSchool          string        `json:"highSchool"`
+			HighSchool          interface{}   `json:"highSchool"`
 			College             string        `json:"college"`
 			Handedness          interface{}   `json:"handedness"`
 			OfficialImageSrc    string        `json:"officialImageSrc"`
