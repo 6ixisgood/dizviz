@@ -6,7 +6,7 @@ import (
 	"log"
 	"bytes"
 	"maps"
-	"text/template"
+	"html/template"
 	"encoding/xml"
 	d "github.com/sixisgoood/matrix-ticker/data"
 
@@ -90,13 +90,6 @@ func (v *BaseView) Template() *Template {
 	return v.template
 }
 
-func TemplateRefresh(v View) {
-	t := ExecuteViewTemplate(v)
-	v.SetTemplate(t)
-	t.Init()
-
-}
-
 func (v *BaseView) SetTemplate(t *Template) {
 	v.template = t
 }
@@ -111,7 +104,7 @@ func (v *BaseView) TemplateString() string {
 func (v *BaseView) Stop() {}
 
 
-func ExecuteViewTemplate(v View) *Template {
+func TemplateRefresh(v View) {
 	// create the template object
 	tmpl := template.New("view-template")
 
@@ -162,7 +155,6 @@ func ExecuteViewTemplate(v View) *Template {
 	// convert to string
 	tmplStr := buf.String()
 
-
 	// unmarshall the string
 	var t Template
 	err = xml.Unmarshal([]byte(tmplStr), &t)
@@ -170,7 +162,9 @@ func ExecuteViewTemplate(v View) *Template {
 		log.Fatalf("Unable to unmarshal xml content: '%v'", err)
 	}
 
-	return &t
+	// set new template and init
+	v.SetTemplate(&t)
+	t.Init()
 }
 
 type ViewGeneralConfig struct {
@@ -484,11 +478,12 @@ type SleeperMatchupsView struct {
 	League			string
 	Week			string
 	SleeperClient	*d.Sleeper
-	CurrentMatchup	[]d.SleeperTeamFormatted
+	matchups		[][]d.SleeperTeamFormatted
 	matchIndex		int
 	Phase			int
 	dataRefresh		*Refresher
 	phaseRefresh	*Refresher
+	league			d.SleeperLeagueFormatted
 }
 
 func SleeperMatchupsViewCreate(config map[string]string) View {
@@ -514,8 +509,9 @@ func (v *SleeperMatchupsView) Init() {
 }
 
 func (v *SleeperMatchupsView) RefreshData() {
-	matchups := v.SleeperClient.GetMatchupsFormatted(v.League, v.Week)
-	v.CurrentMatchup = matchups[v.matchIndex]
+	v.matchups = v.SleeperClient.GetMatchupsFormatted(v.League, v.Week)
+	v.league = v.SleeperClient.GetLeagueFormatted(v.League)
+	 
 }
 
 func (v *SleeperMatchupsView) RefreshPhase() {
@@ -524,14 +520,16 @@ func (v *SleeperMatchupsView) RefreshPhase() {
 		v.Phase += 1
 	} else if v.Phase == 2 {
 		v.Phase = 1
+		v.matchIndex = (v.matchIndex + 1) % len(v.matchups)
 	}
 	TemplateRefresh(v)
 }
 
 func (v *SleeperMatchupsView) TemplateData() map[string]interface{} {
 	return map[string]interface{}{
-		"Team1": v.CurrentMatchup[0],
-		"Team2": v.CurrentMatchup[1],
+		"Team1": v.matchups[v.matchIndex][0],
+		"Team2": v.matchups[v.matchIndex][1],
+		"League": v.league,
 		"Phase": v.Phase,
 	}
 }
@@ -543,91 +541,112 @@ func (v *SleeperMatchupsView) Stop() {
 
 func (v *SleeperMatchupsView) TemplateString() string {
 	return `
-			{{ $MatrixSizex :=  .Config.MatrixCols }}
-			{{ $MatrixSizey := .Config.MatrixRows }}
-			{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
-			{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
-			{{ $DefaultFontSize := 8 }}
-			{{ $DefaultFontType := .Config.DefaultFontType }}
-			{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
-			{{ $DefaultFontColor := .Config.DefaultFontColor }}
 			{{ $BenchedColor := "#FF4542FF" }}
 			{{ $ScoreColor := "#F2FF00FF" }}
 			{{ $PlayingColor := "#FFFFFFFF"}}
 			{{ $TeamNameColor := "#66CCFFFF"}}
-			{{ $ImageDir := .Config.ImageDir }}
-			{{ $CacheDir := .Config.CacheDir }}
+			{{ $PositionColor := "#5FE512FF"}}
 	
 			{{ if eq .Phase 0 }}
 	
 			<template dir="col" justify="center" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-				<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">Bucket Hats</rainbow-text>
-				<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">&#38;</rainbow-text>
-				<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">Trap Music</rainbow-text>
+				<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">{{ .League.Name }}</rainbow-text>
 			</template>
 	
-			{{ else if eq .Phase 1 }}
-	
-			<template justify="space-between" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-				<container sizeX="50%" sizeY="100%">
-					<template justify="space-around" align="center" sizeX="100%" sizeY="100%" dir="col">
-						<text sizeX="90%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
-						<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ .Team1.Avatar }}"></image>
-						<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team1.Score }}</text>
+			{{ else if gt .Phase 0 }}
+			<template justify="space-between" align="center" dir="col" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+
+				<!-- Team Headers -->
+				<container sizeX="100%" sizeY="35%">
+					<template sizeX="100%" sizeY="100%">
+						<container sizeX="50%" sizeY="100%">
+							<template justify="space-around" align="center" sizeX="100%" sizeY="100%" dir="col">
+								<text sizeX="90%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
+								<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ .Team1.Avatar }}"></image>
+								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team1.Score }}</text>
+							</template>
+						</container>
+						<container sizeX="50%" sizeY="100%">
+							<template justify="space-around" align="center" sizeX="100%" sizeY="100%" dir="col">
+								<text sizeX="90%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
+								<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ .Team2.Avatar }}"></image>
+								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team2.Score }}</text>
+							</template>
+						</container>
 					</template>
 				</container>
-				<container sizeX="50%" sizeY="100%">
-					<template justify="space-around" align="center" sizeX="100%" sizeY="100%" dir="col">
-						<text sizeX="90%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
-						<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ .Team2.Avatar }}"></image>
-						<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team2.Score }}</text>
+
+
+				<!-- Player Info -->
+				<container sizeX="100%" sizeY="65%">
+					<template sizeX="100%" sizeY="100%">
+						<container sizeX="45%" sizeY="100%">
+							<template dir="col" sizeX="100%" sizeY="100%" justify="space-around">
+								{{ if eq .Phase 1 }}	
+									{{ range $index, $element := .Team1.Starters }}
+									<container sizeX="100%" sizeY="10%">
+										<template sizeX="100%" sizeY="100%" justify="space-between">
+											<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+											<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+										</template>
+									</container>
+									{{ end }}
+								{{ else if eq .Phase 2 }}
+									{{ range $index, $element := .Team1.Bench }}
+									<container sizeX="100%" sizeY="10%">
+										<template sizeX="100%" sizeY="100%" justify="space-between">
+											<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+											<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+										</template>
+									</container>
+									{{ end }}
+								{{ end }}
+							</template>
+						</container>
+
+						<container sizeX="10%" sizeY="100%">
+							<template dir="col" sizeX="100%" sizeY="100%" justify="space-around">
+								{{ if eq .Phase 1 }}
+									{{ range $index, $element := .League.StartingPositions }}
+									<container sizeX="100%" sizeY="10%">
+										<template sizeX="100%" sizeY="100%" justify="center">
+											<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $PositionColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element }}</text>
+										</template>
+									</container>
+									{{ end }}
+								{{ end}}
+							</template>
+						</container>
+
+						<container sizeX="45%" sizeY="100%">
+							<template dir="col" sizeX="100%" sizeY="100%" justify="space-around">
+								{{ if eq .Phase 1 }}	
+									{{ range $index, $element := .Team2.Starters }}
+									<container sizeX="100%" sizeY="10%">
+										<template sizeX="100%" sizeY="100%" justify="space-between">
+											<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+											<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+										</template>
+									</container>
+									{{ end }}
+								{{ else if eq .Phase 2 }}
+									{{ range $index, $element := .Team2.Bench }}
+									<container sizeX="100%" sizeY="10%">
+										<template sizeX="100%" sizeY="100%" justify="space-between">
+											<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+											<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+										</template>
+									</container>
+									{{ end }}
+								{{ end }}
+							</template>
+						</container>	
 					</template>
 				</container>
 			 </template>
-	
-			{{ else if eq .Phase 2 }}
-	
-			<template justify="space-between" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-				<container sizeX="50%" sizeY="100%">
-					<template dir="col" sizeX="100%" sizeY="100%" justify="start" align="start">
-						<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
-	
-						<scroller scrollX="0" scrollY="-1" sizeX="100%" sizeY="200">
-							<template rr="10" dir="col" sizeX="100%" sizeY="100%">
-								{{ range $index, $element := .Team1.Players }}
-								<container sizeX="100%" sizeY="5%">
-									<template sizeX="100%" sizeY="10">
-										<text sizeX="80%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
-										<text sizeX="20%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ if $element.Starter }}{{ $ScoreColor }}{{ else }}{{ $BenchedColor }}{{ end }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
-									</template>
-								</container>
-								{{ end }}
-							</template>
-						</scroller>
-					</template>
-				</container>
-				<container sizeX="50%" sizeY="100%">
-					<template dir="col" sizeX="100%" sizeY="100%" justify="start" align="start">
-						<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
-	
-						<scroller scrollX="0" scrollY="-1" sizeX="100%" sizeY="200">
-							<template rr="10" dir="col" sizeX="100%" sizeY="100%">
-								{{ range $index, $element := .Team2.Players }}
-								<container sizeX="100%" sizeY="5%">
-									<template sizeX="100%" sizeY="10">
-										<text sizeX="80%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
-										<text sizeX="20%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ if $element.Starter }}{{ $ScoreColor }}{{ else }}{{ $BenchedColor }}{{ end }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
-									</template>
-								</container>
-								{{ end }}
-							</template>
-						</scroller>
-	
-					</template>
-				</container>
-			</template>
-			{{ end }}
-			`
+
+			 {{ end }}
+	`
 }
 
 

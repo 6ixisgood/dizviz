@@ -161,16 +161,15 @@ func (t *Template) Init() {
 	} else {
 		t.computedSizeY, _ = strconv.Atoi(t.SizeY)
 	}
-
-	// create context with sizes
-	ctxTmp := gg.NewContext(t.computedSizeX, t.computedSizeY)
-	t.ctx = ctxTmp 
-
-
+	
 	for _, c  := range t.Components {
 		c.SetParentSize(t.computedSizeX, t.computedSizeY)  // Set parent size on each child component
 		c.Init()
 	}
+
+	// create context with sizes
+	ctxTmp := gg.NewContext(t.computedSizeX, t.computedSizeY)
+	t.ctx = ctxTmp 
 }
 
 func (t *Template) Ready() bool {

@@ -19,25 +19,21 @@ type Animation struct {
 
 func (a *Animation) Init(view string, viewConfig map[string]string) {
 	log.Printf("Initializing view in controller")
+
+	// init new view in background
+	newView := comp.RegisteredViews[view](viewConfig)
+	newView.Init()
+	comp.TemplateRefresh(newView)
+
+	// stop the old view and switch to new view
 	if a.view != nil {
 		a.view.Stop()
 	}
-
-	// create a new view
-	a.view = comp.RegisteredViews[view](viewConfig)
-	a.view.Init()
+	a.view = newView
 }
 
 func (a *Animation) Next() (image.Image, <-chan time.Time, error) {
 	t := a.view.Template()
-
-
-	if t == nil {
-		t = comp.ExecuteViewTemplate(a.view)
-		a.view.SetTemplate(t)
-		t.Init()
-	}
-
 
 	// render template to image.Image
 	for {

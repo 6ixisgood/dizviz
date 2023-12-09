@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"path/filepath"
 	"sort"
+	"slices"
 )
 
 type Sleeper struct {
@@ -299,7 +300,6 @@ type SleeperPlayerFormatted struct {
 	PlayerID			string
 	Name				string
 	Points				float64
-	Starter				bool
 	Position			string
 }
 
@@ -310,11 +310,17 @@ type SleeperTeamFormatted struct {
 	Name				string
 	Avatar 				string
 	Score				float64
-	Players				[]SleeperPlayerFormatted
+	Starters			[]SleeperPlayerFormatted
+	Bench				[]SleeperPlayerFormatted
 	Wins				int
 	Losses				int
 	Ties				int
 	MatchupID			int
+}
+
+type SleeperLeagueFormatted struct {
+	Name				string
+	StartingPositions	[]string
 }
 
 
@@ -444,23 +450,24 @@ func (d* Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]Sleeper
 				PlayerID: id,
 				Points: points,
 			}
-			// determine if starter
-			for _, starter := range rawMatchup.Starters {
-				if id == starter {
-					player.Starter = true
-				}
-			}
+
 			// fetch player details
 			pInfo := d.GetPlayer(id)
-			player.Name = fmt.Sprintf("%c. %s", pInfo.FirstName[0], pInfo.LastName)
+			player.Name = fmt.Sprintf("%c.%s", pInfo.FirstName[0], pInfo.LastName)
 			player.Position = pInfo.Position
 
-			// add player to the team
-			team.Players = append(team.Players, player)
+			// determine if starter
+			if slices.IndexFunc(rawMatchup.Starters, func(s string) bool { return s == id}) >= 0 {
+				team.Starters = append(team.Starters, player)
+			} else {
+				team.Bench = append(team.Bench, player)
+			}
 		}
-		// sort players by top score
-		sort.Slice(team.Players, func(i, j int) bool {
-		  return team.Players[i].Points > team.Players[j].Points
+		// sort starters by position
+		sort.Slice(team.Starters, func(i, j int) bool {
+			l := slices.IndexFunc(rawMatchup.Starters, func(s string) bool { return s == team.Starters[i].PlayerID})
+			r := slices.IndexFunc(rawMatchup.Starters, func(s string) bool { return s == team.Starters[j].PlayerID})
+			return l < r
 		})
 
 		// add to last map
@@ -478,4 +485,21 @@ func (d* Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]Sleeper
 	})	
 
 	return matchups
+}
+
+func (d* Sleeper) GetLeagueFormatted(leagueID string) SleeperLeagueFormatted {
+	league := d.GetLeague(leagueID)
+
+	var startingPositions []string
+	for _, pos := range league.RosterPositions {
+		if pos != "BN" {
+			startingPositions = append(startingPositions, pos[:1])
+		} 
+	}
+
+	return SleeperLeagueFormatted{
+		Name: league.Name,
+		StartingPositions: startingPositions,
+	}
+
 }
