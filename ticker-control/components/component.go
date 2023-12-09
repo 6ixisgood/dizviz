@@ -115,7 +115,6 @@ func (bc *BaseComponent) TickerChan() <-chan time.Time{
 }
 
 func (bc *BaseComponent) Stop() {
-	// pass
 	if bc.Ticker != nil {
 		bc.Ticker.Stop()
 	}

@@ -49,11 +49,16 @@ type ApplicationConfig struct {
 	Data struct {
 		ImageDir				string	`yaml:"images"`
 		CacheDir				string	`yaml:"cache"`
+		Sleeper struct {
+			BaseUrl					string	`yaml:"baseUrl"`
+		}	
 		SportsFeed struct {
+			BaseUrl					string	`yaml:"baseUrl"`
 			Username				string	`yaml:"username"`
 			Password				string  `yaml:"password"`
 		}	`yaml:"sportsfeed"`
 		Weather struct {
+			BaseUrl					string	`yaml:"baseUrl"`
 			Key						string `yaml:"key"`
 		}	`yaml:"weather"`
 		
@@ -100,7 +105,7 @@ func main() {
 		return
 	}
 
-	// configs
+	// set the RBG matrix configs
 	matrixConfig := &rgbmatrix.DefaultConfig
 	matrixConfig.Rows = AppConfig.Matrix.Rows
 	matrixConfig.Cols = AppConfig.Matrix.Cols
@@ -112,6 +117,34 @@ func main() {
 	matrixConfig.InverseColors = AppConfig.Matrix.InverseColors
 	matrixConfig.DisableHardwarePulsing = AppConfig.Matrix.DisableHardwarePulsing
 
+	// configure the views
+	comp.SetViewGeneralConfig(comp.ViewGeneralConfig{
+		MatrixRows: AppConfig.Matrix.Rows * AppConfig.Matrix.Parallel,
+		MatrixCols: AppConfig.Matrix.Cols * AppConfig.Matrix.Chain,
+		ImageDir: AppConfig.Data.ImageDir,
+		CacheDir: AppConfig.Data.CacheDir,
+		DefaultImageSizeX: AppConfig.Default.ImageSizeX,
+		DefaultImageSizeY: AppConfig.Default.ImageSizeY,
+		DefaultFontSize: AppConfig.Default.FontSize,
+		DefaultFontColor: AppConfig.Default.FontColor,
+		DefaultFontStyle: AppConfig.Default.FontStyle,
+		DefaultFontType: AppConfig.Default.FontType,
+	})
+
+	// init the sports feed client
+	d.InitSportsFeedClient(d.SportsFeedConfig{
+		BaseUrl: AppConfig.Data.SportsFeed.BaseUrl,
+		Username: AppConfig.Data.SportsFeed.Username,
+		Password: AppConfig.Data.SportsFeed.Password,
+	})
+
+	// init the sleeper client
+	d.InitSleeperClient(d.SleeperConfig{
+		BaseUrl: AppConfig.Data.Sleeper.BaseUrl,
+	})
+
+	// TODO init the weather client
+
 	// setup matrix
 	fmt.Println("Starting Matrix\n")
 	m, err := rgbmatrix.NewRGBLedMatrix(matrixConfig)
@@ -122,20 +155,7 @@ func main() {
 
 	// start the root animation
 	animation := GetAnimation()
-	comp.SetViewGeneralConfig(comp.ViewGeneralConfig{
-		MatrixRows: AppConfig.Matrix.Rows * AppConfig.Matrix.Parallel,
-		MatrixCols: AppConfig.Matrix.Cols * AppConfig.Matrix.Chain,
-		ImageDir: AppConfig.Data.ImageDir,
-		CacheDir: AppConfig.Data.CacheDir,
-		SportsFeedUsername: AppConfig.Data.SportsFeed.Username,
-		SportsFeedPassword: AppConfig.Data.SportsFeed.Password,
-		DefaultImageSizeX: AppConfig.Default.ImageSizeX,
-		DefaultImageSizeY: AppConfig.Default.ImageSizeY,
-		DefaultFontSize: AppConfig.Default.FontSize,
-		DefaultFontColor: AppConfig.Default.FontColor,
-		DefaultFontStyle: AppConfig.Default.FontStyle,
-		DefaultFontType: AppConfig.Default.FontType,
-	})
+
 	log.Printf("Initializing the starting animation")
 	args := map[string]string{
 		"date": "20230910",
@@ -143,6 +163,8 @@ func main() {
 		"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif",
 		"league_id": "917441035486355456",
 		"week": "3",
+		"text": "Hello, World! It's raining outside right now",
+		"layout": "flat",
 	}
 	animation.Init("sleeper-matchups", args)
 	go tk.PlayAnimation(animation)

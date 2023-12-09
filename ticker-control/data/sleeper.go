@@ -9,13 +9,38 @@ import (
 	"sort"
 )
 
+type Sleeper struct {
+	Client			*APIClient
+}
+
+type SleeperConfig struct {
+	BaseUrl			string
+}
+
+// Sleeper Singleton
+var sleeperClient *Sleeper
+
+func SleeperClient() *Sleeper {
+	return sleeperClient
+}
+
+func InitSleeperClient(config SleeperConfig) {
+	clientOptions := APIClientOptions{
+		BaseURL: config.BaseUrl,
+	}
+
+	client := NewAPIClient(clientOptions)
+
+	// set the singleton
+	sleeperClient = &Sleeper{
+		Client: client,
+	}
+
+}
+
 
 // cache
 var sleperPlayers map[string]SleeperPlayer
-
-type SleeperConfig struct {
-}
-
 
 type SleeperLeagueSettings struct {
 	ReserveAllowCov          int `json:"reserve_allow_cov"`
@@ -292,23 +317,6 @@ type SleeperTeamFormatted struct {
 	MatchupID			int
 }
 
-
-type Sleeper struct {
-	Client			*APIClient
-}
-
-// Get a new client for Sleeper
-func NewSleeper(baseUrl string) Sleeper {
-	clientOptions := APIClientOptions {
-		BaseURL: "https://api.sleeper.app/v1",
-	}
-
-	client := NewAPIClient(clientOptions)
-
-	return Sleeper{
-		Client: client,	
-	}
-}
 
 // Fetch the league info given the league's id
 func (d *Sleeper) GetLeague(id string) SleeperLeague {

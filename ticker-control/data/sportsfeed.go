@@ -12,17 +12,35 @@ type SportsFeed struct {
 	Client			*APIClient
 }
 
-func NewSportsFeed(baseUrl string, auth BasicAuthCredentials) SportsFeed {
-	clientOptions := APIClientOptions {
-		BaseURL: "https://scrambled-api.mysportsfeeds.com/v2.1/",
-		BasicAuth: &auth,
+type SportsFeedConfig struct {
+	BaseUrl			string
+	Username		string
+	Password		string
+}
+
+// Sports Feed Singleton
+var sportsFeedClient *SportsFeed
+
+func SportsFeedClient() *SportsFeed {
+	return sportsFeedClient
+}
+
+func InitSportsFeedClient(config SportsFeedConfig) {
+	clientOptions := APIClientOptions{
+		BaseURL: config.BaseUrl,
+		BasicAuth: &BasicAuthCredentials{
+			Username: config.Username,
+			Password: config.Password,
+		},
 	}
 
 	client := NewAPIClient(clientOptions)
 
-	return SportsFeed{
-		Client: client,	
-	}	
+	// set the singleton
+	sportsFeedClient = &SportsFeed{
+		Client: client,
+	}
+
 }
 
 // -----------------------------------------
