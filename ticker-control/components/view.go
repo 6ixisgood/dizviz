@@ -111,6 +111,22 @@ func TemplateRefresh(v View) {
 	// gather all the custom functions
 	funcMap := template.FuncMap{
 		"NilOrDefault": func() string { return "N/A" },
+		"CardinalToOrdinal": func(card int) string {
+			switch card {
+			case 0:
+				return "0th"
+			case 1:
+				return "1st"
+			case 2:
+				return "2nd"
+			case 3:
+				return "3rd"
+			case 4:
+				return "4th"
+			default:
+				return "N/A"
+			}	
+		},
 	}
 	tmpl = tmpl.Funcs(funcMap)
 
@@ -404,8 +420,9 @@ type NFLSingleGameView struct {
 
 	Matchup		string
 	SportsFeedClient	*d.SportsFeed
-	Game		d.NFLBoxScoreResponse
+	Game		d.NFLBoxScoreResponseFormatted
 	Layout		string
+	dataRefresh *Refresher
 }
 
 func NFLSingleGameViewCreate(config map[string]string) View {
@@ -417,7 +434,16 @@ func NFLSingleGameViewCreate(config map[string]string) View {
 	}
 }
 
-func (v *NFLSingleGameView) Refresh() {
+func (v *NFLSingleGameView) Init() {
+	// init ticker and stop chan
+    v.dataRefresh = RefresherCreate(60 * time.Second, v.RefreshData)
+    //v.phaseRefresh = RefresherCreate(5 * time.Second, v.RefreshPhase)
+    v.RefreshData()
+    v.dataRefresh.Start()
+    //v.phaseRefresh.Start()
+}
+
+func (v *NFLSingleGameView) RefreshData() {
 	// fetch the games
 	v.Game = v.SportsFeedClient.FetchNFLBoxScore(v.Matchup)
 }
@@ -430,41 +456,61 @@ func (v *NFLSingleGameView) TemplateData() map[string]interface{} {
 
 func (v *NFLSingleGameView) TemplateString() string {
 	return `
-		{{ $MatrixSizex :=  .Config.MatrixCols }}
-		{{ $MatrixSizey := .Config.MatrixRows }}
-		{{ $DefaultImageSizex := .Config.DefaultImageSizeX }}
-		{{ $DefaultImageSizey := .Config.DefaultImageSizeY }}
-		{{ $DefaultFontSize := .Config.DefaultFontSize }}
-		{{ $DefaultFontType := .Config.DefaultFontType }}
-		{{ $DefaultFontStyle := .Config.DefaultFontStyle }}
-		{{ $DefaultFontColor := .Config.DefaultFontColor }}
-		{{ $ImageDir := .Config.ImageDir }}
-		{{ $CacheDir := .Config.CacheDir }}
-		{{ $ScoreFontSize := 14 }}
+		{{ $ScoreFontSize := 32 }}
+		{{ $DetailFontSize := 14}}
+		{{ $LogoSize := 64 }}
 
-		<template justify="space-around" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-			<container sizeX="40%" sizeY="100%">
-				<template dir="col" justify="space-around" align="center"  sizeX="100%" sizeY="100%">
-		    		<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Game.Game.AwayTeam.Abbreviation }}.png"></image>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.Scoring.AwayScoreTotal }}</text>
+		<template dir="col" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+
+			<container sizeX="100%" sizeY="50%">
+				<template justify="space-around" sizeX="100%" sizeY="100%">
+					<container sizeX="40%" sizeY="100%">
+						<template dir="col" justify="space-between" align="center"  sizeX="100%" sizeY="100%">
+				    		<image sizeX="{{ $LogoSize }}" sizeY="{{ $LogoSize }}" src="{{ $ImageDir }}/nfl/{{ .Game.AwayAbbreviation }}.png"></image>
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">({{ .Game.AwayWins }}-{{ .Game.AwayLosses }}-{{ .Game.AwayTies }})</text>
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.AwayScore }}</text>
+						</template>
+					</container>
+
+					<container sizeX="20%" sizeY="100%">
+						<template dir="col" justify="space-around" align="center" sizeX="100%" sizeY="100%">
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">{{ .Game.QuarterMinRemaining }}:{{ .Game.QuarterSecRemaining }}</text>
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">{{ CardinalToOrdinal .Game.Quarter}}</text>
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">{{ CardinalToOrdinal .Game.Down}}{{ "&" }}{{ .Game.YardsRemaining }}</text>
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">{{ .Game.LineOfScrimmage }}</text>
+						</template>
+					</container>
+
+					<container sizeX="40%" sizeY="100%">
+						<template dir="col" justify="space-between"  align="center" sizeX="100%" sizeY="100%">
+				    		<image sizeX="{{ $LogoSize }}" sizeY="{{ $LogoSize }}" src="{{ $ImageDir }}/nfl/{{ .Game.HomeAbbreviation }}.png"></image>
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">({{ .Game.HomeWins }}-{{ .Game.HomeLosses }}-{{ .Game.HomeTies }})</text>
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.HomeScore }}</text>
+						</template>
+					</container>
 				</template>
 			</container>
 
-			<container sizeX="20%" sizeY="100%">
-				<template dir="col" justify="space-around" align="center" sizeX="100%" sizeY="100%">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.CurrentQuarterSecondsRemaining }}</text>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.CurrentQuarter }}/4</text>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.CurrentDown }}&#38;{{ .Game.Scoring.CurrentYardsRemaining }}</text>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Game.Scoring.LineOfScrimmage }}</text>
+			<container sizeX="100%" sizeY="50%">
+				<template justify="space-between" sizeX="100%" sizeY="100%">
+					<container sizeX="45%" sizeY="100%">
+						<template sizeX="100%" sizeY="100%" dir="col" justify="space-around">
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Passing: {{ .Game.AwayPassYards }}</text>
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Rushing: {{ .Game.AwayRushYards }}</text>
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Sacks: {{ .Game.AwaySacks }}</text>
+						</template>
+					</container>
+
+					<container sizeX="45%" sizeY="100%">
+						<template sizeX="100%" sizeY="100%" dir="col" justify="space-around">
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Passing: {{ .Game.HomePassYards }}</text>
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Rushing: {{ .Game.HomeRushYards }}</text>
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Sacks: {{ .Game.HomeSacks }}</text>
+						</template>
+					</container>
 				</template>
 			</container>
 
-			<container sizeX="40%" sizeY="100%">
-				<template dir="col" justify="space-around"  align="center" sizeX="100%" sizeY="100%">
-		    		<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ $ImageDir }}/nfl/{{ .Game.Game.HomeTeam.Abbreviation }}.png"></image>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.Scoring.HomeScoreTotal }}</text>
-				</template>
-			</container>
 		 </template>
 		`
 }

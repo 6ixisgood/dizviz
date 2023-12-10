@@ -311,7 +311,7 @@ type NFLBoxScoreResponse struct {
 		ID        int         `json:"id"`
 		Week      int         `json:"week"`
 		StartTime time.Time   `json:"startTime"`
-		EndedTime interface{} `json:"endedTime"`
+		EndedTime time.Time `json:"endedTime"`
 		AwayTeam  struct {
 			ID           int    `json:"id"`
 			Abbreviation string `json:"abbreviation"`
@@ -1082,7 +1082,36 @@ type NFLBoxScoreResponse struct {
 	} `json:"references"`
 }
 
-func (s *SportsFeed) FetchNFLBoxScore(game string) NFLBoxScoreResponse {
+type NFLBoxScoreResponseFormatted struct {
+	HomeAbbreviation			string
+	AwayAbbreviation			string
+	HomeScore					int
+	AwayScore					int
+	HomeLogo					string
+	AwayLogo					string
+	Quarter						int
+	QuarterMinRemaining			int
+	QuarterSecRemaining			int
+	Down						int
+	YardsRemaining				int
+	LineOfScrimmage				int	
+	PlayedStatus				string
+	StartTime					time.Time
+	HomePassYards				int
+	AwayPassYards				int
+	HomeRushYards				int
+	AwayRushYards				int
+	HomeSacks					int
+	AwaySacks					int
+	HomeWins					int
+	AwayWins					int
+	HomeLosses					int
+	AwayLosses					int
+	HomeTies					int
+	AwayTies					int
+}
+
+func (s *SportsFeed) FetchNFLBoxScore(game string) NFLBoxScoreResponseFormatted {
 	// determine the "season" to use
 	year, err := strconv.Atoi(game[:4])
 	checkErr(err)
@@ -1099,7 +1128,7 @@ func (s *SportsFeed) FetchNFLBoxScore(game string) NFLBoxScoreResponse {
 	// fetch the data
 	request := &APIRequest{
 		Method:   http.MethodGet,
-		Endpoint: fmt.Sprintf("pull/nfl/%s/games/%s/boxscore.json", season, game),
+		Endpoint: fmt.Sprintf("/pull/nfl/%s/games/%s/boxscore.json", season, game),
 	}
 
 	var responseData NFLBoxScoreResponse
@@ -1107,7 +1136,42 @@ func (s *SportsFeed) FetchNFLBoxScore(game string) NFLBoxScoreResponse {
 		log.Fatalf("Failed to retrieve and unmarshal data. Error: %v", err)
 	}
 
-	return responseData
+	// clean up time remaining
+	secRem := responseData.Scoring.CurrentQuarterSecondsRemaining 
+	sec := int(secRem % 60)
+	min := int(secRem / 60)
+
+	formattedGameData := NFLBoxScoreResponseFormatted{
+		HomeAbbreviation: responseData.Game.HomeTeam.Abbreviation,
+		AwayAbbreviation: responseData.Game.AwayTeam.Abbreviation,
+		HomeScore: responseData.Scoring.HomeScoreTotal,
+		AwayScore: responseData.Scoring.AwayScoreTotal,
+		HomeLogo: responseData.References.TeamReferences[0].OfficialLogoImageSrc,
+		AwayLogo: responseData.References.TeamReferences[1].OfficialLogoImageSrc,
+		Quarter: responseData.Scoring.CurrentQuarter,
+		QuarterMinRemaining: min,
+		QuarterSecRemaining: sec,
+		Down: responseData.Scoring.CurrentDown,
+		YardsRemaining: responseData.Scoring.CurrentYardsRemaining,
+		LineOfScrimmage: responseData.Scoring.LineOfScrimmage.YardLine,
+		PlayedStatus: responseData.Game.PlayedStatus,
+		StartTime: responseData.Game.StartTime,
+		HomePassYards: responseData.Stats.Home.TeamStats[0].Passing.PassNetYards,
+		AwayPassYards: responseData.Stats.Away.TeamStats[0].Passing.PassNetYards,
+		HomeRushYards: responseData.Stats.Home.TeamStats[0].Rushing.RushYards,
+		AwayRushYards: responseData.Stats.Away.TeamStats[0].Rushing.RushYards,
+		HomeSacks: responseData.Stats.Home.TeamStats[0].Tackles.Sacks,
+		AwaySacks: responseData.Stats.Away.TeamStats[0].Tackles.Sacks,
+		HomeWins: responseData.Stats.Home.TeamStats[0].Standings.Wins,
+		AwayWins: responseData.Stats.Away.TeamStats[0].Standings.Wins,
+		HomeLosses: responseData.Stats.Home.TeamStats[0].Standings.Losses,
+		AwayLosses: responseData.Stats.Away.TeamStats[0].Standings.Losses,
+		HomeTies: responseData.Stats.Home.TeamStats[0].Standings.Ties,
+		AwayTies: responseData.Stats.Away.TeamStats[0].Standings.Ties,
+
+	}
+
+	return formattedGameData
 }
 
 
