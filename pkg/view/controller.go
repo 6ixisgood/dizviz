@@ -19,11 +19,10 @@ type Animation struct {
 	template	compCommon.Template
 }
 
-func (a *Animation) Init(view string, viewConfig map[string]string) {
+func (a *Animation) Init(newView viewCommon.View) {
 	log.Printf("Initializing view in controller")
 
 	// init new view in background
-	newView := viewCommon.RegisteredViews[view](viewConfig)
 	newView.Init()
 	viewCommon.TemplateRefresh(newView)
 

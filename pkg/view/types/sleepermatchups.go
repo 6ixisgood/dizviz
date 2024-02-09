@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"time"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
@@ -21,17 +22,39 @@ type SleeperMatchupsView struct {
 	league			d.SleeperLeagueFormatted
 }
 
-func SleeperMatchupsViewCreate(config map[string]string) c.View {
-	client := d.SleeperClient()
+type SleeperMatchupsViewConfig struct {
+	LeagueID	string		`json:"league_id"`
+	Week		string		`json:"week"`
+}
 
-	view := &SleeperMatchupsView{
-		League: config["league_id"],
-		Week: config["week"],
-		SleeperClient: client,
-		Phase: 0,
+func (vc *SleeperMatchupsViewConfig) Validate() error {
+	if vc.LeagueID == "" {
+		return errors.New("'league_id' field is required")
+	}
+	if vc.Week == "" {
+		return errors.New("'week' field is required")
+	}
+	return nil
+}
+
+func SleeperMatchupsViewCreate(viewConfig c.ViewConfig) (c.View, error) {
+	config, ok := viewConfig.(*SleeperMatchupsViewConfig)
+	if !ok {
+		return nil, errors.New("Error asserting type SleeperMatchupsViewConfig")
 	}
 
-	return view
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
+	client := d.SleeperClient()
+
+	return &SleeperMatchupsView{
+		League: config.LeagueID,
+		Week: config.Week,
+		SleeperClient: client,
+		Phase: 0,
+	}, nil
 }
 
 func (v *SleeperMatchupsView) Init() {
@@ -184,7 +207,9 @@ func (v *SleeperMatchupsView) TemplateString() string {
 	`
 }
 
-
 func init() {
-	c.RegisterView("sleeper-matchups", SleeperMatchupsViewCreate)
+	c.RegisterView("sleeper-matchups", c.RegisteredView{
+		NewConfig: func() c.ViewConfig { return &SleeperMatchupsViewConfig{} },
+		NewView: SleeperMatchupsViewCreate,
+	})
 }

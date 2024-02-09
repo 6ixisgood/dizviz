@@ -4,6 +4,7 @@ import (
 	"log"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"encoding/json"
 	"net/http"
 	"github.com/6ixisgood/matrix-ticker/pkg/view"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
@@ -32,7 +33,7 @@ func SetAppServerConfig(config *AppServerConfig) {
 func InitializeRoutes() {
 	Server.router.GET("/views", getAllViews)
 	Server.router.GET("/views/:id", getViewById)
-	Server.router.POST("/display/:id", displayView)
+	Server.router.POST("/display", displayView)
 }
 
 func getAllViews(c *gin.Context) {
@@ -53,17 +54,38 @@ func getViewById(c *gin.Context) {
 }
 
 func displayView(c *gin.Context) {
-	id := c.Param("id")
+	type RequestBody struct {
+		Type	string			`json:"type"`
+		Config	json.RawMessage	`json:"config"`
+	}
 
-	var config map[string]string
-	if err := c.BindJSON(&config); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad configuration passed"})
+	var body RequestBody
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad request body"})
 		return
 	}
 
-	log.Printf("Initializing the %s view", id)
+	regView, exists := viewCommon.RegisteredViews[body.Type]
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "View type does not exist"})
+		return
+	}
+
+	configInstance := regView.NewConfig()
+	if err := json.Unmarshal(body.Config, &configInstance); err !=nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad view config passed"})
+		return
+	}
+
+	newView, err := regView.NewView(configInstance)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Failed to create view with given config", "error": err.Error()})
+		return
+	}
+
+	log.Printf("Initializing the %s view", body.Type)
 	animation := view.GetAnimation()
-	animation.Init(id, config)
+	animation.Init(newView)
 
 	c.JSON(http.StatusOK, gin.H{"Status": "Created"})
 }

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
 )
@@ -13,13 +14,33 @@ type NHLBoxView struct {
 	Games				d.DailyGamesNHLResponse
 }
 
-func NHLBoxViewCreate(config map[string]string) c.View {
+type NHLBoxViewConfig struct {
+	Date	string		`json:"date"`
+}
+
+func (vc *NHLBoxViewConfig) Validate() error {
+	if vc.Date == "" {
+		return errors.New("'Date' field is required")
+	}
+	return nil
+}
+
+func NHLBoxViewCreate(viewConfig c.ViewConfig) (c.View, error) {
+	config, ok := viewConfig.(*NHLBoxViewConfig)
+	if !ok {
+		return nil, errors.New("Error asserting type NHLBoxViewConfig")
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
 	client := d.SportsFeedClient()
 
 	return &NHLBoxView{
-		Date: config["date"],
+		Date: config.Date,
 		SportsFeedClient: client,
-	}
+	}, nil
 }
 
 func (v *NHLBoxView) Refresh() {
@@ -62,5 +83,8 @@ func (v *NHLBoxView) TemplateString() string {
 }
 
 func init() {
-	c.RegisterView("nhlbox", NHLBoxViewCreate)
+	c.RegisterView("nhlbox", c.RegisteredView{
+		NewConfig: func() c.ViewConfig { return &NHLBoxViewConfig{} },
+		NewView: NHLBoxViewCreate,
+	})
 }

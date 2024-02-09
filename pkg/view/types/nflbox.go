@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"time"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
@@ -17,13 +18,33 @@ type NFLBoxView struct {
 	dataRefresh *util.Refresher
 }
 
-func NFLBoxViewCreate(config map[string]string) c.View {
+type NFLBoxViewConfig struct {
+	Matchup		string		`json:"matchup"`
+}
+
+func (vc *NFLBoxViewConfig) Validate() error {
+	if vc.Matchup == "" {
+		return errors.New("'matchup' field is required")
+	}
+	return nil
+}
+
+func NFLBoxViewCreate(viewConfig c.ViewConfig) (c.View, error) {
+	config, ok := viewConfig.(*NFLBoxViewConfig)
+	if !ok {
+		return nil, errors.New("Error asserting type NFLBoxViewConfig")
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
 	client := d.SportsFeedClient()
 
 	return &NFLBoxView{
-		Matchup: config["matchup"],
+		Matchup: config.Matchup,
 		SportsFeedClient: client,
-	}
+	}, nil
 }
 
 func (v *NFLBoxView) Init() {
@@ -106,5 +127,8 @@ func (v *NFLBoxView) TemplateString() string {
 }
 
 func init() {
-	c.RegisterView("nflbox", NFLBoxViewCreate)
+	c.RegisterView("nflbox", c.RegisteredView{
+		NewConfig: func() c.ViewConfig { return &NFLBoxViewConfig{} },
+		NewView: NFLBoxViewCreate,
+	})
 }

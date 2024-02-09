@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"encoding/json"
+
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
 	"github.com/6ixisgood/matrix-ticker/pkg/api"
 	_ "github.com/6ixisgood/matrix-ticker/pkg/component"
@@ -57,7 +59,7 @@ func main() {
 	matrixConfig.GpioSlowdown = config.AppConfig.Matrix.GpioSlowdown
 
 	// configure the views
-	viewCommon.SetViewConfig(&viewCommon.ViewConfig{
+	viewCommon.SetViewCommonConfig(&viewCommon.ViewCommonConfig{
 		MatrixRows: config.AppConfig.Matrix.Rows * config.AppConfig.Matrix.Parallel,
 		MatrixCols: config.AppConfig.Matrix.Cols * config.AppConfig.Matrix.Chain,
 		ImageDir: config.AppConfig.Data.ImageDir,
@@ -107,16 +109,37 @@ func main() {
 	animation := view.GetAnimation()
 
 	log.Printf("Initializing the starting animation")
-	args := map[string]string{
-		"date": "20230910",
-		"matchup": "20231207-NE-PIT",
-		"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif",
-		"league_id": "917441035486355456",
-		"week": "3",
-		"text": "Hello, World! It's raining outside right now",
-		"layout": "flat",
-	}
-	animation.Init("nflbox", args)
+	// args := map[string]string{
+	// 	"date": "20230910",
+	// 	"matchup": "20231207-NE-PIT",
+	// 	"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif",
+	// 	"league_id": "917441035486355456",
+	// 	"week": "3",
+	// 	"text": "Hello, World! It's raining outside right now",
+	// 	"layout": "flat",
+	// 	"template": `
+	// 		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+	// 			<colorwave sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}"></colorwave>
+	// 		 </template>	
+	// 	`,
+	// }
+
+	body := `
+	{
+		"type": "image",
+		"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif"
+	}`
+
+	regView := viewCommon.RegisteredViews["image"]	
+	configInstance := regView.NewConfig()
+	if err := json.Unmarshal([]byte(body), &configInstance); err != nil {
+		log.Printf("Error creating init view")
+        return
+    }
+
+    newView, _ := regView.NewView(configInstance)
+
+	animation.Init(newView)
 	go tk.PlayAnimation(animation)
 
 	// run the app server	

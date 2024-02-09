@@ -20,7 +20,7 @@ type View interface {
 	Stop()
 }
 
-type ViewConfig struct {
+type ViewCommonConfig struct {
 	MatrixRows			int
 	MatrixCols			int
 	ImageDir			string
@@ -33,19 +33,25 @@ type ViewConfig struct {
 	DefaultFontType		string
 }
 
+type ViewConfig interface {}
+
+type RegisteredView struct {
+	NewConfig		func() ViewConfig
+	NewView			func(ViewConfig) (View, error)
+}
+
 var (
-	Config = &ViewConfig{}
-	RegisteredViews = map[string]func(map[string]string) View{}
+	CommonConfig = &ViewCommonConfig{}
+	RegisteredViews = map[string]RegisteredView{}
 )
 
-func SetViewConfig(config *ViewConfig) {
-	Config = config
+func SetViewCommonConfig(config *ViewCommonConfig) {
+	CommonConfig = config
 }
 
-func RegisterView(name string, creator func(map[string]string) View) {
+func RegisterView(name string, creator RegisteredView) {
 	RegisteredViews[name] = creator
 }
-
 
 func TemplateRefresh(v View) {
 	// create the template object
@@ -99,7 +105,7 @@ func TemplateRefresh(v View) {
 
 	// merge data maps
 	data := map[string]interface{}{
-		"Ctx": Config,
+		"Ctx": CommonConfig,
     }
     maps.Copy(data, v.TemplateData())
 

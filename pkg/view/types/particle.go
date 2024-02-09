@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 )
 
@@ -8,8 +9,23 @@ type ParticlesView struct {
 	c.BaseView
 }
 
-func ParticlesViewCreate(config map[string]string) c.View {
-	return &ParticlesView{}
+type ParticlesViewConfig struct {}
+
+func (vc *ParticlesViewConfig) Validate() error {
+	return nil
+}
+
+func ParticlesViewCreate(viewConfig c.ViewConfig) (c.View, error) {
+	config, ok := viewConfig.(*ParticlesViewConfig)
+	if !ok {
+		return nil, errors.New("Error asserting type ParticlesViewConfig")
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &ParticlesView{}, nil
 }
 
 func (v *ParticlesView) TemplateString() string {
@@ -21,5 +37,8 @@ func (v *ParticlesView) TemplateString() string {
 }
 
 func init() {
-	c.RegisterView("particle", ParticlesViewCreate)
+	c.RegisterView("particle", c.RegisteredView{
+		NewConfig: func() c.ViewConfig { return &ParticlesViewConfig{} },
+		NewView: ParticlesViewCreate,
+	})
 }

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
 )
@@ -14,18 +15,38 @@ type NFLScrollView struct {
 	Layout		string
 }
 
-func NFLScrollViewCreate(config map[string]string) c.View {
+type NFLScrollViewConfig struct {
+	Layout	string		`json:"layout"`
+	Date	string		`json:"date"`
+}
+
+func (vc *NFLScrollViewConfig) Validate() error {
+	if vc.Layout == "" {
+		vc.Layout = "flat"
+	}
+	if vc.Date == "" {
+		return errors.New("'date' field is required")
+	}
+	return nil
+}
+
+func NFLScrollViewCreate(viewConfig c.ViewConfig) (c.View, error) {
+	config, ok := viewConfig.(*NFLScrollViewConfig)
+	if !ok {
+		return nil, errors.New("Error asserting type NFLScrollViewConfig")
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
 	client := d.SportsFeedClient()
 
-	if _, ok := config["layout"]; !ok {
-		config["layout"] = "flat"
-	}	
-
 	return &NFLScrollView{
-		Date: config["date"],
-		Layout: config["layout"],
+		Date: config.Date,
+		Layout: config.Layout,
 		SportsFeedClient: client,
-	}
+	}, nil
 }
 
 func (v *NFLScrollView) Refresh() {
@@ -129,5 +150,8 @@ func (v *NFLScrollView) TemplateString() string {
 }
 
 func init() {
-	c.RegisterView("nflscroll", NFLScrollViewCreate)
+	c.RegisterView("nflscroll", c.RegisteredView{
+		NewConfig: func() c.ViewConfig { return &NFLScrollViewConfig{} },
+		NewView: NFLScrollViewCreate,
+	})
 }
