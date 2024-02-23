@@ -130,14 +130,44 @@ func main() {
 		"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif"
 	}`
 
-	regView := viewCommon.RegisteredViews["image"]	
+	body = `
+	{
+		"views": [
+			{
+				"type": "image",
+				"config": {
+					"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif"
+				}
+			},
+			{
+				"type": "image",
+				"config": {
+					"src": "https://media.giphy.com/media/uHWzPe1dPgkEj2UXZb/giphy.gif"
+				},
+				"settings": {
+					"time": 10
+				}
+			}
+		],
+		"settings": {
+			"time": 2
+		}
+	}`
+
+
+	regView := viewCommon.RegisteredViews["playlist"]	
 	configInstance := regView.NewConfig()
 	if err := json.Unmarshal([]byte(body), &configInstance); err != nil {
 		log.Printf("Error creating init view")
         return
     }
 
-    newView, _ := regView.NewView(configInstance)
+    newView, err := regView.NewView(configInstance)
+    if err != nil {
+    	log.Printf(fmt.Sprintf("Error %s", err))
+    	return
+    }
+
 
 	animation.Init(newView)
 	go tk.PlayAnimation(animation)

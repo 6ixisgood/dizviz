@@ -5,71 +5,36 @@ import (
 	"image"
 	"image/color"
 	"math"
-	"strconv"
-	"strings"
 	"encoding/xml"
 	"github.com/fogleman/gg"
 )
 
 type Template struct {
+	BaseComponent
+
 	XMLName			xml.Name		`xml:"template"`
-	SizeX        string       `xml:"sizeX,attr"`
-	SizeY        string       `xml:"sizeY,attr"`
+
 	Align			string			`xml:"align,attr"`
 	Justify			string			`xml:"justify,attr"`
 	Direction		string			`xml:"dir,attr"`
-	ParentWidth int
-    ParentHeight int
-	computedSizeX int
-	computedSizeY int
 	Components		[]Component		`xml:",any"`
-
-	CmpCtx			*ComponentContext
-	ctx				*gg.Context
-
 }
 
 func (t *Template) Init() {
-	// determine sizing
-	if strings.HasSuffix(t.SizeX, "%") {
-		percentage, _ := strconv.Atoi(t.SizeX[:len(t.SizeX)-1])
-		t.computedSizeX = int(t.ParentWidth * percentage / 100)
-	} else {
-		t.computedSizeX, _ = strconv.Atoi(t.SizeX)
-	}
-
-	if strings.HasSuffix(t.SizeY, "%") {
-		percentage, _ := strconv.Atoi(t.SizeY[:len(t.SizeY)-1])
-		t.computedSizeY = int(t.ParentHeight * percentage / 100)
-	} else {
-		t.computedSizeY, _ = strconv.Atoi(t.SizeY)
-	}
+	t.BaseComponent.Init()
 	
 	for _, c  := range t.Components {
-		c.SetParentSize(t.computedSizeX, t.computedSizeY)  // Set parent size on each child component
+		c.SetParentSize(t.ComputedSizeX, t.ComputedSizeY)  // Set parent size on each child component
 		c.Init()
 	}
 
 	// create context with sizes
-	ctxTmp := gg.NewContext(t.computedSizeX, t.computedSizeY)
-	t.ctx = ctxTmp 
+	ctxTmp := gg.NewContext(t.ComputedSizeX, t.ComputedSizeY)
+	t.Ctx = ctxTmp 
 }
 
 func (t *Template) Ready() bool {
-	return t.ctx != nil
-}
-
-func (t *Template) ComponentWidth() int {
-	sizeX := 0
-	for _, c := range t.Components {
-		sizeX += c.Width()
-	}
-	return sizeX
-}
-
-func (t *Template) SetParentSize(width int, height int) {
-    t.ParentWidth = width
-    t.ParentHeight = height
+	return t.Ctx != nil
 }
 
 func (t *Template) computeSpace(availableSpace int, itemCount int, mode string) int {
@@ -108,12 +73,12 @@ type Axis struct {
 }
 
 func (t *Template) Render() image.Image {
-	if t.ctx == nil {
-		t.ctx = gg.NewContext(t.computedSizeX, t.computedSizeY)
+	if t.Ctx == nil {
+		t.Ctx = gg.NewContext(t.ComputedSizeX, t.ComputedSizeY)
 	}
 
-	t.ctx.SetColor(color.RGBA{0,0,0,255})
-	t.ctx.Clear()
+	t.Ctx.SetColor(color.RGBA{0,0,0,255})
+	t.Ctx.Clear()
 
 	var componentLengthX, componentLengthY int
 	var componentMaxX, componentMaxY int
@@ -146,11 +111,11 @@ func (t *Template) Render() image.Image {
 
 	var primary, secondary Axis
     if t.Direction == "col" {
-        primary = Axis{TemplateSize: t.computedSizeY, Max: componentMaxY, Length: componentLengthY}
-        secondary = Axis{TemplateSize: t.computedSizeX, Max: componentMaxX, Length: componentLengthX}
+        primary = Axis{TemplateSize: t.ComputedSizeY, Max: componentMaxY, Length: componentLengthY}
+        secondary = Axis{TemplateSize: t.ComputedSizeX, Max: componentMaxX, Length: componentLengthX}
     } else {
-        primary = Axis{TemplateSize: t.computedSizeX, Max: componentMaxX, Length: componentLengthX}
-        secondary = Axis{TemplateSize: t.computedSizeY, Max: componentMaxY, Length: componentLengthY}
+        primary = Axis{TemplateSize: t.ComputedSizeX, Max: componentMaxX, Length: componentLengthX}
+        secondary = Axis{TemplateSize: t.ComputedSizeY, Max: componentMaxY, Length: componentLengthY}
     }
 
     // Modularized positioning logic
@@ -161,25 +126,26 @@ func (t *Template) Render() image.Image {
         if t.Direction == "col" {
         	secondary.Length = bounds.Dx()
     		secondary.Position, _ = t.computePositionAndSpace(secondary, len(imList), t.Align)
-	        t.ctx.DrawImage(im, secondary.Position, primary.Position)
+	        t.Ctx.DrawImage(im, secondary.Position, primary.Position)
 	        primary.Position += bounds.Dy()
 	    } else {
 			secondary.Length = bounds.Dy()
     		secondary.Position, _ = t.computePositionAndSpace(secondary, len(imList), t.Align)
-	        t.ctx.DrawImage(im, primary.Position, secondary.Position)
+	        t.Ctx.DrawImage(im, primary.Position, secondary.Position)
 	        primary.Position += bounds.Dx()
 	    }
         
         primary.Position += primary.Space // Increment only if it's space-between or space-around.
     }
 
-	return t.ctx.Image()
+	return t.Ctx.Image()
 }
 
-func (tmpl *Template) Stop() {
-	for _, c  := range tmpl.Components {
+func (t *Template) Stop() {
+	for _, c  := range t.Components {
 		c.Stop()
 	}
+	t.BaseComponent.Stop()
 }
 
 func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
