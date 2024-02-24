@@ -2,34 +2,33 @@ package types
 
 import (
 	"encoding/xml"
+	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 	"image"
 	"image/color"
 	"math"
 	"math/rand"
-	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 )
 
-
 type Particle struct {
-	X, Y     float64
-	SpeedX   float64
-	SpeedY   float64
-	Color    color.RGBA
-	Radius   float64
+	X, Y   float64
+	SpeedX float64
+	SpeedY float64
+	Color  color.RGBA
+	Radius float64
 }
 
 type GravityParticle struct {
-	X, Y    float64
-	Force   float64
-	Color   color.RGBA
+	X, Y  float64
+	Force float64
+	Color color.RGBA
 }
 
 type GravityParticles struct {
 	c.BaseComponent
 
-	XMLName         xml.Name         `xml:"gravity-particles"`
-	Particles       []Particle
-	GravityPoints   []GravityParticle
+	XMLName       xml.Name `xml:"gravity-particles"`
+	Particles     []Particle
+	GravityPoints []GravityParticle
 }
 
 func (gp *GravityParticles) Init() {
@@ -41,8 +40,8 @@ func (gp *GravityParticles) Init() {
 		gp.Particles = append(gp.Particles, Particle{
 			X:      float64(rand.Intn(gp.Width())),
 			Y:      float64(rand.Intn(gp.Height())),
-			SpeedX: float64(rand.Intn(5)-2), // Random speed between -2 and 2
-			SpeedY: float64(rand.Intn(5)-2),
+			SpeedX: float64(rand.Intn(5) - 2), // Random speed between -2 and 2
+			SpeedY: float64(rand.Intn(5) - 2),
 			Color:  color.RGBA{uint8(rand.Intn(256)), uint8(rand.Intn(256)), uint8(rand.Intn(256)), 255},
 			Radius: 2,
 		})
@@ -93,7 +92,6 @@ func (gp *GravityParticles) Render() image.Image {
 		gp.Ctx.DrawCircle(particle.X, particle.Y, particle.Radius)
 		gp.Ctx.Fill()
 	}
-
 
 	return gp.Ctx.Image()
 }

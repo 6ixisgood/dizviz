@@ -8,11 +8,11 @@ import (
 type TextView struct {
 	c.BaseView
 
-	Text		string
+	Text string
 }
 
 type TextViewConfig struct {
-	Text	string		`json:"text"`
+	Text string `json:"text"`
 }
 
 func (vc *TextViewConfig) Validate() error {
@@ -40,7 +40,7 @@ func TextViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 func (v *TextView) TemplateData() map[string]interface{} {
 	return map[string]interface{}{
 		"Text": v.Text,
-	}  
+	}
 }
 
 func (v *TextView) TemplateString() string {
@@ -55,6 +55,6 @@ func (v *TextView) TemplateString() string {
 func init() {
 	c.RegisterView("text", c.RegisteredView{
 		NewConfig: func() c.ViewConfig { return &TextViewConfig{} },
-		NewView: TextViewCreate,
+		NewView:   TextViewCreate,
 	})
 }

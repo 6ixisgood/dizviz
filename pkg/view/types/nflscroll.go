@@ -2,22 +2,22 @@ package types
 
 import (
 	"errors"
-	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
+	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 )
 
 type NFLScrollView struct {
 	c.BaseView
 
-	Date		string
-	SportsFeedClient	*d.SportsFeed
-	Games		d.DailyGamesNFLResponse
-	Layout		string
+	Date             string
+	SportsFeedClient *d.SportsFeed
+	Games            d.DailyGamesNFLResponse
+	Layout           string
 }
 
 type NFLScrollViewConfig struct {
-	Layout	string		`json:"layout"`
-	Date	string		`json:"date"`
+	Layout string `json:"layout"`
+	Date   string `json:"date"`
 }
 
 func (vc *NFLScrollViewConfig) Validate() error {
@@ -43,8 +43,8 @@ func NFLScrollViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 	client := d.SportsFeedClient()
 
 	return &NFLScrollView{
-		Date: config.Date,
-		Layout: config.Layout,
+		Date:             config.Date,
+		Layout:           config.Layout,
 		SportsFeedClient: client,
 	}, nil
 }
@@ -57,7 +57,7 @@ func (v *NFLScrollView) Refresh() {
 func (v *NFLScrollView) TemplateData() map[string]interface{} {
 	return map[string]interface{}{
 		"Games": v.Games,
-	} 
+	}
 }
 
 func (v *NFLScrollView) TemplateString() string {
@@ -152,6 +152,6 @@ func (v *NFLScrollView) TemplateString() string {
 func init() {
 	c.RegisterView("nflscroll", c.RegisteredView{
 		NewConfig: func() c.ViewConfig { return &NFLScrollViewConfig{} },
-		NewView: NFLScrollViewCreate,
+		NewView:   NFLScrollViewCreate,
 	})
 }

@@ -2,20 +2,20 @@ package types
 
 import (
 	"errors"
-	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
+	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 )
 
 type NHLBoxView struct {
 	c.BaseView
 
-	Date				string
-	SportsFeedClient	*d.SportsFeed
-	Games				d.DailyGamesNHLResponse
+	Date             string
+	SportsFeedClient *d.SportsFeed
+	Games            d.DailyGamesNHLResponse
 }
 
 type NHLBoxViewConfig struct {
-	Date	string		`json:"date"`
+	Date string `json:"date"`
 }
 
 func (vc *NHLBoxViewConfig) Validate() error {
@@ -38,7 +38,7 @@ func NHLBoxViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 	client := d.SportsFeedClient()
 
 	return &NHLBoxView{
-		Date: config.Date,
+		Date:             config.Date,
 		SportsFeedClient: client,
 	}, nil
 }
@@ -85,6 +85,6 @@ func (v *NHLBoxView) TemplateString() string {
 func init() {
 	c.RegisterView("nhlbox", c.RegisteredView{
 		NewConfig: func() c.ViewConfig { return &NHLBoxViewConfig{} },
-		NewView: NHLBoxViewCreate,
+		NewView:   NHLBoxViewCreate,
 	})
 }

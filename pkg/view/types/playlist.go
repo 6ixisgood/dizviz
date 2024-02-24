@@ -1,42 +1,40 @@
 package types
 
 import (
-	"fmt"
 	"encoding/json"
-	"time"
 	"errors"
+	"fmt"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	"time"
 )
 
 type PlaylistView struct {
 	c.BaseView
 
-	views		[]c.View
-	activeIndex	int
-	timings		[]time.Duration
+	views       []c.View
+	activeIndex int
+	timings     []time.Duration
 }
-
 
 type PlaylistViewConfig struct {
-	Views		[]struct {
-		Type		string			`json:"type"`
-		Config		json.RawMessage	`json:"config"`
-		Settings 	struct {
-			Time	time.Duration		`json:"time"`
+	Views []struct {
+		Type     string          `json:"type"`
+		Config   json.RawMessage `json:"config"`
+		Settings struct {
+			Time time.Duration `json:"time"`
 		} `json:"settings"`
 	} `json:"views"`
-	Settings	struct {
-		Time	time.Duration `json:"time"`
+	Settings struct {
+		Time time.Duration `json:"time"`
 	} `json:"settings"`
 }
-
 
 func (vc *PlaylistViewConfig) Validate() error {
 	if vc.Views == nil {
 		return errors.New("'Views' field is required")
-	} 
+	}
 
-	for i, v := range(vc.Views) {
+	for i, v := range vc.Views {
 		if v.Type == "" {
 			return errors.New(fmt.Sprintf("'Type' field is required for view in position %d", i))
 		}
@@ -71,14 +69,14 @@ func PlaylistViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 		}
 
 		configInstance := regView.NewConfig()
-		if err := json.Unmarshal(v.Config, &configInstance); err !=nil {
+		if err := json.Unmarshal(v.Config, &configInstance); err != nil {
 			return nil, errors.New(fmt.Sprintf("Config for view type %s is invalid", v.Type))
 		}
 
 		newView, err := regView.NewView(configInstance)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("Failed to create view of type %s with given config\nError: %s", v.Type, err))
-		}	
+		}
 
 		views = append(views, newView)
 		time := defaultTime
@@ -87,15 +85,15 @@ func PlaylistViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 		}
 		timings = append(timings, time)
 
-	} 
+	}
 
 	if len(views) == 0 {
 		return nil, errors.New("No views supplied in playlist config")
 	}
 
 	return &PlaylistView{
-		views: views,
-		timings: timings,
+		views:       views,
+		timings:     timings,
 		activeIndex: -1,
 	}, nil
 }
@@ -108,14 +106,13 @@ func (v *PlaylistView) TemplateData() map[string]interface{} {
 	return v.views[v.activeIndex].TemplateData()
 }
 
-
 func (v *PlaylistView) NextView() {
 	// init next view
 	fmt.Println(v.activeIndex)
 	nextIndex := (v.activeIndex + 1) % len(v.views)
 
 	// stop active view
-	if (v.activeIndex > 0) {
+	if v.activeIndex > 0 {
 		v.views[v.activeIndex].Stop()
 	}
 	v.views[nextIndex].Init()
@@ -138,6 +135,6 @@ func (v *PlaylistView) Init() {
 func init() {
 	c.RegisterView("playlist", c.RegisteredView{
 		NewConfig: func() c.ViewConfig { return &PlaylistViewConfig{} },
-		NewView: PlaylistViewCreate,
+		NewView:   PlaylistViewCreate,
 	})
 }

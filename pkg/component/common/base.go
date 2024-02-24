@@ -1,27 +1,27 @@
 package common
 
 import (
-	"image"
-	"strings"
-	"strconv"
-	"time"
 	"github.com/fogleman/gg"
+	"image"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type BaseComponent struct {
-	SizeX        string       `xml:"sizeX,attr"`
-	SizeY        string       `xml:"sizeY,attr"`
+	SizeX         string `xml:"sizeX,attr"`
+	SizeY         string `xml:"sizeY,attr"`
 	ComputedSizeX int
 	ComputedSizeY int
-	ParentWidth  int
-    ParentHeight int
-	PosX		int			`xml:"posX,attr"`
-	PosY		int			`xml:"posY,attr"`
+	ParentWidth   int
+	ParentHeight  int
+	PosX          int `xml:"posX,attr"`
+	PosY          int `xml:"posY,attr"`
 
-	Ctx			*gg.Context
-	prevImg		image.Image
-	Ticker		*time.Ticker
-	Rr			int			// render rate in milliseconds
+	Ctx     *gg.Context
+	prevImg image.Image
+	Ticker  *time.Ticker
+	Rr      int // render rate in milliseconds
 }
 
 func (bc *BaseComponent) Init() {
@@ -41,7 +41,7 @@ func (bc *BaseComponent) Init() {
 	}
 
 	// create a context, if needed
-	if (bc.Ctx == nil && bc.ComputedSizeX > 0 && bc.ComputedSizeY > 0) {
+	if bc.Ctx == nil && bc.ComputedSizeX > 0 && bc.ComputedSizeY > 0 {
 		bc.Ctx = gg.NewContext(bc.ComputedSizeX, bc.ComputedSizeY)
 	}
 	// set a render rate, if needed
@@ -68,11 +68,11 @@ func (bc *BaseComponent) Size() image.Point {
 }
 
 func (bc *BaseComponent) SetParentSize(width int, height int) {
-    bc.ParentWidth = width
-    bc.ParentHeight = height
+	bc.ParentWidth = width
+	bc.ParentHeight = height
 }
 
-func (bc *BaseComponent) TickerChan() <-chan time.Time{
+func (bc *BaseComponent) TickerChan() <-chan time.Time {
 	if bc.Ticker != nil {
 		return bc.Ticker.C
 	} else {

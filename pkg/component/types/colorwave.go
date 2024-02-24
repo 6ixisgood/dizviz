@@ -1,20 +1,20 @@
 package types
 
 import (
-	"math"
 	"encoding/xml"
-	"image/color"
-	"image"
 	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
+	"image"
+	"image/color"
+	"math"
 )
 
 type ColorWave struct {
 	c.BaseComponent
 
-	XMLName xml.Name `xml:"colorwave"`
-	Frequency float64 `xml:"frequency,attr"`
-	Amplitude float64 `xml:"amplitude,attr"`
-	Speed     float64 `xml:"speed,attr"`
+	XMLName   xml.Name `xml:"colorwave"`
+	Frequency float64  `xml:"frequency,attr"`
+	Amplitude float64  `xml:"amplitude,attr"`
+	Speed     float64  `xml:"speed,attr"`
 	Offset    float64
 }
 
@@ -39,10 +39,10 @@ func (cw *ColorWave) Render() image.Image {
 		y := float64(cw.Height())/2 + cw.Amplitude*math.Sin(cw.Frequency*x+cw.Offset)
 
 		// Use a gradient of colors
-		r := uint8((math.Sin(cw.Frequency*x)+1)/2*255)
-		g := uint8((math.Cos(cw.Frequency*x)+1)/2*255)
-		b := uint8((math.Sin(cw.Offset*2)+1)/2*255)
-		
+		r := uint8((math.Sin(cw.Frequency*x) + 1) / 2 * 255)
+		g := uint8((math.Cos(cw.Frequency*x) + 1) / 2 * 255)
+		b := uint8((math.Sin(cw.Offset*2) + 1) / 2 * 255)
+
 		// Draw circles for a cooler effect
 		cw.Ctx.SetColor(color.RGBA{r, g, b, 255})
 		cw.Ctx.DrawCircle(x, y, 3) // Larger circles

@@ -3,19 +3,19 @@ package data
 import (
 	"fmt"
 	"log"
-	"time"
-	"strconv"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 type SportsFeed struct {
-	Client			*APIClient
+	Client *APIClient
 }
 
 type SportsFeedConfig struct {
-	BaseUrl			string
-	Username		string
-	Password		string
+	BaseUrl  string
+	Username string
+	Password string
 }
 
 // Sports Feed Singleton
@@ -164,7 +164,7 @@ type DailyGamesNHLResponse struct {
 	} `json:"references"`
 }
 
-func (s *SportsFeed) FetchDailyNHLGamesInfo(date string) DailyGamesNHLResponse{
+func (s *SportsFeed) FetchDailyNHLGamesInfo(date string) DailyGamesNHLResponse {
 	// determine the "season" to use
 	year, err := strconv.Atoi(date[:4])
 	checkErr(err)
@@ -191,8 +191,9 @@ func (s *SportsFeed) FetchDailyNHLGamesInfo(date string) DailyGamesNHLResponse{
 
 	return responseData
 }
+
 // -----------------------------------------
-// NFL 
+// NFL
 // -----------------------------------------
 
 type DailyGamesNFLResponse struct {
@@ -276,8 +277,7 @@ type DailyGamesNFLResponse struct {
 	} `json:"references"`
 }
 
-
-func (s *SportsFeed) FetchDailyNFLGamesInfo(date string) DailyGamesNFLResponse{
+func (s *SportsFeed) FetchDailyNFLGamesInfo(date string) DailyGamesNFLResponse {
 	// determine the "season" to use
 	year, err := strconv.Atoi(date[:4])
 	checkErr(err)
@@ -308,9 +308,9 @@ func (s *SportsFeed) FetchDailyNFLGamesInfo(date string) DailyGamesNFLResponse{
 type NFLBoxScoreResponse struct {
 	LastUpdatedOn time.Time `json:"lastUpdatedOn"`
 	Game          struct {
-		ID        int         `json:"id"`
-		Week      int         `json:"week"`
-		StartTime time.Time   `json:"startTime"`
+		ID        int       `json:"id"`
+		Week      int       `json:"week"`
+		StartTime time.Time `json:"startTime"`
 		EndedTime time.Time `json:"endedTime"`
 		AwayTeam  struct {
 			ID           int    `json:"id"`
@@ -1083,32 +1083,32 @@ type NFLBoxScoreResponse struct {
 }
 
 type NFLBoxScoreResponseFormatted struct {
-	HomeAbbreviation			string
-	AwayAbbreviation			string
-	HomeScore					int
-	AwayScore					int
-	HomeLogo					string
-	AwayLogo					string
-	Quarter						int
-	QuarterMinRemaining			int
-	QuarterSecRemaining			int
-	Down						int
-	YardsRemaining				int
-	LineOfScrimmage				int	
-	PlayedStatus				string
-	StartTime					time.Time
-	HomePassYards				int
-	AwayPassYards				int
-	HomeRushYards				int
-	AwayRushYards				int
-	HomeSacks					int
-	AwaySacks					int
-	HomeWins					int
-	AwayWins					int
-	HomeLosses					int
-	AwayLosses					int
-	HomeTies					int
-	AwayTies					int
+	HomeAbbreviation    string
+	AwayAbbreviation    string
+	HomeScore           int
+	AwayScore           int
+	HomeLogo            string
+	AwayLogo            string
+	Quarter             int
+	QuarterMinRemaining int
+	QuarterSecRemaining int
+	Down                int
+	YardsRemaining      int
+	LineOfScrimmage     int
+	PlayedStatus        string
+	StartTime           time.Time
+	HomePassYards       int
+	AwayPassYards       int
+	HomeRushYards       int
+	AwayRushYards       int
+	HomeSacks           int
+	AwaySacks           int
+	HomeWins            int
+	AwayWins            int
+	HomeLosses          int
+	AwayLosses          int
+	HomeTies            int
+	AwayTies            int
 }
 
 func (s *SportsFeed) FetchNFLBoxScore(game string) NFLBoxScoreResponseFormatted {
@@ -1137,47 +1137,44 @@ func (s *SportsFeed) FetchNFLBoxScore(game string) NFLBoxScoreResponseFormatted 
 	}
 
 	// clean up time remaining
-	secRem := responseData.Scoring.CurrentQuarterSecondsRemaining 
+	secRem := responseData.Scoring.CurrentQuarterSecondsRemaining
 	sec := int(secRem % 60)
 	min := int(secRem / 60)
 
 	formattedGameData := NFLBoxScoreResponseFormatted{
-		HomeAbbreviation: responseData.Game.HomeTeam.Abbreviation,
-		AwayAbbreviation: responseData.Game.AwayTeam.Abbreviation,
-		HomeScore: responseData.Scoring.HomeScoreTotal,
-		AwayScore: responseData.Scoring.AwayScoreTotal,
-		HomeLogo: responseData.References.TeamReferences[0].OfficialLogoImageSrc,
-		AwayLogo: responseData.References.TeamReferences[1].OfficialLogoImageSrc,
-		Quarter: responseData.Scoring.CurrentQuarter,
+		HomeAbbreviation:    responseData.Game.HomeTeam.Abbreviation,
+		AwayAbbreviation:    responseData.Game.AwayTeam.Abbreviation,
+		HomeScore:           responseData.Scoring.HomeScoreTotal,
+		AwayScore:           responseData.Scoring.AwayScoreTotal,
+		HomeLogo:            responseData.References.TeamReferences[0].OfficialLogoImageSrc,
+		AwayLogo:            responseData.References.TeamReferences[1].OfficialLogoImageSrc,
+		Quarter:             responseData.Scoring.CurrentQuarter,
 		QuarterMinRemaining: min,
 		QuarterSecRemaining: sec,
-		Down: responseData.Scoring.CurrentDown,
-		YardsRemaining: responseData.Scoring.CurrentYardsRemaining,
-		LineOfScrimmage: responseData.Scoring.LineOfScrimmage.YardLine,
-		PlayedStatus: responseData.Game.PlayedStatus,
-		StartTime: responseData.Game.StartTime,
-		HomePassYards: responseData.Stats.Home.TeamStats[0].Passing.PassNetYards,
-		AwayPassYards: responseData.Stats.Away.TeamStats[0].Passing.PassNetYards,
-		HomeRushYards: responseData.Stats.Home.TeamStats[0].Rushing.RushYards,
-		AwayRushYards: responseData.Stats.Away.TeamStats[0].Rushing.RushYards,
-		HomeSacks: responseData.Stats.Home.TeamStats[0].Tackles.Sacks,
-		AwaySacks: responseData.Stats.Away.TeamStats[0].Tackles.Sacks,
-		HomeWins: responseData.Stats.Home.TeamStats[0].Standings.Wins,
-		AwayWins: responseData.Stats.Away.TeamStats[0].Standings.Wins,
-		HomeLosses: responseData.Stats.Home.TeamStats[0].Standings.Losses,
-		AwayLosses: responseData.Stats.Away.TeamStats[0].Standings.Losses,
-		HomeTies: responseData.Stats.Home.TeamStats[0].Standings.Ties,
-		AwayTies: responseData.Stats.Away.TeamStats[0].Standings.Ties,
-
+		Down:                responseData.Scoring.CurrentDown,
+		YardsRemaining:      responseData.Scoring.CurrentYardsRemaining,
+		LineOfScrimmage:     responseData.Scoring.LineOfScrimmage.YardLine,
+		PlayedStatus:        responseData.Game.PlayedStatus,
+		StartTime:           responseData.Game.StartTime,
+		HomePassYards:       responseData.Stats.Home.TeamStats[0].Passing.PassNetYards,
+		AwayPassYards:       responseData.Stats.Away.TeamStats[0].Passing.PassNetYards,
+		HomeRushYards:       responseData.Stats.Home.TeamStats[0].Rushing.RushYards,
+		AwayRushYards:       responseData.Stats.Away.TeamStats[0].Rushing.RushYards,
+		HomeSacks:           responseData.Stats.Home.TeamStats[0].Tackles.Sacks,
+		AwaySacks:           responseData.Stats.Away.TeamStats[0].Tackles.Sacks,
+		HomeWins:            responseData.Stats.Home.TeamStats[0].Standings.Wins,
+		AwayWins:            responseData.Stats.Away.TeamStats[0].Standings.Wins,
+		HomeLosses:          responseData.Stats.Home.TeamStats[0].Standings.Losses,
+		AwayLosses:          responseData.Stats.Away.TeamStats[0].Standings.Losses,
+		HomeTies:            responseData.Stats.Home.TeamStats[0].Standings.Ties,
+		AwayTies:            responseData.Stats.Away.TeamStats[0].Standings.Ties,
 	}
 
 	return formattedGameData
 }
 
-
-
 func checkErr(e error) {
-	if (e != nil) {
+	if e != nil {
 		log.Printf("Error: %s", e)
 	}
 }

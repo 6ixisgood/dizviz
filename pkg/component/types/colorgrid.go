@@ -1,11 +1,10 @@
 package types
 
-
 import (
+	"encoding/xml"
 	"image"
 	"image/color"
 	"math"
-	"encoding/xml"
 
 	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 )
@@ -13,9 +12,9 @@ import (
 type ColorGrid struct {
 	c.BaseComponent
 
-	XMLName   xml.Name `xml:"color-grid"`
-	GridSize  int      `xml:"gridSize,attr"`
-	Offset    float64
+	XMLName  xml.Name `xml:"color-grid"`
+	GridSize int      `xml:"gridSize,attr"`
+	Offset   float64
 }
 
 func (cg *ColorGrid) Init() {
@@ -32,8 +31,8 @@ func (cg *ColorGrid) Render() image.Image {
 	gridSize := float64(cg.GridSize)
 	for x := 0.0; x < float64(cg.Width()); x += gridSize {
 		for y := 0.0; y < float64(cg.Height()); y += gridSize {
-			r := uint8((math.Sin(cg.Offset+x/10)+1)/2*255)
-			g := uint8((math.Cos(cg.Offset+y/10)+1)/2*255)
+			r := uint8((math.Sin(cg.Offset+x/10) + 1) / 2 * 255)
+			g := uint8((math.Cos(cg.Offset+y/10) + 1) / 2 * 255)
 			b := uint8(255 - r)
 
 			cg.Ctx.SetColor(color.RGBA{r, g, b, 255})

@@ -2,10 +2,10 @@ package types
 
 import (
 	"encoding/xml"
-	"image"
-	"math/rand"
-	"image/color"
 	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
+	"image"
+	"image/color"
+	"math/rand"
 )
 
 type Drop struct {
@@ -14,8 +14,8 @@ type Drop struct {
 
 type MatrixRain struct {
 	c.BaseComponent
-	XMLName xml.Name `xml:"matrix-rain"`
-	Drops   []Drop
+	XMLName  xml.Name `xml:"matrix-rain"`
+	Drops    []Drop
 	NumDrops int
 }
 
@@ -23,7 +23,7 @@ func (mr *MatrixRain) Init() {
 	mr.BaseComponent.Init()
 	mr.NumDrops = 100
 	for i := 0; i < mr.NumDrops; i++ {
-		mr.Drops = append(mr.Drops, Drop{rand.Float64() * float64(mr.Width()), rand.Float64() * float64(mr.Height()), rand.Float64() * 5 + 1})
+		mr.Drops = append(mr.Drops, Drop{rand.Float64() * float64(mr.Width()), rand.Float64() * float64(mr.Height()), rand.Float64()*5 + 1})
 	}
 }
 

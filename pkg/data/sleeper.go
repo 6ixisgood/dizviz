@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"runtime"
 	"path/filepath"
-	"sort"
+	"runtime"
 	"slices"
+	"sort"
 )
 
 type Sleeper struct {
-	Client			*APIClient
+	Client *APIClient
 }
 
 type SleeperConfig struct {
-	BaseUrl			string
+	BaseUrl string
 }
 
 // Sleeper Singleton
@@ -38,7 +38,6 @@ func InitSleeperClient(config SleeperConfig) {
 	}
 
 }
-
 
 // cache
 var sleperPlayers map[string]SleeperPlayer
@@ -143,48 +142,47 @@ type SleeperLeagueScoringSettings struct {
 	Sack         float64 `json:"sack"`
 }
 
-
 type SleeperLeague struct {
-	TotalRosters int    `json:"total_rosters"`
-	Status       string `json:"status"`
-	Sport        string `json:"sport"`
-	Shard        int    `json:"shard"`
-	Settings     SleeperLeagueSettings `json:"settings"`
-	SeasonType      string `json:"season_type"`
-	Season          string `json:"season"`
-	ScoringSettings SleeperLeagueScoringSettings `json:"scoring_settings"`
-	RosterPositions  []string `json:"roster_positions"`
-	PreviousLeagueID string   `json:"previous_league_id"`
-	Name             string   `json:"name"`
-	Metadata         SleeperLeagueMetadata `json:"metadata"`
-	LoserBracketID        string		`json:"loser_bracket_id"`
-	LeagueID              string      `json:"league_id"`
-	LastReadID            string		 `json:"last_read_id"`
-	LastPinnedMessageID   string      `json:"last_pinned_message_id"`
-	LastMessageTime       int64       `json:"last_message_time"`
-	LastMessageTextMap    interface{} `json:"last_message_text_map"`
-	LastMessageID         string      `json:"last_message_id"`
-	LastMessageAttachment interface{} `json:"last_message_attachment"`
-	LastAuthorIsBot       bool        `json:"last_author_is_bot"`
-	LastAuthorID          string      `json:"last_author_id"`
-	LastAuthorDisplayName string      `json:"last_author_display_name"`
-	LastAuthorAvatar      interface{} `json:"last_author_avatar"`
-	GroupID               string		 `json:"group_id"`
-	DraftID               string      `json:"draft_id"`
-	CompanyID             string		 `json:"company_id"`
-	BracketID             string	 `json:"bracket_id"`
-	Avatar                interface{} `json:"avatar"`
+	TotalRosters          int                          `json:"total_rosters"`
+	Status                string                       `json:"status"`
+	Sport                 string                       `json:"sport"`
+	Shard                 int                          `json:"shard"`
+	Settings              SleeperLeagueSettings        `json:"settings"`
+	SeasonType            string                       `json:"season_type"`
+	Season                string                       `json:"season"`
+	ScoringSettings       SleeperLeagueScoringSettings `json:"scoring_settings"`
+	RosterPositions       []string                     `json:"roster_positions"`
+	PreviousLeagueID      string                       `json:"previous_league_id"`
+	Name                  string                       `json:"name"`
+	Metadata              SleeperLeagueMetadata        `json:"metadata"`
+	LoserBracketID        string                       `json:"loser_bracket_id"`
+	LeagueID              string                       `json:"league_id"`
+	LastReadID            string                       `json:"last_read_id"`
+	LastPinnedMessageID   string                       `json:"last_pinned_message_id"`
+	LastMessageTime       int64                        `json:"last_message_time"`
+	LastMessageTextMap    interface{}                  `json:"last_message_text_map"`
+	LastMessageID         string                       `json:"last_message_id"`
+	LastMessageAttachment interface{}                  `json:"last_message_attachment"`
+	LastAuthorIsBot       bool                         `json:"last_author_is_bot"`
+	LastAuthorID          string                       `json:"last_author_id"`
+	LastAuthorDisplayName string                       `json:"last_author_display_name"`
+	LastAuthorAvatar      interface{}                  `json:"last_author_avatar"`
+	GroupID               string                       `json:"group_id"`
+	DraftID               string                       `json:"draft_id"`
+	CompanyID             string                       `json:"company_id"`
+	BracketID             string                       `json:"bracket_id"`
+	Avatar                interface{}                  `json:"avatar"`
 }
 
 type SleeperLeagueMatchup struct {
-	StartersPoints []float64 `json:"starters_points"`
-	Starters       []string  `json:"starters"`
-	RosterID       int       `json:"roster_id"`
-	Points         float64   `json:"points"`
+	StartersPoints []float64          `json:"starters_points"`
+	Starters       []string           `json:"starters"`
+	RosterID       int                `json:"roster_id"`
+	Points         float64            `json:"points"`
 	PlayersPoints  map[string]float64 `json:"players_points"`
-	Players      []string    `json:"players"`
-	MatchupID    int         `json:"matchup_id"`
-	CustomPoints interface{} `json:"custom_points"`
+	Players        []string           `json:"players"`
+	MatchupID      int                `json:"matchup_id"`
+	CustomPoints   interface{}        `json:"custom_points"`
 }
 
 type SleeperPlayer struct {
@@ -193,7 +191,7 @@ type SleeperPlayer struct {
 	College               interface{} `json:"college"`
 	SwishID               interface{} `json:"swish_id"`
 	FantasyPositions      interface{} `json:"fantasy_positions"`
-	Position              string	  `json:"position"`
+	Position              string      `json:"position"`
 	FullName              string      `json:"full_name"`
 	InjuryStatus          interface{} `json:"injury_status"`
 	BirthCity             interface{} `json:"birth_city"`
@@ -288,8 +286,8 @@ type SleeperLeagueRoster struct {
 	PlayerMap interface{} `json:"player_map"`
 	OwnerID   string      `json:"owner_id"`
 	Metadata  struct {
-		Streak    string `json:"streak"`
-		Record    string `json:"record"`
+		Streak string `json:"streak"`
+		Record string `json:"record"`
 	} `json:"metadata"`
 	LeagueID string      `json:"league_id"`
 	Keepers  interface{} `json:"keepers"`
@@ -297,32 +295,30 @@ type SleeperLeagueRoster struct {
 }
 
 type SleeperPlayerFormatted struct {
-	PlayerID			string
-	Name				string
-	Points				float64
-	Position			string
+	PlayerID string
+	Name     string
+	Points   float64
+	Position string
 }
 
-
 type SleeperTeamFormatted struct {
-	UserID				string
-	RosterID			int
-	Name				string
-	Avatar 				string
-	Score				float64
-	Starters			[]SleeperPlayerFormatted
-	Bench				[]SleeperPlayerFormatted
-	Wins				int
-	Losses				int
-	Ties				int
-	MatchupID			int
+	UserID    string
+	RosterID  int
+	Name      string
+	Avatar    string
+	Score     float64
+	Starters  []SleeperPlayerFormatted
+	Bench     []SleeperPlayerFormatted
+	Wins      int
+	Losses    int
+	Ties      int
+	MatchupID int
 }
 
 type SleeperLeagueFormatted struct {
-	Name				string
-	StartingPositions	[]string
+	Name              string
+	StartingPositions []string
 }
-
 
 // Fetch the league info given the league's id
 func (d *Sleeper) GetLeague(id string) SleeperLeague {
@@ -385,15 +381,14 @@ func (d *Sleeper) GetMatchups(league_id string, week string) []SleeperLeagueMatc
 }
 
 // Get a player's info by id
-// Fetches data from a cached file 
-func (d* Sleeper) GetPlayer(id string) SleeperPlayer {
+// Fetches data from a cached file
+func (d *Sleeper) GetPlayer(id string) SleeperPlayer {
 	if sleperPlayers == nil {
 		_, filePath, _, _ := runtime.Caller(0)
 		// Get the directory of the current file
 		basePath := filepath.Dir(filePath)
 		// Create the full path to the file you want to reference
 		absPath := filepath.Join(basePath, "./cache/sleeper_players.json")
-
 
 		if err := ReadFileAndUnmarshal(absPath, &sleperPlayers); err != nil {
 			log.Printf("Error %v", err)
@@ -406,15 +401,14 @@ func (d* Sleeper) GetPlayer(id string) SleeperPlayer {
 
 }
 
-
-func (d* Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]SleeperTeamFormatted {
+func (d *Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]SleeperTeamFormatted {
 	// get all users in league
 	userIDToTeam := make(map[string]*SleeperTeamFormatted)
 
 	for _, rawUser := range d.GetUsers(leagueID) {
 		team := SleeperTeamFormatted{
 			UserID: rawUser.UserID,
-			Name: rawUser.Metadata.TeamName,
+			Name:   rawUser.Metadata.TeamName,
 			Avatar: rawUser.Metadata.Avatar,
 		}
 		// add to dict for easier lookup
@@ -448,7 +442,7 @@ func (d* Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]Sleeper
 		for id, points := range rawMatchup.PlayersPoints {
 			player := SleeperPlayerFormatted{
 				PlayerID: id,
-				Points: points,
+				Points:   points,
 			}
 
 			// fetch player details
@@ -457,7 +451,7 @@ func (d* Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]Sleeper
 			player.Position = pInfo.Position
 
 			// determine if starter
-			if slices.IndexFunc(rawMatchup.Starters, func(s string) bool { return s == id}) >= 0 {
+			if slices.IndexFunc(rawMatchup.Starters, func(s string) bool { return s == id }) >= 0 {
 				team.Starters = append(team.Starters, player)
 			} else {
 				team.Bench = append(team.Bench, player)
@@ -465,8 +459,8 @@ func (d* Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]Sleeper
 		}
 		// sort starters by position
 		sort.Slice(team.Starters, func(i, j int) bool {
-			l := slices.IndexFunc(rawMatchup.Starters, func(s string) bool { return s == team.Starters[i].PlayerID})
-			r := slices.IndexFunc(rawMatchup.Starters, func(s string) bool { return s == team.Starters[j].PlayerID})
+			l := slices.IndexFunc(rawMatchup.Starters, func(s string) bool { return s == team.Starters[i].PlayerID })
+			r := slices.IndexFunc(rawMatchup.Starters, func(s string) bool { return s == team.Starters[j].PlayerID })
 			return l < r
 		})
 
@@ -481,24 +475,24 @@ func (d* Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]Sleeper
 	}
 	// sort teams by matchup
 	sort.Slice(matchups, func(i, j int) bool {
-	  return matchups[i][0].MatchupID < matchups[j][0].MatchupID
-	})	
+		return matchups[i][0].MatchupID < matchups[j][0].MatchupID
+	})
 
 	return matchups
 }
 
-func (d* Sleeper) GetLeagueFormatted(leagueID string) SleeperLeagueFormatted {
+func (d *Sleeper) GetLeagueFormatted(leagueID string) SleeperLeagueFormatted {
 	league := d.GetLeague(leagueID)
 
 	var startingPositions []string
 	for _, pos := range league.RosterPositions {
 		if pos != "BN" {
 			startingPositions = append(startingPositions, pos[:1])
-		} 
+		}
 	}
 
 	return SleeperLeagueFormatted{
-		Name: league.Name,
+		Name:              league.Name,
 		StartingPositions: startingPositions,
 	}
 

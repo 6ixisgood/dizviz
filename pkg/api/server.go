@@ -1,13 +1,13 @@
 package api
 
 import (
-	"log"
-	"fmt"
-	"github.com/gin-gonic/gin"
 	"encoding/json"
-	"net/http"
+	"fmt"
 	"github.com/6ixisgood/matrix-ticker/pkg/view"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	"github.com/gin-gonic/gin"
+	"log"
+	"net/http"
 )
 
 type AppServer struct {
@@ -15,8 +15,8 @@ type AppServer struct {
 }
 
 type AppServerConfig struct {
-	AllowedHost	string
-	Port		string
+	AllowedHost string
+	Port        string
 }
 
 var (
@@ -55,8 +55,8 @@ func getViewById(c *gin.Context) {
 
 func displayView(c *gin.Context) {
 	type RequestBody struct {
-		Type	string			`json:"type"`
-		Config	json.RawMessage	`json:"config"`
+		Type   string          `json:"type"`
+		Config json.RawMessage `json:"config"`
 	}
 
 	var body RequestBody
@@ -72,7 +72,7 @@ func displayView(c *gin.Context) {
 	}
 
 	configInstance := regView.NewConfig()
-	if err := json.Unmarshal(body.Config, &configInstance); err !=nil {
+	if err := json.Unmarshal(body.Config, &configInstance); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad view config passed"})
 		return
 	}

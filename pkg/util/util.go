@@ -1,8 +1,8 @@
 package util
 
 type UtilConfig struct {
-	CacheDir		string	
-	FontDir			string
+	CacheDir string
+	FontDir  string
 }
 
 var (

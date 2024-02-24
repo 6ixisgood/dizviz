@@ -2,24 +2,24 @@ package types
 
 import (
 	"errors"
-	"time"
+	d "github.com/6ixisgood/matrix-ticker/pkg/data"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
-	d "github.com/6ixisgood/matrix-ticker/pkg/data"
+	"time"
 )
 
 type NFLBoxView struct {
 	c.BaseView
 
-	Matchup		string
-	SportsFeedClient	*d.SportsFeed
-	Game		d.NFLBoxScoreResponseFormatted
-	Layout		string
-	dataRefresh *util.Refresher
+	Matchup          string
+	SportsFeedClient *d.SportsFeed
+	Game             d.NFLBoxScoreResponseFormatted
+	Layout           string
+	dataRefresh      *util.Refresher
 }
 
 type NFLBoxViewConfig struct {
-	Matchup		string		`json:"matchup"`
+	Matchup string `json:"matchup"`
 }
 
 func (vc *NFLBoxViewConfig) Validate() error {
@@ -42,16 +42,16 @@ func NFLBoxViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 	client := d.SportsFeedClient()
 
 	return &NFLBoxView{
-		Matchup: config.Matchup,
+		Matchup:          config.Matchup,
 		SportsFeedClient: client,
 	}, nil
 }
 
 func (v *NFLBoxView) Init() {
 	// init ticker and stop chan
-    v.dataRefresh = util.RefresherCreate(60 * time.Second, v.RefreshData)
-    v.RefreshData()
-    v.dataRefresh.Start()
+	v.dataRefresh = util.RefresherCreate(60*time.Second, v.RefreshData)
+	v.RefreshData()
+	v.dataRefresh.Start()
 }
 
 func (v *NFLBoxView) RefreshData() {
@@ -62,7 +62,7 @@ func (v *NFLBoxView) RefreshData() {
 func (v *NFLBoxView) TemplateData() map[string]interface{} {
 	return map[string]interface{}{
 		"Game": v.Game,
-	} 
+	}
 }
 
 func (v *NFLBoxView) TemplateString() string {
@@ -129,6 +129,6 @@ func (v *NFLBoxView) TemplateString() string {
 func init() {
 	c.RegisterView("nflbox", c.RegisteredView{
 		NewConfig: func() c.ViewConfig { return &NFLBoxViewConfig{} },
-		NewView: NFLBoxViewCreate,
+		NewView:   NFLBoxViewCreate,
 	})
 }

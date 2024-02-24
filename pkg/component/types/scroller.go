@@ -2,20 +2,19 @@ package types
 
 import (
 	"encoding/xml"
+	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
+	"github.com/fogleman/gg"
 	"image"
 	"image/color"
-	"github.com/fogleman/gg"
-	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 )
-
 
 type Scroller struct {
 	c.BaseComponent
 
-	XMLName			xml.Name		`xml:"scroller"`
-	ScrollX			int				`xml:"scrollX,attr"`
-	ScrollY			int				`xml:"scrollY,attr"`
-	Slot			*c.Template		`xml:"template"`
+	XMLName xml.Name    `xml:"scroller"`
+	ScrollX int         `xml:"scrollX,attr"`
+	ScrollY int         `xml:"scrollY,attr"`
+	Slot    *c.Template `xml:"template"`
 }
 
 func (s *Scroller) Init() {
@@ -33,8 +32,8 @@ func (s *Scroller) Render() image.Image {
 		s.Ctx = gg.NewContext(s.ComputedSizeX, s.ComputedSizeY)
 	}
 
-	s.Ctx.SetColor(color.RGBA{0,0,0,255})
-	s.Ctx.Clear()	
+	s.Ctx.SetColor(color.RGBA{0, 0, 0, 255})
+	s.Ctx.Clear()
 
 	s.Ctx.DrawImage(im, s.PosX, s.PosY)
 
@@ -48,8 +47,7 @@ func (s *Scroller) Render() image.Image {
 		}
 	}
 
-
-	return s.Ctx.Image()	
+	return s.Ctx.Image()
 }
 
 func init() {

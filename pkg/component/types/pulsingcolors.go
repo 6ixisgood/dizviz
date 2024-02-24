@@ -2,19 +2,19 @@ package types
 
 import (
 	"encoding/xml"
+	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 	"image"
 	"image/color"
 	"math"
-	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 )
 
 type PulsingCircles struct {
 	c.BaseComponent
 
-	XMLName      xml.Name `xml:"pulsing-circles"`
-	NumCircles   int      `xml:"numCircles,attr"`
-	MaxRadius    float64  `xml:"maxRadius,attr"`
-	Offset       float64
+	XMLName    xml.Name `xml:"pulsing-circles"`
+	NumCircles int      `xml:"numCircles,attr"`
+	MaxRadius  float64  `xml:"maxRadius,attr"`
+	Offset     float64
 }
 
 func (pc *PulsingCircles) Init() {
@@ -33,7 +33,7 @@ func (pc *PulsingCircles) Render() image.Image {
 
 	centerX, centerY := float64(pc.Width())/2, float64(pc.Height())/2
 	for i := 0; i < pc.NumCircles; i++ {
-		angle := 2 * math.Pi / float64(pc.NumCircles) * float64(i) + pc.Offset
+		angle := 2*math.Pi/float64(pc.NumCircles)*float64(i) + pc.Offset
 		radius := pc.MaxRadius * (0.5 + 0.5*math.Sin(pc.Offset+float64(i)))
 
 		r := uint8((math.Sin(angle) + 1) / 2 * 255)

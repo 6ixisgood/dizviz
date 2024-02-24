@@ -11,15 +11,14 @@ type TemplateView struct {
 	templateString string
 }
 
-
 type TemplateViewConfig struct {
-	Template	string		`json:"template"`
+	Template string `json:"template"`
 }
 
 func (vc *TemplateViewConfig) Validate() error {
 	if vc.Template == "" {
 		return errors.New("'template' field is required")
-	} 
+	}
 	return nil
 }
 
@@ -45,6 +44,6 @@ func (v *TemplateView) TemplateString() string {
 func init() {
 	c.RegisterView("template", c.RegisteredView{
 		NewConfig: func() c.ViewConfig { return &TemplateViewConfig{} },
-		NewView: TemplateViewCreate,
+		NewView:   TemplateViewCreate,
 	})
 }

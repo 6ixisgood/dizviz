@@ -9,7 +9,7 @@ type ParticlesView struct {
 	c.BaseView
 }
 
-type ParticlesViewConfig struct {}
+type ParticlesViewConfig struct{}
 
 func (vc *ParticlesViewConfig) Validate() error {
 	return nil
@@ -39,6 +39,6 @@ func (v *ParticlesView) TemplateString() string {
 func init() {
 	c.RegisterView("particle", c.RegisteredView{
 		NewConfig: func() c.ViewConfig { return &ParticlesViewConfig{} },
-		NewView: ParticlesViewCreate,
+		NewView:   ParticlesViewCreate,
 	})
 }

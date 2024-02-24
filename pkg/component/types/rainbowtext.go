@@ -1,27 +1,27 @@
 package types
 
 import (
-	"fmt"
-	"math"
-	"image"
-	"image/color"
 	"encoding/xml"
-	"github.com/fogleman/gg"
-	"github.com/golang/freetype/truetype"
+	"fmt"
 	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
+	"github.com/fogleman/gg"
+	"github.com/golang/freetype/truetype"
+	"image"
+	"image/color"
+	"math"
 )
 
 // Rainbow text
 type AnimatedRainbowText struct {
 	c.BaseComponent
 
-	XMLName      xml.Name    `xml:"rainbow-text"`
-	Font         string      `xml:"font,attr"`		
-	FontStyle    string      `xml:"style,attr"`	
-	FontSize     float64     `xml:"size,attr"`	
-	Text         string      `xml:",chardata"`
-	colorIndex   int
+	XMLName    xml.Name `xml:"rainbow-text"`
+	Font       string   `xml:"font,attr"`
+	FontStyle  string   `xml:"style,attr"`
+	FontSize   float64  `xml:"size,attr"`
+	Text       string   `xml:",chardata"`
+	colorIndex int
 }
 
 func (art *AnimatedRainbowText) Init() {
@@ -39,10 +39,8 @@ func (art *AnimatedRainbowText) Init() {
 		art.ComputedSizeY = h_i
 	}
 
-
 	// resize context
 	art.Ctx = gg.NewContext(art.ComputedSizeX, art.ComputedSizeY)
-
 
 	var font = util.LoadFont(fmt.Sprintf("%s-%s", art.Font, art.FontStyle))
 	var face = truetype.NewFace(font, &truetype.Options{Size: art.FontSize})
@@ -50,7 +48,7 @@ func (art *AnimatedRainbowText) Init() {
 }
 
 func (art *AnimatedRainbowText) Render() image.Image {
-	art.Ctx.SetColor(color.RGBA{0,0,0,255})
+	art.Ctx.SetColor(color.RGBA{0, 0, 0, 255})
 	art.Ctx.Clear()
 	rainbowColors := []color.RGBA{
 		{255, 0, 0, 255},   // Red

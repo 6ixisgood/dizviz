@@ -1,47 +1,47 @@
 package common
 
 import (
-	"log"
-	"fmt"
-	"maps"
 	"bytes"
 	"encoding/xml"
-	"html/template"
+	"fmt"
 	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
+	"html/template"
+	"log"
+	"maps"
 )
 
 // define the View interface
 type View interface {
 	Init()
-	Template()				*compCommon.Template
+	Template() *compCommon.Template
 	SetTemplate(*compCommon.Template)
-	TemplateString()		string
-	TemplateData()			map[string]interface{}
+	TemplateString() string
+	TemplateData() map[string]interface{}
 	Stop()
 }
 
 type ViewCommonConfig struct {
-	MatrixRows			int
-	MatrixCols			int
-	ImageDir			string
-	CacheDir			string
-	DefaultImageSizeX	int
-	DefaultImageSizeY	int
-	DefaultFontSize		int
-	DefaultFontColor	string
-	DefaultFontStyle	string
-	DefaultFontType		string
+	MatrixRows        int
+	MatrixCols        int
+	ImageDir          string
+	CacheDir          string
+	DefaultImageSizeX int
+	DefaultImageSizeY int
+	DefaultFontSize   int
+	DefaultFontColor  string
+	DefaultFontStyle  string
+	DefaultFontType   string
 }
 
-type ViewConfig interface {}
+type ViewConfig interface{}
 
 type RegisteredView struct {
-	NewConfig		func() ViewConfig
-	NewView			func(ViewConfig) (View, error)
+	NewConfig func() ViewConfig
+	NewView   func(ViewConfig) (View, error)
 }
 
 var (
-	CommonConfig = &ViewCommonConfig{}
+	CommonConfig    = &ViewCommonConfig{}
 	RegisteredViews = map[string]RegisteredView{}
 )
 
@@ -74,7 +74,7 @@ func TemplateRefresh(v View) {
 				return "4th"
 			default:
 				return "N/A"
-			}	
+			}
 		},
 	}
 	tmpl = tmpl.Funcs(funcMap)
@@ -94,7 +94,7 @@ func TemplateRefresh(v View) {
 
 		%s
 	`
-	tmplString = fmt.Sprintf(tmplString, v.TemplateString())	
+	tmplString = fmt.Sprintf(tmplString, v.TemplateString())
 
 	// parse the template string from the view
 	tmpl, err := tmpl.Parse(tmplString)
@@ -106,8 +106,8 @@ func TemplateRefresh(v View) {
 	// merge data maps
 	data := map[string]interface{}{
 		"Ctx": CommonConfig,
-    }
-    maps.Copy(data, v.TemplateData())
+	}
+	maps.Copy(data, v.TemplateData())
 
 	// execute the template with the data
 	var buf bytes.Buffer
@@ -115,7 +115,7 @@ func TemplateRefresh(v View) {
 	if err != nil {
 		log.Fatalf("Unable to execute view template")
 		panic(err)
-	}	
+	}
 
 	// convert to string
 	tmplStr := buf.String()

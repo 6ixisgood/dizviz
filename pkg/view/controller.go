@@ -1,22 +1,21 @@
 package view
 
 import (
-	"log"
-	"image"
-	"time"
 	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	_ "github.com/6ixisgood/matrix-ticker/pkg/view/types"
+	"image"
+	"log"
+	"time"
 )
 
 var (
-	animation = &Animation{
-	}
+	animation = &Animation{}
 )
 
 type Animation struct {
-	view		viewCommon.View
-	template	compCommon.Template
+	view     viewCommon.View
+	template compCommon.Template
 }
 
 func (a *Animation) Init(newView viewCommon.View) {

@@ -1,11 +1,11 @@
 package util
 
 import (
-	"log"
 	"fmt"
-	"path/filepath"
-	"io/ioutil"	
 	"github.com/golang/freetype/truetype"
+	"io/ioutil"
+	"log"
+	"path/filepath"
 )
 
 func LoadFont(fontName string) *truetype.Font {
@@ -15,7 +15,7 @@ func LoadFont(fontName string) *truetype.Font {
 	if err != nil {
 		log.Fatalf("Failed to read font file: %v", err)
 	}
-// Parse font file into a truetype.Font 
+	// Parse font file into a truetype.Font
 	font, err := truetype.Parse(fontBytes)
 	if err != nil {
 		log.Fatalf("Failed to parse font file: %v", err)

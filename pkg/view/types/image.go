@@ -8,11 +8,11 @@ import (
 type ImagePlayerView struct {
 	c.BaseView
 
-	Src		string
+	Src string
 }
 
 type ImagePlayerViewConfig struct {
-	Src			string		`json:"src"`
+	Src string `json:"src"`
 }
 
 func (vc *ImagePlayerViewConfig) Validate() error {
@@ -40,7 +40,7 @@ func ImagePlayerViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 func (v *ImagePlayerView) TemplateData() map[string]interface{} {
 	return map[string]interface{}{
 		"Src": v.Src,
-	}  
+	}
 }
 
 func (v *ImagePlayerView) TemplateString() string {
@@ -54,6 +54,6 @@ func (v *ImagePlayerView) TemplateString() string {
 func init() {
 	c.RegisterView("image", c.RegisteredView{
 		NewConfig: func() c.ViewConfig { return &ImagePlayerViewConfig{} },
-		NewView: ImagePlayerViewCreate,
+		NewView:   ImagePlayerViewCreate,
 	})
 }

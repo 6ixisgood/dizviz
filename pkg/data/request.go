@@ -6,12 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
-    
+
 const (
 	defaultRateLimitDuration = time.Second
 	maxRetries               = 3
@@ -20,11 +20,11 @@ const (
 
 // APIClientOptions holds configuration options for the APIClient.
 type APIClientOptions struct {
-	BaseURL    string             // The base URL for API requests.
-	BasicAuth  *BasicAuthCredentials // Optional basic auth credentials.
-	Headers    map[string]string  // Headers to be added to each request.
-	Timeout    time.Duration      // Max time to wait for a response.
-	RateLimit  time.Duration      // Duration to wait between API calls.
+	BaseURL   string                // The base URL for API requests.
+	BasicAuth *BasicAuthCredentials // Optional basic auth credentials.
+	Headers   map[string]string     // Headers to be added to each request.
+	Timeout   time.Duration         // Max time to wait for a response.
+	RateLimit time.Duration         // Duration to wait between API calls.
 }
 
 // BasicAuthCredentials holds basic authentication username and password.
@@ -43,10 +43,10 @@ type APIRequest struct {
 
 // APIClient is the main API client type.
 type APIClient struct {
-	options      APIClientOptions  // Configuration options.
-	rateLimiter  chan struct{}  // Rate limiter channel.
-	ticker		 *time.Ticker	// ticker to reset rate limit
-	httpClient   *http.Client   // Underlying HTTP client.
+	options     APIClientOptions // Configuration options.
+	rateLimiter chan struct{}    // Rate limiter channel.
+	ticker      *time.Ticker     // ticker to reset rate limit
+	httpClient  *http.Client     // Underlying HTTP client.
 }
 
 // TimeoutError is an error indicating a request timeout.
@@ -78,7 +78,7 @@ func NewAPIClient(options APIClientOptions) *APIClient {
 	client := &APIClient{
 		options:     options,
 		rateLimiter: rateLimiter,
-		ticker:		time.NewTicker(options.RateLimit),
+		ticker:      time.NewTicker(options.RateLimit),
 		httpClient:  &http.Client{Timeout: options.Timeout},
 	}
 
@@ -88,12 +88,12 @@ func NewAPIClient(options APIClientOptions) *APIClient {
 }
 
 func (c *APIClient) refillTokens() {
-    for range c.ticker.C {
-        select {
-        case c.rateLimiter <- struct{}{}:
-        default:
-        }
-    }
+	for range c.ticker.C {
+		select {
+		case c.rateLimiter <- struct{}{}:
+		default:
+		}
+	}
 }
 
 // Do sends the API request and returns the response.
@@ -161,7 +161,6 @@ func (c *APIClient) DoAndUnmarshal(req *APIRequest, out interface{}) error {
 	return nil
 }
 
-
 func ReadFileAndUnmarshal(path string, out interface{}) error {
 	// Open the file
 	file, err := os.Open(path)
@@ -183,4 +182,3 @@ func ReadFileAndUnmarshal(path string, out interface{}) error {
 
 	return nil
 }
-

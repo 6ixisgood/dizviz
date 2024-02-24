@@ -1,31 +1,31 @@
 package types
 
 import (
-	"math"
 	"encoding/xml"
-	"image"
 	"fmt"
-	"log"
-	"github.com/fogleman/gg"
-	fontpkg "golang.org/x/image/font"
-	"github.com/golang/freetype"
-	"github.com/golang/freetype/truetype"
 	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
+	"github.com/fogleman/gg"
+	"github.com/golang/freetype"
+	"github.com/golang/freetype/truetype"
+	fontpkg "golang.org/x/image/font"
+	"image"
+	"log"
+	"math"
 )
 
 type Text struct {
 	c.BaseComponent
 
-	XMLName			xml.Name		`xml:"text"`
-	Font			string			`xml:"font,attr"`		
-	FontStyle		string			`xml:"style,attr"`	
-	FontSize		float64			`xml:"size,attr"`	
-	Color			util.RGBA		`xml:"color,attr"`
-	Text			string			`xml:",chardata"`
+	XMLName   xml.Name  `xml:"text"`
+	Font      string    `xml:"font,attr"`
+	FontStyle string    `xml:"style,attr"`
+	FontSize  float64   `xml:"size,attr"`
+	Color     util.RGBA `xml:"color,attr"`
+	Text      string    `xml:",chardata"`
 
-	img         	*image.RGBA
-	ftCtx			*freetype.Context
+	img   *image.RGBA
+	ftCtx *freetype.Context
 }
 
 func (t *Text) Init() {
@@ -50,7 +50,6 @@ func (t *Text) Init() {
 		t.ComputedSizeY = h_i
 	}
 
-
 	// resize context
 	t.Ctx = gg.NewContext(t.ComputedSizeX, t.ComputedSizeY)
 	// set up a blank image
@@ -64,9 +63,8 @@ func (t *Text) Init() {
 	t.ftCtx.SetClip(t.img.Bounds())
 	t.ftCtx.SetDst(t.img)
 	t.ftCtx.SetSrc(image.NewUniform(t.Color.RGBA)) // set the color
-	t.ftCtx.SetHinting(fontpkg.HintingNone) 
+	t.ftCtx.SetHinting(fontpkg.HintingNone)
 }
-
 
 func (t *Text) Render() image.Image {
 	// Convert the point to fixed.Point26_6 format for freetype

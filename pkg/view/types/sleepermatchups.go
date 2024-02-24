@@ -2,29 +2,29 @@ package types
 
 import (
 	"errors"
-	"time"
-	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
+	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	"time"
 )
 
 type SleeperMatchupsView struct {
 	c.BaseView
 
-	League			string
-	Week			string
-	SleeperClient	*d.Sleeper
-	matchups		[][]d.SleeperTeamFormatted
-	matchIndex		int
-	Phase			int
-	dataRefresh		*util.Refresher
-	phaseRefresh	*util.Refresher
-	league			d.SleeperLeagueFormatted
+	League        string
+	Week          string
+	SleeperClient *d.Sleeper
+	matchups      [][]d.SleeperTeamFormatted
+	matchIndex    int
+	Phase         int
+	dataRefresh   *util.Refresher
+	phaseRefresh  *util.Refresher
+	league        d.SleeperLeagueFormatted
 }
 
 type SleeperMatchupsViewConfig struct {
-	LeagueID	string		`json:"league_id"`
-	Week		string		`json:"week"`
+	LeagueID string `json:"league_id"`
+	Week     string `json:"week"`
 }
 
 func (vc *SleeperMatchupsViewConfig) Validate() error {
@@ -50,26 +50,26 @@ func SleeperMatchupsViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 	client := d.SleeperClient()
 
 	return &SleeperMatchupsView{
-		League: config.LeagueID,
-		Week: config.Week,
+		League:        config.LeagueID,
+		Week:          config.Week,
 		SleeperClient: client,
-		Phase: 0,
+		Phase:         0,
 	}, nil
 }
 
 func (v *SleeperMatchupsView) Init() {
 	// init ticker and stop chan
-    v.dataRefresh = util.RefresherCreate(60 * time.Second, v.RefreshData)
-    v.phaseRefresh = util.RefresherCreate(5 * time.Second, v.RefreshPhase)
-    v.RefreshData()
-    v.dataRefresh.Start()
-    v.phaseRefresh.Start()
+	v.dataRefresh = util.RefresherCreate(60*time.Second, v.RefreshData)
+	v.phaseRefresh = util.RefresherCreate(5*time.Second, v.RefreshPhase)
+	v.RefreshData()
+	v.dataRefresh.Start()
+	v.phaseRefresh.Start()
 }
 
 func (v *SleeperMatchupsView) RefreshData() {
 	v.matchups = v.SleeperClient.GetMatchupsFormatted(v.League, v.Week)
 	v.league = v.SleeperClient.GetLeagueFormatted(v.League)
-	 
+
 }
 
 func (v *SleeperMatchupsView) RefreshPhase() {
@@ -85,10 +85,10 @@ func (v *SleeperMatchupsView) RefreshPhase() {
 
 func (v *SleeperMatchupsView) TemplateData() map[string]interface{} {
 	return map[string]interface{}{
-		"Team1": v.matchups[v.matchIndex][0],
-		"Team2": v.matchups[v.matchIndex][1],
+		"Team1":  v.matchups[v.matchIndex][0],
+		"Team2":  v.matchups[v.matchIndex][1],
 		"League": v.league,
-		"Phase": v.Phase,
+		"Phase":  v.Phase,
 	}
 }
 
@@ -210,6 +210,6 @@ func (v *SleeperMatchupsView) TemplateString() string {
 func init() {
 	c.RegisterView("sleeper-matchups", c.RegisteredView{
 		NewConfig: func() c.ViewConfig { return &SleeperMatchupsViewConfig{} },
-		NewView: SleeperMatchupsViewCreate,
+		NewView:   SleeperMatchupsViewCreate,
 	})
 }

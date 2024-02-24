@@ -1,17 +1,17 @@
 package component
 
 import (
-	"os"
-	"log"
-	"image"
-	"fmt"
-	"runtime"
-	"path/filepath"
-	"io/ioutil"	
 	"encoding/xml"
-	"image/color"
+	"fmt"
 	"github.com/golang/freetype/truetype"
 	"github.com/nfnt/resize"
+	"image"
+	"image/color"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"runtime"
 )
 
 var (
@@ -42,7 +42,7 @@ func loadFont(fontName string) *truetype.Font {
 	if err != nil {
 		log.Fatalf("Failed to read font file: %v", err)
 	}
-// Parse font file into a truetype.Font 
+	// Parse font file into a truetype.Font
 	font, err := truetype.Parse(fontBytes)
 	if err != nil {
 		log.Fatalf("Failed to parse font file: %v", err)
@@ -50,11 +50,10 @@ func loadFont(fontName string) *truetype.Font {
 	return font
 }
 
-
 func fetchImageFromPath(path string) image.Image {
 	if contents, ok := imageCache[path]; ok {
 		return contents
-	} 
+	}
 	// else fetch the file
 	file, err := os.Open(path)
 	if err != nil {
@@ -66,10 +65,9 @@ func fetchImageFromPath(path string) image.Image {
 	img, _, err := image.Decode(file)
 	if err != nil {
 		log.Fatalf("Failed to decode the image: %v", err)
-	}	
+	}
 
 	imageCache[path] = img
-
 
 	return img
 }

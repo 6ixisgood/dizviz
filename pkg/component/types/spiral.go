@@ -1,18 +1,18 @@
 package types
 
 import (
-	"math"
-	"image"
 	"encoding/xml"
-	"github.com/fogleman/gg"
 	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
+	"github.com/fogleman/gg"
+	"image"
+	"math"
 )
 
 type SpiralGallery struct {
 	c.BaseComponent
 
 	XMLName     xml.Name     `xml:"spiral"`
-	Slots       []c.Template   `xml:"template"`
+	Slots       []c.Template `xml:"template"`
 	Angle       float64      // Rotation angle in degrees
 	CurrentSlot int
 }
