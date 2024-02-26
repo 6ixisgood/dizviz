@@ -3,6 +3,7 @@ package common
 import (
 	"bytes"
 	"encoding/xml"
+	"encoding/json"
 	"fmt"
 	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 	"html/template"
@@ -10,7 +11,7 @@ import (
 	"maps"
 )
 
-// define the View interface
+// View a structure to describe a layout of components at a given time
 type View interface {
 	Init()
 	Template() *compCommon.Template
@@ -20,6 +21,7 @@ type View interface {
 	Stop()
 }
 
+// ViewCommonConfig a set of global application configuration useful for rendering Views
 type ViewCommonConfig struct {
 	MatrixRows        int
 	MatrixCols        int
@@ -33,8 +35,22 @@ type ViewCommonConfig struct {
 	DefaultFontType   string
 }
 
+// ViewConfig type alias to hold raw config definition for a View
 type ViewConfig interface{}
 
+// ViewDefinition what defines a View? The Type of View it is and the View's configuration
+type ViewDefinition struct {
+	Type   string          `json:"type"`
+	Config ViewConfig 		`json:"config"`
+}
+
+// ViewDefinitionRaw similar to ViewDefinition, but Config is json.RawMessage ([]byte)
+type ViewDefinitionRaw struct {
+	Type   string          `json:"type"`
+	Config json.RawMessage 		`json:"config"`
+}
+
+// RegisteredView set of generic functions to a create a given View's config and the View itself
 type RegisteredView struct {
 	NewConfig func() ViewConfig
 	NewView   func(ViewConfig) (View, error)
@@ -53,6 +69,7 @@ func RegisterView(name string, creator RegisteredView) {
 	RegisteredViews[name] = creator
 }
 
+// TemplateRefresh static function to generate a View's template
 func TemplateRefresh(v View) {
 	// create the template object
 	tmpl := template.New("view-template")

@@ -122,48 +122,64 @@ func main() {
 	// 	`,
 	// }
 
-	body := `
-	{
-		"type": "image",
-		"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif"
-	}`
+	// body := `
+	// {
+	// 	"type": "image",
+	// 	"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif"
+	// }`
 
-	body = `
-	{
-		"views": [
-			{
-				"type": "image",
-				"config": {
-					"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif"
-				}
-			},
-			{
-				"type": "image",
-				"config": {
-					"src": "https://media.giphy.com/media/uHWzPe1dPgkEj2UXZb/giphy.gif"
-				},
-				"settings": {
-					"time": 10
-				}
-			}
-		],
-		"settings": {
-			"time": 2
+	// body = `
+	// {
+	// 	"views": [
+	// 		{
+	// 			"type": "image",
+	// 			"config": {
+	// 				"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif"
+	// 			}
+	// 		},
+	// 		{
+	// 			"type": "image",
+	// 			"config": {
+	// 				"src": "https://media.giphy.com/media/uHWzPe1dPgkEj2UXZb/giphy.gif"
+	// 			},
+	// 			"settings": {
+	// 				"time": 10
+	// 			}
+	// 		}
+	// 	],
+	// 	"settings": {
+	// 		"time": 2
+	// 	}
+	// }`
+
+	// body = `
+	// {
+	// 	"type": "text"
+	// }
+	// `
+
+	t := "matchups-scroll"
+	config := []byte(`
+		{
+			"league": "nfl",
+			"date": "2023-10-01T00:00:00Z"
 		}
-	}`
+	`)
 
-	regView := viewCommon.RegisteredViews["playlist"]
+	// go from []byte to specific ViewConfig type
+	regView := viewCommon.RegisteredViews[t]
 	configInstance := regView.NewConfig()
-	if err := json.Unmarshal([]byte(body), &configInstance); err != nil {
-		log.Printf("Error creating init view")
+	if err := json.Unmarshal(config, &configInstance); err != nil {
+		log.Printf(fmt.Sprintf("Config for view type %s is invalid", t))
 		return
 	}
 
 	newView, err := regView.NewView(configInstance)
 	if err != nil {
-		log.Printf(fmt.Sprintf("Error %s", err))
+		log.Printf(fmt.Sprintf("Failed to create view of type %s with given config\nError: %s", t, err))
 		return
 	}
+
 
 	animation.Init(newView)
 	go tk.PlayAnimation(animation)

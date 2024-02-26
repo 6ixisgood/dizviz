@@ -1,8 +1,8 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
+	"encoding/json"
 	"github.com/6ixisgood/matrix-ticker/pkg/view"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	"github.com/gin-gonic/gin"
@@ -37,9 +37,13 @@ func InitializeRoutes() {
 }
 
 func getAllViews(c *gin.Context) {
-	var views []string
-	for view, _ := range viewCommon.RegisteredViews {
-		views = append(views, view)
+	var views []viewCommon.ViewDefinition
+	for name, regView := range viewCommon.RegisteredViews {
+		definition := viewCommon.ViewDefinition{
+			Type: name,
+			Config: regView.NewConfig(),
+		}
+		views = append(views, definition)
 	}
 	c.JSON(http.StatusOK, views)
 }
@@ -54,12 +58,7 @@ func getViewById(c *gin.Context) {
 }
 
 func displayView(c *gin.Context) {
-	type RequestBody struct {
-		Type   string          `json:"type"`
-		Config json.RawMessage `json:"config"`
-	}
-
-	var body RequestBody
+	var body viewCommon.ViewDefinitionRaw
 	if err := c.BindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad request body"})
 		return

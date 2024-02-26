@@ -1,8 +1,8 @@
 package types
 
 import (
-	"encoding/json"
 	"errors"
+	"encoding/json"
 	"fmt"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	"time"
@@ -16,10 +16,13 @@ type PlaylistView struct {
 	timings     []time.Duration
 }
 
+const (
+	DefaultPlayTime = 60
+)
+
 type PlaylistViewConfig struct {
 	Views []struct {
-		Type     string          `json:"type"`
-		Config   json.RawMessage `json:"config"`
+		c.ViewDefinition
 		Settings struct {
 			Time time.Duration `json:"time"`
 		} `json:"settings"`
@@ -28,6 +31,49 @@ type PlaylistViewConfig struct {
 		Time time.Duration `json:"time"`
 	} `json:"settings"`
 }
+
+// type ViewConfigDesc struct {
+// 	FieldName		string
+// 	FieldType		string
+// }
+
+
+// [
+// 	{
+// 		"type": "text",	
+// 		"fields" [
+// 			{
+// 				"name": "text",
+// 				"type": "text"
+// 			}
+// 		]
+// 	},
+// 	{
+// 		"type": "playlist",
+// 		"fields": [
+// 			{
+// 				"name": "views",
+// 				"type": "nested",
+// 				"nested": {
+// 					{
+// 						"name": "type",
+// 						"type": ""
+// 					}
+// 				}
+// 			},
+// 			{
+// 				"name": "settings",
+// 				"type": "nested",
+// 				"nested": [
+// 					{
+// 						"name": "time",
+// 						"type": "number"
+// 					}
+// 				]
+// 			}
+// 		]
+// 	}
+// ]
 
 func (vc *PlaylistViewConfig) Validate() error {
 	if vc.Views == nil {
@@ -54,7 +100,7 @@ func PlaylistViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 	}
 
 	// parse global settings
-	var defaultTime time.Duration = 10
+	var defaultTime time.Duration = DefaultPlayTime
 	if config.Settings.Time > 0 {
 		defaultTime = config.Settings.Time
 	}
@@ -68,8 +114,15 @@ func PlaylistViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 			return nil, errors.New(fmt.Sprintf("View type %s does not exist", v.Type))
 		}
 
+		// go from the ViewConfig (map[string]interface{}) to []byte
+		jsonConfig, err := json.Marshal(v.Config)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Error marshaling generic ViewConfig to []byte"))
+		}
+
+		// go from []byte to specific ViewConfig type
 		configInstance := regView.NewConfig()
-		if err := json.Unmarshal(v.Config, &configInstance); err != nil {
+		if err := json.Unmarshal(jsonConfig, &configInstance); err != nil {
 			return nil, errors.New(fmt.Sprintf("Config for view type %s is invalid", v.Type))
 		}
 
