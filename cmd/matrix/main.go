@@ -166,6 +166,13 @@ func main() {
 		}
 	`)
 
+	t = "text"
+	config = []byte(`
+		{
+			"text": "HI"
+		}
+	`)
+
 	// go from []byte to specific ViewConfig type
 	regView := viewCommon.RegisteredViews[t]
 	configInstance := regView.NewConfig()
@@ -179,7 +186,6 @@ func main() {
 		log.Printf(fmt.Sprintf("Failed to create view of type %s with given config\nError: %s", t, err))
 		return
 	}
-
 
 	animation.Init(newView)
 	go tk.PlayAnimation(animation)

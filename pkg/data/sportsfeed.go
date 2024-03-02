@@ -46,7 +46,7 @@ func InitSportsFeedClient(config SportsFeedConfig) {
 // sportsfeedDateFormat take in a time.Time and return the proper seasona and date format for sportsfeed
 func sportsfeedDateFormat(date time.Time) (string, string) {
 	// come up with date id for sportsfeed
-	dateStr := date.Format("20060102")	
+	dateStr := date.Format("20060102")
 	year, _ := strconv.Atoi(dateStr[:4])
 	month, _ := strconv.Atoi(dateStr[4:6])
 
@@ -97,8 +97,6 @@ func (s *SportsFeed) FetchDailyNFLGamesInfo(date time.Time) DailyGamesNFLRespons
 
 	return responseData
 }
-
-
 
 type NFLBoxScoreResponseFormatted struct {
 	HomeAbbreviation    string

@@ -3,37 +3,24 @@ package types
 import (
 	"errors"
 	"fmt"
-	"time"
-	"github.com/6ixisgood/matrix-ticker/pkg/view/model"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	"github.com/6ixisgood/matrix-ticker/pkg/view/model"
+	"time"
 )
 
 type MatchupsScrollView struct {
 	c.BaseView
 
-	Date             time.Time
-	Matchups		 []model.Matchup
-	Layout           string
-	League			 string
+	Date     time.Time
+	Matchups []model.Matchup
+	Layout   string
+	League   string
 }
 
 type MatchupsScrollViewConfig struct {
-	Layout string `json:"layout"`
+	Layout string    `json:"layout""`
 	Date   time.Time `json:"date"`
-	League string `json:"league"`
-}
-
-func (vc *MatchupsScrollViewConfig) Validate() error {
-	if vc.Layout == "" {
-		vc.Layout = "flat"
-	}
-	if vc.Date.IsZero() {
-		return errors.New("'date' field is required")
-	}
-	if vc.League == "" {
-		return errors.New("'league' field is required")
-	}
-	return nil
+	League string    `json:"league" spec:"required:'true'"`
 }
 
 func MatchupsScrollViewCreate(viewConfig c.ViewConfig) (c.View, error) {
@@ -42,15 +29,14 @@ func MatchupsScrollViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 		return nil, errors.New("Error asserting type MatchupsScrollViewConfig")
 	}
 
-	if err := config.Validate(); err != nil {
+	if err := c.ValidateViewConfig(config); err != nil {
 		return nil, err
 	}
 
-
 	return &MatchupsScrollView{
-		Date:             config.Date,
-		Layout:           config.Layout,
-		League:			config.League,
+		Date:   config.Date,
+		Layout: config.Layout,
+		League: config.League,
 	}, nil
 }
 

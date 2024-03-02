@@ -1,8 +1,8 @@
 package types
 
 import (
-	"errors"
 	"encoding/json"
+	"errors"
 	"fmt"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	"time"
@@ -11,7 +11,7 @@ import (
 type PlaylistView struct {
 	c.BaseView
 
-	views       []c.View
+	views       []c.View `ui:"label='Default Duration',type='number',min='1',hint='Enter default time in seconds'"`
 	activeIndex int
 	timings     []time.Duration
 }
@@ -24,12 +24,12 @@ type PlaylistViewConfig struct {
 	Views []struct {
 		c.ViewDefinition
 		Settings struct {
-			Time time.Duration `json:"time"`
-		} `json:"settings"`
-	} `json:"views"`
+			Time time.Duration `json:"time" spec:"label='Time (s)',type='number',required=true,min=10"`
+		} `json:"settings" spec:"label='View Settings',type='section'"`
+	} `json:"views" spec:"label='Views',type='list'"`
 	Settings struct {
-		Time time.Duration `json:"time"`
-	} `json:"settings"`
+		Time time.Duration `json:"time" spec:"label='Default Duration',type='number',min='1',hint='Enter default time in seconds'"`
+	} `json:"settings" spec:"label='Global Settings',type='section'"`
 }
 
 // type ViewConfigDesc struct {
@@ -37,57 +37,42 @@ type PlaylistViewConfig struct {
 // 	FieldType		string
 // }
 
-
-// [
-// 	{
-// 		"type": "text",	
-// 		"fields" [
-// 			{
-// 				"name": "text",
-// 				"type": "text"
-// 			}
-// 		]
-// 	},
-// 	{
-// 		"type": "playlist",
-// 		"fields": [
-// 			{
-// 				"name": "views",
-// 				"type": "nested",
-// 				"nested": {
-// 					{
-// 						"name": "type",
-// 						"type": ""
-// 					}
-// 				}
-// 			},
-// 			{
-// 				"name": "settings",
-// 				"type": "nested",
-// 				"nested": [
-// 					{
-// 						"name": "time",
-// 						"type": "number"
-// 					}
-// 				]
-// 			}
-// 		]
-// 	}
-// ]
-
-func (vc *PlaylistViewConfig) Validate() error {
-	if vc.Views == nil {
-		return errors.New("'Views' field is required")
-	}
-
-	for i, v := range vc.Views {
-		if v.Type == "" {
-			return errors.New(fmt.Sprintf("'Type' field is required for view in position %d", i))
-		}
-	}
-
-	return nil
-}
+// {
+//   "Views": {
+//     "label": "Views",
+//     "type": "list",
+//     "fields": {
+//       "Type": {
+//         "label": "View Type",
+//         "type": "text"
+//       },
+//       "Settings": {
+//         "label": "View Settings",
+//         "type": "section",
+//         "fields": {
+//           "Time": {
+//             "label": "Time (s)",
+//             "type": "number",
+//             "min": "1",
+//             "hint": "Duration in seconds"
+//           }
+//         }
+//       }
+//     }
+//   },
+//   "Settings": {
+//     "label": "Global Settings",
+//     "type": "section",
+//     "fields": {
+//       "Time": {
+//         "label": "Default Duration",
+//         "type": "number",
+//         "min": "1",
+//         "hint": "Enter default time in seconds"
+//       }
+//     }
+//   }
+// }
 
 func PlaylistViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 	config, ok := viewConfig.(*PlaylistViewConfig)
@@ -95,7 +80,7 @@ func PlaylistViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 		return nil, errors.New("Error asserting type PlaylistViewConfig")
 	}
 
-	if err := config.Validate(); err != nil {
+	if err := c.ValidateViewConfig(config); err != nil {
 		return nil, err
 	}
 

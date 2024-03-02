@@ -2,8 +2,8 @@ package common
 
 import (
 	"bytes"
-	"encoding/xml"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 	"html/template"
@@ -40,14 +40,14 @@ type ViewConfig interface{}
 
 // ViewDefinition what defines a View? The Type of View it is and the View's configuration
 type ViewDefinition struct {
-	Type   string          `json:"type"`
-	Config ViewConfig 		`json:"config"`
+	Type   string     `json:"type" spec:"label='View Type',required='true'"`
+	Config ViewConfig `json:"config" spec:"label='View Config',required='true'"`
 }
 
 // ViewDefinitionRaw similar to ViewDefinition, but Config is json.RawMessage ([]byte)
 type ViewDefinitionRaw struct {
 	Type   string          `json:"type"`
-	Config json.RawMessage 		`json:"config"`
+	Config json.RawMessage `json:"config"`
 }
 
 // RegisteredView set of generic functions to a create a given View's config and the View itself

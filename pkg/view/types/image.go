@@ -12,14 +12,7 @@ type ImagePlayerView struct {
 }
 
 type ImagePlayerViewConfig struct {
-	Src string `json:"src"`
-}
-
-func (vc *ImagePlayerViewConfig) Validate() error {
-	if vc.Src == "" {
-		return errors.New("'src' field is required")
-	}
-	return nil
+	Src string `json:"src" spec:"required:'true'"`
 }
 
 func ImagePlayerViewCreate(viewConfig c.ViewConfig) (c.View, error) {
@@ -28,7 +21,7 @@ func ImagePlayerViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 		return nil, errors.New("Error asserting type ImagePlayerViewConfig")
 	}
 
-	if err := config.Validate(); err != nil {
+	if err := c.ValidateViewConfig(config); err != nil {
 		return nil, err
 	}
 

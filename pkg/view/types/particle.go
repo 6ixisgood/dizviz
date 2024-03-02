@@ -11,17 +11,13 @@ type ParticlesView struct {
 
 type ParticlesViewConfig struct{}
 
-func (vc *ParticlesViewConfig) Validate() error {
-	return nil
-}
-
 func ParticlesViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 	config, ok := viewConfig.(*ParticlesViewConfig)
 	if !ok {
 		return nil, errors.New("Error asserting type ParticlesViewConfig")
 	}
 
-	if err := config.Validate(); err != nil {
+	if err := c.ValidateViewConfig(config); err != nil {
 		return nil, err
 	}
 

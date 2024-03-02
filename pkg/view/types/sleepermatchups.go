@@ -5,6 +5,7 @@ import (
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	"strconv"
 	"time"
 )
 
@@ -12,7 +13,7 @@ type SleeperMatchupsView struct {
 	c.BaseView
 
 	League        string
-	Week          string
+	Week          int
 	SleeperClient *d.Sleeper
 	matchups      [][]d.SleeperTeamFormatted
 	matchIndex    int
@@ -23,18 +24,8 @@ type SleeperMatchupsView struct {
 }
 
 type SleeperMatchupsViewConfig struct {
-	LeagueID string `json:"league_id"`
-	Week     string `json:"week"`
-}
-
-func (vc *SleeperMatchupsViewConfig) Validate() error {
-	if vc.LeagueID == "" {
-		return errors.New("'league_id' field is required")
-	}
-	if vc.Week == "" {
-		return errors.New("'week' field is required")
-	}
-	return nil
+	LeagueID string `json:"league_id" spec:"required:'true'"`
+	Week     int    `json:"week" spec:"required:'true',min='1',max="18"`
 }
 
 func SleeperMatchupsViewCreate(viewConfig c.ViewConfig) (c.View, error) {
@@ -43,7 +34,7 @@ func SleeperMatchupsViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 		return nil, errors.New("Error asserting type SleeperMatchupsViewConfig")
 	}
 
-	if err := config.Validate(); err != nil {
+	if err := c.ValidateViewConfig(config); err != nil {
 		return nil, err
 	}
 
@@ -67,7 +58,7 @@ func (v *SleeperMatchupsView) Init() {
 }
 
 func (v *SleeperMatchupsView) RefreshData() {
-	v.matchups = v.SleeperClient.GetMatchupsFormatted(v.League, v.Week)
+	v.matchups = v.SleeperClient.GetMatchupsFormatted(v.League, strconv.Itoa(v.Week))
 	v.league = v.SleeperClient.GetLeagueFormatted(v.League)
 
 }

@@ -12,14 +12,7 @@ type TextView struct {
 }
 
 type TextViewConfig struct {
-	Text string `json:"text"`
-}
-
-func (vc *TextViewConfig) Validate() error {
-	if vc.Text == "" {
-		return errors.New("'text' field is required")
-	}
-	return nil
+	Text string `json:"text" spec:"required:'true',min='1'"`
 }
 
 func TextViewCreate(viewConfig c.ViewConfig) (c.View, error) {
@@ -28,7 +21,7 @@ func TextViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 		return nil, errors.New("Error asserting type TextViewConfig")
 	}
 
-	if err := config.Validate(); err != nil {
+	if err := c.ValidateViewConfig(config); err != nil {
 		return nil, err
 	}
 
@@ -46,8 +39,7 @@ func (v *TextView) TemplateData() map[string]interface{} {
 func (v *TextView) TemplateString() string {
 	return `
 		<template dir="row" justify="space-between" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">One</text>
-			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">Two</text>
+			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
 		</template>
 	`
 }

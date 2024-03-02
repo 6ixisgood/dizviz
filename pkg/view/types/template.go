@@ -12,14 +12,7 @@ type TemplateView struct {
 }
 
 type TemplateViewConfig struct {
-	Template string `json:"template"`
-}
-
-func (vc *TemplateViewConfig) Validate() error {
-	if vc.Template == "" {
-		return errors.New("'template' field is required")
-	}
-	return nil
+	Template string `json:"template" spec:"required:'true'"`
 }
 
 func TemplateViewCreate(viewConfig c.ViewConfig) (c.View, error) {
@@ -28,7 +21,7 @@ func TemplateViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 		return nil, errors.New("Error asserting type TemplateViewConfig")
 	}
 
-	if err := config.Validate(); err != nil {
+	if err := c.ValidateViewConfig(config); err != nil {
 		return nil, err
 	}
 

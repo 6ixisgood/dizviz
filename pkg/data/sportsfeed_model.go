@@ -127,10 +127,10 @@ type DailyGamesNFLResponse struct {
 	LastUpdatedOn time.Time `json:"lastUpdatedOn"`
 	Games         []struct {
 		Schedule struct {
-			ID        int         `json:"id"`
-			Week      int         `json:"week"`
-			StartTime time.Time   `json:"startTime"`
-			EndedTime time.Time		`json:"endedTime"`
+			ID        int       `json:"id"`
+			Week      int       `json:"week"`
+			StartTime time.Time `json:"startTime"`
+			EndedTime time.Time `json:"endedTime"`
 			AwayTeam  struct {
 				ID           int    `json:"id"`
 				Abbreviation string `json:"abbreviation"`
@@ -154,20 +154,20 @@ type DailyGamesNFLResponse struct {
 			Weather                  interface{}   `json:"weather"`
 		} `json:"schedule"`
 		Score struct {
-			CurrentQuarter                 int   `json:"currentQuarter"`
-			CurrentQuarterSecondsRemaining int   `json:"currentQuarterSecondsRemaining"`
-			CurrentIntermission            interface{}   `json:"currentIntermission"`
-			TeamInPossession               interface{}   `json:"teamInPossession"`
-			CurrentDown                    interface{}   `json:"currentDown"`
-			CurrentYardsRemaining          interface{}   `json:"currentYardsRemaining"`
-			LineOfScrimmage                interface{}   `json:"lineOfScrimmage"`
-			AwayScoreTotal                 int   `json:"awayScoreTotal"`
-			HomeScoreTotal                 int   `json:"homeScoreTotal"`
+			CurrentQuarter                 int         `json:"currentQuarter"`
+			CurrentQuarterSecondsRemaining int         `json:"currentQuarterSecondsRemaining"`
+			CurrentIntermission            interface{} `json:"currentIntermission"`
+			TeamInPossession               interface{} `json:"teamInPossession"`
+			CurrentDown                    interface{} `json:"currentDown"`
+			CurrentYardsRemaining          interface{} `json:"currentYardsRemaining"`
+			LineOfScrimmage                interface{} `json:"lineOfScrimmage"`
+			AwayScoreTotal                 int         `json:"awayScoreTotal"`
+			HomeScoreTotal                 int         `json:"homeScoreTotal"`
 			Quarters                       interface{} `json:"quarters"`
 		} `json:"score"`
 	} `json:"games"`
 	References struct {
-		TeamReferences []DailyGamesNFLTeamReference `json:"teamReferences"`
+		TeamReferences  []DailyGamesNFLTeamReference `json:"teamReferences"`
 		VenueReferences []struct {
 			ID             int    `json:"id"`
 			Name           string `json:"name"`

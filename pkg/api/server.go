@@ -1,8 +1,8 @@
 package api
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"github.com/6ixisgood/matrix-ticker/pkg/view"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	"github.com/gin-gonic/gin"
@@ -40,7 +40,7 @@ func getAllViews(c *gin.Context) {
 	var views []viewCommon.ViewDefinition
 	for name, regView := range viewCommon.RegisteredViews {
 		definition := viewCommon.ViewDefinition{
-			Type: name,
+			Type:   name,
 			Config: regView.NewConfig(),
 		}
 		views = append(views, definition)
