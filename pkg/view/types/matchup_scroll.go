@@ -18,9 +18,9 @@ type MatchupsScrollView struct {
 }
 
 type MatchupsScrollViewConfig struct {
-	Layout string    `json:"layout""`
-	Date   time.Time `json:"date"`
-	League string    `json:"league" spec:"required:'true'"`
+	Layout string    `json:"layout" spec:"label='Layout'"`
+	Date   time.Time `json:"date" spec:"required='true',label='Date'"`
+	League string    `json:"league" spec:"required='true',label='League'"`
 }
 
 func MatchupsScrollViewCreate(viewConfig c.ViewConfig) (c.View, error) {

@@ -12,7 +12,7 @@ type TextView struct {
 }
 
 type TextViewConfig struct {
-	Text string `json:"text" spec:"required:'true',min='1'"`
+	Text string `json:"text" spec:"required='true',min='1',label="Text"`
 }
 
 func TextViewCreate(viewConfig c.ViewConfig) (c.View, error) {

@@ -31,21 +31,18 @@ func SetAppServerConfig(config *AppServerConfig) {
 }
 
 func InitializeRoutes() {
-	Server.router.GET("/views", getAllViews)
+	Server.router.GET("/views/configs", getAllViewConfigs)
 	Server.router.GET("/views/:id", getViewById)
 	Server.router.POST("/display", displayView)
 }
 
-func getAllViews(c *gin.Context) {
-	var views []viewCommon.ViewDefinition
+func getAllViewConfigs(c *gin.Context) {
+	configs := make(map[string]interface{})
 	for name, regView := range viewCommon.RegisteredViews {
-		definition := viewCommon.ViewDefinition{
-			Type:   name,
-			Config: regView.NewConfig(),
-		}
-		views = append(views, definition)
+		configSpec := viewCommon.GenerateViewConfigSpecJson(regView.NewConfig())
+		configs[name] = configSpec
 	}
-	c.JSON(http.StatusOK, views)
+	c.JSON(http.StatusOK, configs)
 }
 
 func getViewById(c *gin.Context) {

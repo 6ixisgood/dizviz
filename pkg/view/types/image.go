@@ -12,7 +12,7 @@ type ImagePlayerView struct {
 }
 
 type ImagePlayerViewConfig struct {
-	Src string `json:"src" spec:"required:'true'"`
+	Src string `json:"src" spec:"required='true',label='Src (URL/Filepath)'"`
 }
 
 func ImagePlayerViewCreate(viewConfig c.ViewConfig) (c.View, error) {

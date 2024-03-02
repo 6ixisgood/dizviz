@@ -12,7 +12,7 @@ type TemplateView struct {
 }
 
 type TemplateViewConfig struct {
-	Template string `json:"template" spec:"required:'true'"`
+	Template string `json:"template" spec:"required='true',label='Raw Template'"`
 }
 
 func TemplateViewCreate(viewConfig c.ViewConfig) (c.View, error) {

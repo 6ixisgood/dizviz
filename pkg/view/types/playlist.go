@@ -11,7 +11,7 @@ import (
 type PlaylistView struct {
 	c.BaseView
 
-	views       []c.View `ui:"label='Default Duration',type='number',min='1',hint='Enter default time in seconds'"`
+	views       []c.View
 	activeIndex int
 	timings     []time.Duration
 }
@@ -20,16 +20,18 @@ const (
 	DefaultPlayTime = 60
 )
 
+type PlaylistViewConfigView struct {
+	c.ViewDefinition `json:"viewDefinition" spec:"label='View Definition'"`
+	Settings         PlaylistViewConfigSettings `json:"settings" spec:"label='Settings'"`
+}
+
+type PlaylistViewConfigSettings struct {
+	Time time.Duration `json:"time" spec:"label='Duration(s)',min='20',max='100'"`
+}
+
 type PlaylistViewConfig struct {
-	Views []struct {
-		c.ViewDefinition
-		Settings struct {
-			Time time.Duration `json:"time" spec:"label='Time (s)',type='number',required=true,min=10"`
-		} `json:"settings" spec:"label='View Settings',type='section'"`
-	} `json:"views" spec:"label='Views',type='list'"`
-	Settings struct {
-		Time time.Duration `json:"time" spec:"label='Default Duration',type='number',min='1',hint='Enter default time in seconds'"`
-	} `json:"settings" spec:"label='Global Settings',type='section'"`
+	Views    []PlaylistViewConfigView   `json:"views" spec:"label='Views',min='1'"`
+	Settings PlaylistViewConfigSettings `json:"settings" spec:"label='Global Settings'"`
 }
 
 // type ViewConfigDesc struct {
@@ -73,6 +75,13 @@ type PlaylistViewConfig struct {
 //     }
 //   }
 // }
+
+func PlaylistViewConfigCreate() c.ViewConfig {
+	return &PlaylistViewConfig{
+		Views:    make([]PlaylistViewConfigView, 0),
+		Settings: PlaylistViewConfigSettings{},
+	}
+}
 
 func PlaylistViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 	config, ok := viewConfig.(*PlaylistViewConfig)
@@ -172,7 +181,7 @@ func (v *PlaylistView) Init() {
 
 func init() {
 	c.RegisterView("playlist", c.RegisteredView{
-		NewConfig: func() c.ViewConfig { return &PlaylistViewConfig{} },
+		NewConfig: PlaylistViewConfigCreate,
 		NewView:   PlaylistViewCreate,
 	})
 }

@@ -9,6 +9,8 @@ import (
 	"html/template"
 	"log"
 	"maps"
+	"reflect"
+	"time"
 )
 
 // View a structure to describe a layout of components at a given time
@@ -147,4 +149,79 @@ func TemplateRefresh(v View) {
 	// set new template and init
 	v.SetTemplate(&t)
 	t.Init()
+}
+
+type ViewConfigFieldSpec struct {
+	Field    string
+	Type     reflect.Type
+	Value    interface{}
+	Kind     reflect.Kind
+	Required bool
+	Min      int
+	Max      int
+	Label    string
+}
+
+// ValidateViewConfig takes a ViewConfig and using the rules defined by
+// "spec" field tags, it validates the configuration
+func ValidateViewConfig(v ViewConfig) error {
+	validators := generateFieldSpecs(v, "")
+
+	for _, validator := range validators {
+		if validator.Required && isEmpty(validator.Value, validator.Kind) {
+			return fmt.Errorf("field %s is required", validator.Field)
+		}
+		switch validator.Kind {
+		case reflect.Int, reflect.Int64:
+			switch validator.Type {
+			case reflect.TypeOf(time.Duration(0)):
+				dur, ok := validator.Value.(time.Duration)
+				if !ok {
+					return fmt.Errorf("error converting field %s of type %s to time.Duration", validator.Field, validator.Type)
+				}
+				if time.Duration(validator.Min) != 0 && dur < time.Duration(validator.Min) {
+					return fmt.Errorf("field %s must be at least %d", validator.Field, validator.Min)
+				}
+				if time.Duration(validator.Max) != 0 && dur > time.Duration(validator.Max) {
+					return fmt.Errorf("field %s must be no more than %d", validator.Field, validator.Max)
+				}
+			default:
+				num, ok := validator.Value.(int)
+				if !ok {
+					return fmt.Errorf("error converting field %s of type %s to int", validator.Field, validator.Type)
+				}
+				if validator.Min != 0 && num < validator.Min {
+					return fmt.Errorf("field %s must be at least %d", validator.Field, validator.Min)
+				}
+				if validator.Max != 0 && num > validator.Max {
+					return fmt.Errorf("field %s must be no more than %d", validator.Field, validator.Max)
+				}
+			}
+
+		case reflect.String:
+			str, ok := validator.Value.(string)
+			if !ok {
+				return fmt.Errorf("error converting field %s of type %s to string", validator.Field, validator.Type)
+			}
+			if validator.Min != 0 && len(str) < validator.Min {
+				return fmt.Errorf("field %s must have at least %d characters", validator.Field, validator.Min)
+			}
+			if validator.Max != 0 && len(str) > validator.Max {
+				return fmt.Errorf("field %s must have no more than %d characters", validator.Field, validator.Max)
+			}
+		case reflect.Slice:
+			sliceVal := reflect.ValueOf(validator.Value)
+			if sliceVal.Kind() != reflect.Slice {
+				return fmt.Errorf("field %s is not a slice", validator.Field)
+			}
+			if validator.Min != 0 && sliceVal.Len() < validator.Min {
+				return fmt.Errorf("field %s must contain at least %d items", validator.Field, validator.Min)
+			}
+			if validator.Max != 0 && sliceVal.Len() > validator.Max {
+				return fmt.Errorf("field %s must contain no more than %d items", validator.Field, validator.Max)
+			}
+		}
+	}
+
+	return nil
 }
