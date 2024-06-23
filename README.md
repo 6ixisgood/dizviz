@@ -1,17 +1,4 @@
-# Matrix Ticker
+# DizViz
+Dizplay some fun Vizualizations! 
 
-Control an RPI attached matrix with a variety of animations.
-
-View form details
-implement nhl scroll
-implement nhl/nfl box score
-nfl logos
-component padding
-view definition persistance
-frame buffer
-decouple display from frame generation
-
-
-
-# Local flags for rpi matrix
-export CGO_CFLAGS="-I/home/andrew/Lab/rpi-rgb-led-matrix/include -DSHOW_REFRESH_RATE"; export CGO_LDFLAGS="-lrgbmatrix -L/home/andrew/Lab/rpi-rgb-led-matrix/lib -lstdc++ -lm"
+DizViz is a dynamic, template-driven graphics display tool designed to fetch data from various sources and weave it into DIY visual displays.  Vue.js-inspired templates combine the flexibility of the GO programming language with a structured, semantic display language.
