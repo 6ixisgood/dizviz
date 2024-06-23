@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/6ixisgood/matrix-ticker/pkg/view"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	"github.com/6ixisgood/matrix-ticker/pkg/store"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"log"
 	"net/http"
 )
@@ -17,6 +19,7 @@ type AppServer struct {
 type AppServerConfig struct {
 	AllowedHost string
 	Port        string
+	Store		*store.Store
 }
 
 var (
@@ -31,12 +34,74 @@ func SetAppServerConfig(config *AppServerConfig) {
 }
 
 func InitializeRoutes() {
-	Server.router.GET("/views/configs", getAllViewConfigs)
+	Server.router.GET("/views/configSpecs", getAllViewConfigSpecs)
+	Server.router.GET("/views/definitions", getAllViewDefinitions)
+    Server.router.POST("/views/definitions", saveViewDefinition)
+    Server.router.GET("/views/definitions/:id", getViewDefinition)
 	Server.router.GET("/views/:id", getViewById)
-	Server.router.POST("/display", displayView)
+	Server.router.POST("/display/:id", displayViewById)
 }
 
-func getAllViewConfigs(c *gin.Context) {
+func getAllViewDefinitions(c *gin.Context) {
+    definitions, err := Config.Store.GetAllViewDefinitions()
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"message": "Error retrieving view definitions"})
+        return
+    }
+    c.JSON(http.StatusOK, definitions)
+}
+
+func getViewDefinition(c *gin.Context) {
+    id := c.Param("id")
+    definition, err := Config.Store.GetViewDefinition(id)
+    if err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"message": "View definition not found"})
+        return
+    }
+    c.JSON(http.StatusOK, definition)
+}
+
+func saveViewDefinition(c *gin.Context) {
+    var body viewCommon.ViewDefinitionRaw
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad request body"})
+		return
+	}
+
+	regView, exists := viewCommon.RegisteredViews[body.Type]
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "View type does not exist"})
+		return
+	}
+
+	configInstance := regView.NewConfig()
+	if err := json.Unmarshal(body.Config, &configInstance); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad view config passed"})
+		return
+	}
+
+	// Generate a UUID if the definition doesn't have an ID
+    if body.Id == "" {
+        body.Id = uuid.New().String()
+    }
+
+	definition := viewCommon.ViewDefinition{
+		Id: body.Id,
+		Name: body.Name,
+		Type: body.Type,
+		Config: configInstance,
+	}
+
+    err := Config.Store.SaveViewDefinition(definition)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"message": "Error saving view definition"})
+        return
+    }
+    // Return the ID of the saved definition to the client
+    c.JSON(http.StatusOK, gin.H{"message": "View definition saved successfully", "id": definition.Id})
+}
+
+func getAllViewConfigSpecs(c *gin.Context) {
 	configs := make(map[string]interface{})
 	for name, regView := range viewCommon.RegisteredViews {
 		configSpec := viewCommon.GenerateViewConfigSpecJson(regView.NewConfig())
@@ -52,6 +117,43 @@ func getViewById(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+}
+
+func displayViewById(c *gin.Context) {
+	viewDefinitionId := c.Param("id")
+
+	// was ID given?
+	if viewDefinitionId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "No valid ID provided"})
+		return
+	}	
+
+	// fetch by ID
+	viewDefinition, err := Config.Store.GetViewDefinition(viewDefinitionId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, 
+			gin.H{"message": fmt.Sprintf("Error fetching View Defintion with ID: %s", viewDefinitionId)})
+		return	
+	}
+
+	regView, exists := viewCommon.RegisteredViews[viewDefinition.Type]
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "View type does not exist"})
+		return
+	}
+
+	// create new view and trigger
+	newView, err := regView.NewView(viewDefinition.Config)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Failed to create view with saved config", "error": err.Error()})
+		return
+	}
+
+	log.Printf("Initializing the %s view", viewDefinition.Id)
+	animation := view.GetAnimation()
+	animation.Init(newView)
+
+	c.JSON(http.StatusOK, gin.H{"Status": "Created"})
 }
 
 func displayView(c *gin.Context) {

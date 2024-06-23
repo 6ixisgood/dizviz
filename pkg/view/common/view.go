@@ -42,12 +42,16 @@ type ViewConfig interface{}
 
 // ViewDefinition what defines a View? The Type of View it is and the View's configuration
 type ViewDefinition struct {
+    Id string	`json:"id" spec:"label='View Definition ID',required='true'"`
+	Name string	`json:"name" spec:"label='View Definition Name',required='true'"`
 	Type   string     `json:"type" spec:"label='View Type',required='true'"`
 	Config ViewConfig `json:"config" spec:"label='View Config',required='true'"`
 }
 
 // ViewDefinitionRaw similar to ViewDefinition, but Config is json.RawMessage ([]byte)
 type ViewDefinitionRaw struct {
+	 Id string `json:"id"`
+	Name string `json:"name"`
 	Type   string          `json:"type"`
 	Config json.RawMessage `json:"config"`
 }

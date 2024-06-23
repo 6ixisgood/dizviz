@@ -14,6 +14,7 @@ import (
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	"github.com/6ixisgood/matrix-ticker/pkg/view"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	"github.com/6ixisgood/matrix-ticker/pkg/store"
 	"github.com/sixisgoood/go-rpi-rgb-led-matrix"
 )
 
@@ -77,10 +78,18 @@ func main() {
 		FontDir:  config.AppConfig.Data.FontDir,
 	})
 
+	// init the store
+	appStore, err := store.NewStore(config.AppConfig.Data.StoreDir)
+	if err != nil {
+		panic(err)
+	}
+	defer appStore.Close()
+
 	// configure server
 	api.SetAppServerConfig(&api.AppServerConfig{
 		AllowedHost: "127.0.0.1",
 		Port:        "8081",
+		Store:		 appStore,
 	})
 
 	// init the sports feed client

@@ -31,6 +31,7 @@ type ApplicationConfig struct {
 		ImageDir string `yaml:"images"`
 		CacheDir string `yaml:"cache"`
 		FontDir  string `yaml:"fonts"`
+		StoreDir string `yaml:"store"`
 		Sleeper  struct {
 			BaseUrl string `yaml:"baseUrl"`
 		}
