@@ -7,6 +7,7 @@ import (
 	"image"
 	"log"
 	"time"
+	"context"
 )
 
 var (
@@ -16,10 +17,18 @@ var (
 type Animation struct {
 	view     viewCommon.View
 	template compCommon.Template
+	ctx      context.Context
+    cancel   context.CancelFunc
+	buffer  chan image.Image
 }
 
 func (a *Animation) Init(newView viewCommon.View) {
 	log.Printf("Initializing view in controller")
+
+	// close the running rendering task
+	if a.cancel != nil {
+		a.cancel()
+	}
 
 	// init new view in background
 	newView.Init()
@@ -30,22 +39,44 @@ func (a *Animation) Init(newView viewCommon.View) {
 		a.view.Stop()
 	}
 	a.view = newView
+
+	// Create a new context for the new rendering task
+    a.ctx, a.cancel = context.WithCancel(context.Background())
+
+	a.buffer = make(chan image.Image, 10)
+
+    // Start the new rendering task
+    go a.startRendering(a.ctx)
+}
+
+func (a *Animation) startRendering(ctx context.Context) {
+    for {
+        select {
+        case <-ctx.Done():
+            // Context was cancelled, exit the goroutine
+            return
+        default:
+			if len(a.buffer) < cap(a.buffer) {
+				im := a.view.Template().Render()
+				a.buffer <- im
+			} else {
+				time.Sleep(100 * time.Millisecond)
+			}
+        }
+    }
 }
 
 func (a *Animation) Next() (image.Image, <-chan time.Time, error) {
-	t := a.view.Template()
-
-	// render template to image.Image
+	var im image.Image
 	for {
-		if !(t.Ready()) {
-			time.Sleep(100 * time.Millisecond)
-		} else {
-			break
-		}
-	}
+        select {
+        case im = <-a.buffer:
+            return im, time.After(time.Millisecond * 10), nil
+        default:
+            time.Sleep(100 * time.Millisecond)
+        }
+    }
 
-	im := t.Render()
-	return im, time.After(time.Millisecond * 10), nil
 }
 
 func GetAnimation() *Animation {
