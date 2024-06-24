@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
-	"runtime"
 	"slices"
 	"sort"
+	"github.com/6ixisgood/matrix-ticker/pkg/util"
 )
 
 type Sleeper struct {
@@ -155,7 +155,7 @@ type SleeperLeague struct {
 	PreviousLeagueID      string                       `json:"previous_league_id"`
 	Name                  string                       `json:"name"`
 	Metadata              SleeperLeagueMetadata        `json:"metadata"`
-	LoserBracketID        string                       `json:"loser_bracket_id"`
+	LoserBracketID        int                       `json:"loser_bracket_id"`
 	LeagueID              string                       `json:"league_id"`
 	LastReadID            string                       `json:"last_read_id"`
 	LastPinnedMessageID   string                       `json:"last_pinned_message_id"`
@@ -170,7 +170,7 @@ type SleeperLeague struct {
 	GroupID               string                       `json:"group_id"`
 	DraftID               string                       `json:"draft_id"`
 	CompanyID             string                       `json:"company_id"`
-	BracketID             string                       `json:"bracket_id"`
+	BracketID             int                       `json:"bracket_id"`
 	Avatar                interface{}                  `json:"avatar"`
 }
 
@@ -384,13 +384,10 @@ func (d *Sleeper) GetMatchups(league_id string, week string) []SleeperLeagueMatc
 // Fetches data from a cached file
 func (d *Sleeper) GetPlayer(id string) SleeperPlayer {
 	if sleperPlayers == nil {
-		_, filePath, _, _ := runtime.Caller(0)
-		// Get the directory of the current file
-		basePath := filepath.Dir(filePath)
 		// Create the full path to the file you want to reference
-		absPath := filepath.Join(basePath, "./cache/sleeper_players.json")
+		absPath := filepath.Join(util.Config.CacheDir, "./sleeper_players.json")
 
-		if err := ReadFileAndUnmarshal(absPath, &sleperPlayers); err != nil {
+		if err := util.ReadFileAndUnmarshal(absPath, &sleperPlayers); err != nil {
 			log.Printf("Error %v", err)
 		}
 	}

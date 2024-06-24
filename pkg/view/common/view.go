@@ -157,6 +157,7 @@ func TemplateRefresh(v View) {
 
 type ViewConfigFieldSpec struct {
 	Field    string
+	JsonKey  string
 	Type     reflect.Type
 	Value    interface{}
 	Kind     reflect.Kind

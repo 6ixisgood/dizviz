@@ -38,6 +38,7 @@ func InitializeRoutes() {
 	Server.router.GET("/views/definitions", getAllViewDefinitions)
     Server.router.POST("/views/definitions", saveViewDefinition)
     Server.router.GET("/views/definitions/:id", getViewDefinition)
+	Server.router.DELETE("/views/definitions/:id", deleteViewDefinition)
 	Server.router.GET("/views/:id", getViewById)
 	Server.router.POST("/display/:id", displayViewById)
 }
@@ -99,6 +100,19 @@ func saveViewDefinition(c *gin.Context) {
     }
     // Return the ID of the saved definition to the client
     c.JSON(http.StatusOK, gin.H{"message": "View definition saved successfully", "id": definition.Id})
+}
+
+// deleteViewDefinition handler function
+func deleteViewDefinition(c *gin.Context) {
+    id := c.Param("id") // Extract the ID from the URL parameter
+
+    err := Config.Store.DeleteViewDefinition(id)
+    if err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("Unable to delete ID: %s", id)})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "View definition deleted successfully"})
 }
 
 func getAllViewConfigSpecs(c *gin.Context) {

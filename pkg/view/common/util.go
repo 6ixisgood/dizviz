@@ -56,6 +56,12 @@ func parseStructMetadata(v interface{}, tagName string) *StructMetadata {
 		for _, tag := range tagsStrSplit {
 			keyValue := strings.Split(tag, "=")
 			if len(keyValue) != 2 {
+				// theres no "=" sign
+				// just assign the raw value as "root"
+				tagMetadata = append(tagMetadata, TagMetadata{
+					Key:   "root",
+					Value: tag,
+				})	
 				continue
 			}
 
@@ -148,15 +154,17 @@ func generateFieldSpecs(v interface{}, parentField string) []ViewConfigFieldSpec
 	}
 
 	metadata := parseStructMetadata(v, "spec")
+	jsonMetadata := parseStructMetadata(v, "json")
 	specs := make([]ViewConfigFieldSpec, 0)
 
 	if strings.HasPrefix(parentField, "Views.ViewDefinition") {
 	}
 
-	for _, field := range metadata.Fields {
+	for i, field := range metadata.Fields {
 		// init the spec for this field
 		spec := ViewConfigFieldSpec{
 			Field:    parentField + field.FieldName,
+			JsonKey:  getStrTag(jsonMetadata.Fields[i].Tags, "root"),
 			Type:     field.Type,
 			Required: getBoolTag(field.Tags, "required"),
 			Min:      getIntTag(field.Tags, "min"),
@@ -224,6 +232,7 @@ func GenerateViewConfigSpecJson(v ViewConfig) map[string]interface{} {
 func mapViewConfigSpec(spec ViewConfigFieldSpec) map[string]interface{} {
 	specMap := map[string]interface{}{
 		"label":    spec.Label,
+		"key":   spec.JsonKey, 
 		"kind":     spec.Kind.String(),
 		"type":     spec.Type.String(),
 		"required": spec.Required,

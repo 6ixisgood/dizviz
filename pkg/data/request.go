@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -161,24 +160,3 @@ func (c *APIClient) DoAndUnmarshal(req *APIRequest, out interface{}) error {
 	return nil
 }
 
-func ReadFileAndUnmarshal(path string, out interface{}) error {
-	// Open the file
-	file, err := os.Open(path)
-	if err != nil {
-		return fmt.Errorf("failed to open file: %v", err)
-	}
-	defer file.Close()
-
-	// Read the file content
-	data, err := io.ReadAll(file)
-	if err != nil {
-		return fmt.Errorf("failed to read file: %v", err)
-	}
-
-	// Unmarshal the JSON data
-	if err := json.Unmarshal(data, out); err != nil {
-		return fmt.Errorf("failed to unmarshal json: %v", err)
-	}
-
-	return nil
-}

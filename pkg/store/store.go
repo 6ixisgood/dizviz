@@ -82,6 +82,23 @@ func (s *Store) GetAllViewDefinitions() ([]view.ViewDefinition, error) {
     return definitions, nil
 }
 
+// DeleteViewDefinition removes a view definition from the store by its ID
+func (s *Store) DeleteViewDefinition(id string) error {
+    key := []byte(viewDefinitionPrefix + "-" + id)
+
+    // Create a write options object
+    wo := grocksdb.NewDefaultWriteOptions()
+    defer wo.Destroy()
+
+    // Perform the deletion
+    err := s.db.Delete(wo, key)
+    if err != nil {
+        return fmt.Errorf("failed to delete view definition with ID %s: %w", id, err)
+    }
+
+    return nil
+}
+
 func unmarshalViewDefinition(data []byte) (view.ViewDefinition, error) {
     var definition view.ViewDefinition
 
