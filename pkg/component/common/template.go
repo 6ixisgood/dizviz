@@ -22,7 +22,6 @@ type Template struct {
 
 func (t *Template) Init() {
 	t.BaseComponent.Init()
-
 	for _, c := range t.Components {
 		c.SetParentSize(t.ComputedSizeX, t.ComputedSizeY) // Set parent size on each child component
 		c.Init()
@@ -193,4 +192,8 @@ func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 
 	}
 	return nil
+}
+
+func init() {
+	RegisterComponent("template", func() Component { return &Template{} })
 }

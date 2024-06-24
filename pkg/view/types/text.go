@@ -38,8 +38,14 @@ func (v *TextView) TemplateData() map[string]interface{} {
 
 func (v *TextView) TemplateString() string {
 	return `
-		<template dir="row" justify="space-between" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
+		<template dir="col" justify="space-between" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+				<template sizeX="100%" sizeY="45%">
+					<text sizeX="50%" sizeY="100%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
+					<text sizeX="50%" sizeY="100%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
+				</template>
+				<template sizeX="100%" sizeY="35%">
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
+				</template>
 		</template>
 	`
 }
