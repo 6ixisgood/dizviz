@@ -34,48 +34,6 @@ type PlaylistViewConfig struct {
 	Settings PlaylistViewConfigSettings `json:"settings" spec:"label='Global Settings'"`
 }
 
-// type ViewConfigDesc struct {
-// 	FieldName		string
-// 	FieldType		string
-// }
-
-// {
-//   "Views": {
-//     "label": "Views",
-//     "type": "list",
-//     "fields": {
-//       "Type": {
-//         "label": "View Type",
-//         "type": "text"
-//       },
-//       "Settings": {
-//         "label": "View Settings",
-//         "type": "section",
-//         "fields": {
-//           "Time": {
-//             "label": "Time (s)",
-//             "type": "number",
-//             "min": "1",
-//             "hint": "Duration in seconds"
-//           }
-//         }
-//       }
-//     }
-//   },
-//   "Settings": {
-//     "label": "Global Settings",
-//     "type": "section",
-//     "fields": {
-//       "Time": {
-//         "label": "Default Duration",
-//         "type": "number",
-//         "min": "1",
-//         "hint": "Enter default time in seconds"
-//       }
-//     }
-//   }
-// }
-
 func PlaylistViewConfigCreate() c.ViewConfig {
 	return &PlaylistViewConfig{
 		Views:    make([]PlaylistViewConfigView, 0),

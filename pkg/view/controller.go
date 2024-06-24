@@ -25,11 +25,6 @@ type Animation struct {
 func (a *Animation) Init(newView viewCommon.View) {
 	log.Printf("Initializing view in controller")
 
-	// close the running rendering task
-	if a.cancel != nil {
-		a.cancel()
-	}
-
 	// init new view in background
 	newView.Init()
 	viewCommon.TemplateRefresh(newView)
@@ -39,6 +34,11 @@ func (a *Animation) Init(newView viewCommon.View) {
 		a.view.Stop()
 	}
 	a.view = newView
+
+	// close the running rendering task
+	if a.cancel != nil {
+		a.cancel()
+	}
 
 	// Create a new context for the new rendering task
     a.ctx, a.cancel = context.WithCancel(context.Background())
