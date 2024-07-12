@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/6ixisgood/matrix-ticker/pkg/view"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
-	"github.com/6ixisgood/matrix-ticker/pkg/store"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"log"
@@ -19,7 +18,6 @@ type AppServer struct {
 type AppServerConfig struct {
 	AllowedHost string
 	Port        string
-	Store		*store.Store
 }
 
 var (
@@ -44,7 +42,7 @@ func InitializeRoutes() {
 }
 
 func getAllViewDefinitions(c *gin.Context) {
-    definitions, err := Config.Store.GetAllViewDefinitions()
+    definitions, err := viewCommon.GetAllViewDefinitions()
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"message": "Error retrieving view definitions"})
         return
@@ -54,7 +52,7 @@ func getAllViewDefinitions(c *gin.Context) {
 
 func getViewDefinition(c *gin.Context) {
     id := c.Param("id")
-    definition, err := Config.Store.GetViewDefinition(id)
+    definition, err := viewCommon.GetViewDefinition(id)
     if err != nil {
         c.JSON(http.StatusNotFound, gin.H{"message": "View definition not found"})
         return
@@ -93,7 +91,7 @@ func saveViewDefinition(c *gin.Context) {
 		Config: configInstance,
 	}
 
-    err := Config.Store.SaveViewDefinition(definition)
+    err := viewCommon.SaveViewDefinition(definition)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"message": "Error saving view definition"})
         return
@@ -106,7 +104,7 @@ func saveViewDefinition(c *gin.Context) {
 func deleteViewDefinition(c *gin.Context) {
     id := c.Param("id") // Extract the ID from the URL parameter
 
-    err := Config.Store.DeleteViewDefinition(id)
+    err := viewCommon.DeleteViewDefinition(id)
     if err != nil {
         c.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("Unable to delete ID: %s", id)})
         return
@@ -143,7 +141,7 @@ func displayViewById(c *gin.Context) {
 	}	
 
 	// fetch by ID
-	viewDefinition, err := Config.Store.GetViewDefinition(viewDefinitionId)
+	viewDefinition, err := viewCommon.GetViewDefinition(viewDefinitionId)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, 
 			gin.H{"message": fmt.Sprintf("Error fetching View Defintion with ID: %s", viewDefinitionId)})

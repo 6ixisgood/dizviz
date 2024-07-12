@@ -58,6 +58,13 @@ func main() {
 	matrixConfig.DisableHardwarePulsing = config.AppConfig.Matrix.DisableHardwarePulsing
 	matrixConfig.GpioSlowdown = config.AppConfig.Matrix.GpioSlowdown
 
+	// init the store
+	appStore, err := store.NewStore(config.AppConfig.Data.StoreDir)
+	if err != nil {
+		panic(err)
+	}
+	defer appStore.Close()
+
 	// configure the views
 	viewCommon.SetViewCommonConfig(&viewCommon.ViewCommonConfig{
 		MatrixRows:        config.AppConfig.Matrix.Rows * config.AppConfig.Matrix.Parallel,
@@ -70,6 +77,7 @@ func main() {
 		DefaultFontColor:  config.AppConfig.Default.FontColor,
 		DefaultFontStyle:  config.AppConfig.Default.FontStyle,
 		DefaultFontType:   config.AppConfig.Default.FontType,
+		Store: appStore,
 	})
 
 	// configure utils
@@ -78,18 +86,10 @@ func main() {
 		FontDir:  config.AppConfig.Data.FontDir,
 	})
 
-	// init the store
-	appStore, err := store.NewStore(config.AppConfig.Data.StoreDir)
-	if err != nil {
-		panic(err)
-	}
-	defer appStore.Close()
-
 	// configure server
 	api.SetAppServerConfig(&api.AppServerConfig{
-		AllowedHost: "127.0.0.1",
-		Port:        "8081",
-		Store:		 appStore,
+		AllowedHost:  config.AppConfig.Server.AllowedHosts,
+		Port:        config.AppConfig.Server.Port,
 	})
 
 	// init the sports feed client
@@ -116,67 +116,9 @@ func main() {
 	animation := view.GetAnimation()
 
 	log.Printf("Initializing the starting animation")
-	// args := map[string]string{
-	// 	"date": "20230910",
-	// 	"matchup": "20231207-NE-PIT",
-	// 	"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif",
-	// 	"league_id": "917441035486355456",
-	// 	"week": "3",
-	// 	"text": "Hello, World! It's raining outside right now",
-	// 	"layout": "flat",
-	// 	"template": `
-	// 		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-	// 			<colorwave sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}"></colorwave>
-	// 		 </template>
-	// 	`,
-	// }
 
-	// body := `
-	// {
-	// 	"type": "image",
-	// 	"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif"
-	// }`
-
-	// body = `
-	// {
-	// 	"views": [
-	// 		{
-	// 			"type": "image",
-	// 			"config": {
-	// 				"src": "https://33.media.tumblr.com/ced5ea6f7722dd433465d2ab7e6e58e5/tumblr_nmt6p07KpV1ut1wfqo1_1280.gif"
-	// 			}
-	// 		},
-	// 		{
-	// 			"type": "image",
-	// 			"config": {
-	// 				"src": "https://media.giphy.com/media/uHWzPe1dPgkEj2UXZb/giphy.gif"
-	// 			},
-	// 			"settings": {
-	// 				"time": 10
-	// 			}
-	// 		}
-	// 	],
-	// 	"settings": {
-	// 		"time": 2
-	// 	}
-	// }`
-
-	// body = `
-	// {
-	// 	"type": "text"
-	// }
-	// `
-
-	t := "matchups-scroll"
+	t := "text"
 	config := []byte(`
-		{
-			"league": "nfl",
-			"date": "2023-10-01T00:00:00Z"
-		}
-	`)
-
-	t = "text"
-	config = []byte(`
 		{
 			"text": "HI"
 		}

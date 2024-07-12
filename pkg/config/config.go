@@ -27,6 +27,10 @@ type ApplicationConfig struct {
 		FontStyle  string `yaml:"font_style"`
 		FontType   string `yaml:"font_type"`
 	}
+	Server struct {
+		AllowedHosts string `yaml:"allowed_hosts"`
+		Port string `yaml:"port"`
+	}
 	Data struct {
 		ImageDir string `yaml:"images"`
 		CacheDir string `yaml:"cache"`

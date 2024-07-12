@@ -1,21 +1,15 @@
 package store
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	view "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	"github.com/linxGnu/grocksdb"
 )
 
-// Store represents the RocksDB store for view configurations
+// Store represents the RocksDB store
 type Store struct {
 	db *grocksdb.DB
 }
 
-const (
-	viewDefinitionPrefix = "VD"
-)
 
 
 // NewStore initializes and returns a new Store
@@ -29,62 +23,52 @@ func NewStore(dbPath string) (*Store, error) {
 	return &Store{db: db}, nil
 }
 
-// SaveViewDefinition saves a view definition to the store
-func (s *Store) SaveViewDefinition(definition view.ViewDefinition) error {
-	data, err := json.Marshal(definition)
-	if err != nil {
-		return err
-	}
-	wo := grocksdb.NewDefaultWriteOptions()
+// Save
+func (s *Store) SaveItem(prefix string, id string, data []byte) (string, error) {
+    wo := grocksdb.NewDefaultWriteOptions()
 	defer wo.Destroy()
-	fmt.Printf("\n\n%s\n\n", data)
-
-	return s.db.Put(wo, []byte(viewDefinitionPrefix + "-" + definition.Id), data)
+    fullId := prefix + "-" + id 
+	return fullId, s.db.Put(wo, []byte(id), data)
 }
 
-// GetViewConfig retrieves a view definition from the store by name
-func (s *Store) GetViewDefinition(id string) (view.ViewDefinition, error) {
+// Get
+func (s *Store) GetItem(id string) ([]byte, error) {
     ro := grocksdb.NewDefaultReadOptions()
     defer ro.Destroy()
-    data, err := s.db.Get(ro, []byte(viewDefinitionPrefix + "-" + id))
+    rocksSlice, err := s.db.Get(ro, []byte(id))
+    defer rocksSlice.Free()
+    data := rocksSlice.Data()
     if err != nil {
-        return view.ViewDefinition{}, err
+        return []byte{}, err
     }
-    defer data.Free()
 	
-	vd, err :=unmarshalViewDefinition(data.Data())
-	
-
-    return vd, err
+    return data, err
 }
 
-// GetAllViewDefinitions retrieves all saved view definitions from the store
-func (s *Store) GetAllViewDefinitions() ([]view.ViewDefinition, error) {
-    var definitions []view.ViewDefinition
+// GetPrefix
+func (s *Store) GetPrefix(prefix string) ([][]byte, error) {
+    var datas [][]byte
     ro := grocksdb.NewDefaultReadOptions()
     defer ro.Destroy()
     it := s.db.NewIterator(ro)
     defer it.Close()
 
-    prefix := []byte(viewDefinitionPrefix + "-")
-    for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-        definition, err := unmarshalViewDefinition(it.Value().Data())
-        if err != nil {
-            return nil, err
-        }
-        definitions = append(definitions, definition)
+    prefixRaw := []byte(prefix)
+    for it.Seek(prefixRaw); it.ValidForPrefix(prefixRaw); it.Next() {
+        data := it.Value().Data()
+        datas = append(datas, data)
     }
 
     if err := it.Err(); err != nil {
         return nil, err
     }
 
-    return definitions, nil
+    return datas, nil
 }
 
-// DeleteViewDefinition removes a view definition from the store by its ID
-func (s *Store) DeleteViewDefinition(id string) error {
-    key := []byte(viewDefinitionPrefix + "-" + id)
+// DeleteItem
+func (s *Store) DeleteItem(id string) error {
+    key := []byte(id)
 
     // Create a write options object
     wo := grocksdb.NewDefaultWriteOptions()
@@ -93,42 +77,10 @@ func (s *Store) DeleteViewDefinition(id string) error {
     // Perform the deletion
     err := s.db.Delete(wo, key)
     if err != nil {
-        return fmt.Errorf("failed to delete view definition with ID %s: %w", id, err)
+        return fmt.Errorf("failed to delete item with ID %s: %w", id, err)
     }
 
     return nil
-}
-
-func unmarshalViewDefinition(data []byte) (view.ViewDefinition, error) {
-    var definition view.ViewDefinition
-
-    // Unmarshal the whole object
-    err := json.Unmarshal(data, &definition)
-    if err != nil {
-        return definition, err
-    }
-
-    // Unmarshal into a map to get the raw config
-    var rawDef map[string]json.RawMessage
-    err = json.Unmarshal(data, &rawDef)
-    if err != nil {
-        return definition, err
-    }
-
-    // Get the RegisteredView for this type
-    regView, ok := view.RegisteredViews[definition.Type]
-    if !ok {
-        return definition, errors.New(fmt.Sprintf("No registered view of type %s", definition.Type))
-    }
-
-    // Use the RegisteredView's NewConfig function to unmarshal the config
-    definition.Config = regView.NewConfig()
-    err = json.Unmarshal(rawDef["config"], &definition.Config)
-    if err != nil {
-        return definition, err
-    }
-
-    return definition, nil
 }
 
 // Close closes the store and releases the database resources

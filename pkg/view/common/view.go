@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
+	"github.com/6ixisgood/matrix-ticker/pkg/store"
 	"html/template"
 	"log"
 	"maps"
@@ -35,6 +36,7 @@ type ViewCommonConfig struct {
 	DefaultFontColor  string
 	DefaultFontStyle  string
 	DefaultFontType   string
+    Store *store.Store 
 }
 
 // ViewConfig type alias to hold raw config definition for a View
@@ -50,7 +52,7 @@ type ViewDefinition struct {
 
 // ViewDefinitionRaw similar to ViewDefinition, but Config is json.RawMessage ([]byte)
 type ViewDefinitionRaw struct {
-	 Id string `json:"id"`
+	Id string `json:"id"`
 	Name string `json:"name"`
 	Type   string          `json:"type"`
 	Config json.RawMessage `json:"config"`

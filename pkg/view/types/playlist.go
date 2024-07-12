@@ -21,7 +21,7 @@ const (
 )
 
 type PlaylistViewConfigView struct {
-	c.ViewDefinition `json:"viewDefinition" spec:"label='View Definition'"`
+	ViewId string `json:"viewId spec:"label='The View ID in the store'`
 	Settings         PlaylistViewConfigSettings `json:"settings" spec:"label='Settings'"`
 }
 
@@ -59,15 +59,21 @@ func PlaylistViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 
 	var views []c.View
 	var timings []time.Duration
-	// validate and create each view
+	// find each view in the store and create
 	for _, v := range config.Views {
-		regView, exists := c.RegisteredViews[v.Type]
+		// find in the store
+		viewDef, err := c.GetViewDefinition(v.ViewId)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Error fetching view definition from store"))
+		}
+
+		regView, exists := c.RegisteredViews[viewDef.Type]
 		if !exists {
-			return nil, errors.New(fmt.Sprintf("View type %s does not exist", v.Type))
+			return nil, errors.New(fmt.Sprintf("View type %s does not exist", viewDef.Type))
 		}
 
 		// go from the ViewConfig (map[string]interface{}) to []byte
-		jsonConfig, err := json.Marshal(v.Config)
+		jsonConfig, err := json.Marshal(viewDef.Config)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("Error marshaling generic ViewConfig to []byte"))
 		}
@@ -75,12 +81,12 @@ func PlaylistViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 		// go from []byte to specific ViewConfig type
 		configInstance := regView.NewConfig()
 		if err := json.Unmarshal(jsonConfig, &configInstance); err != nil {
-			return nil, errors.New(fmt.Sprintf("Config for view type %s is invalid", v.Type))
+			return nil, errors.New(fmt.Sprintf("Config for view type %s is invalid", viewDef.Type))
 		}
 
 		newView, err := regView.NewView(configInstance)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Failed to create view of type %s with given config\nError: %s", v.Type, err))
+			return nil, errors.New(fmt.Sprintf("Failed to create view of type %s with given config\nError: %s", viewDef.Type, err))
 		}
 
 		views = append(views, newView)

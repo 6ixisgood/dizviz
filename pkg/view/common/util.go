@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"encoding/json"
+	"errors"
 )
 
 // StructMetadata the tag metadata related to a specific struct and tag name
@@ -27,6 +29,10 @@ type TagMetadata struct {
 	Key   string
 	Value string
 }
+
+const (
+	viewDefinitionPrefix = "VD"
+)
 
 // parseStructMetadata return a StructMetadata containing a struct's tag metadata,
 // given a struct and the name of the tag to extract info from
@@ -240,4 +246,84 @@ func mapViewConfigSpec(spec ViewConfigFieldSpec) map[string]interface{} {
 		"max":      spec.Max,
 	}
 	return specMap
+}
+
+
+// SaveViewDefinition saves a view definition to the store
+func SaveViewDefinition(definition ViewDefinition) error {
+	data, err := json.Marshal(definition)
+	if err != nil {
+		return err
+	}
+	_, err = CommonConfig.Store.SaveItem(viewDefinitionPrefix, definition.Id, data)
+	return err
+}
+
+// GetViewConfig retrieves a view definition from the store by name
+func GetViewDefinition(id string) (ViewDefinition, error) {
+	data, err := CommonConfig.Store.GetItem(viewDefinitionPrefix + "-" + id)
+
+    if err != nil {
+        return ViewDefinition{}, err
+    }
+	
+	vd, err :=unmarshalViewDefinition(data)
+    return vd, err
+}
+
+// GetAllViewDefinitions retrieves all saved view definitions from the store
+func GetAllViewDefinitions() ([]ViewDefinition, error) {
+    var definitions []ViewDefinition
+	viewDatas, err := CommonConfig.Store.GetPrefix(viewDefinitionPrefix + "-")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, viewData := range(viewDatas) {
+		definition, err := unmarshalViewDefinition(viewData)
+        if err != nil {
+            return nil, err
+        }
+        definitions = append(definitions, definition)
+	}
+
+    return definitions, nil
+}
+
+// DeleteViewDefinition delete a given view def by id from the store 
+func DeleteViewDefinition(id string) error {
+	return CommonConfig.Store.DeleteItem(id)
+} 
+
+// unmarshalViewDefinition helper function to get a ViewDefinition from []byte
+func unmarshalViewDefinition(data []byte) (ViewDefinition, error) {
+    var definition ViewDefinition
+
+    // Unmarshal the whole object
+    err := json.Unmarshal(data, &definition)
+    if err != nil {
+        return definition, err
+    }
+
+    // Unmarshal into a map to get the raw config
+    var rawDef map[string]json.RawMessage
+    err = json.Unmarshal(data, &rawDef)
+    if err != nil {
+        return definition, err
+    }
+
+    // Get the RegisteredView for this type
+    regView, ok := RegisteredViews[definition.Type]
+    if !ok {
+        return definition, errors.New(fmt.Sprintf("No registered view of type %s", definition.Type))
+    }
+
+    // Use the RegisteredView's NewConfig function to unmarshal the config
+    definition.Config = regView.NewConfig()
+    err = json.Unmarshal(rawDef["config"], &definition.Config)
+    if err != nil {
+        return definition, err
+    }
+
+    return definition, nil
 }
