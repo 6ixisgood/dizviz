@@ -267,7 +267,7 @@ func GetViewDefinition(id string) (ViewDefinition, error) {
         return ViewDefinition{}, err
     }
 	
-	vd, err :=unmarshalViewDefinition(data)
+	vd, err := unmarshalViewDefinition(data)
     return vd, err
 }
 

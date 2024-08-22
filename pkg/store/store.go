@@ -28,21 +28,25 @@ func (s *Store) SaveItem(prefix string, id string, data []byte) (string, error) 
     wo := grocksdb.NewDefaultWriteOptions()
 	defer wo.Destroy()
     fullId := prefix + "-" + id 
-	return fullId, s.db.Put(wo, []byte(id), data)
+	return fullId, s.db.Put(wo, []byte(fullId), data)
 }
 
 // Get
 func (s *Store) GetItem(id string) ([]byte, error) {
     ro := grocksdb.NewDefaultReadOptions()
     defer ro.Destroy()
+    
     rocksSlice, err := s.db.Get(ro, []byte(id))
-    defer rocksSlice.Free()
-    data := rocksSlice.Data()
     if err != nil {
-        return []byte{}, err
+        return nil, err
     }
-	
-    return data, err
+    defer rocksSlice.Free()
+
+    data := rocksSlice.Data()
+    dataCopy := make([]byte, len(data))
+    copy(dataCopy, data)
+
+    return dataCopy, nil
 }
 
 // GetPrefix
