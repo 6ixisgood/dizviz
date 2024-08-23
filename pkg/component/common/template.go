@@ -21,6 +21,7 @@ type Template struct {
 }
 
 func (t *Template) Init() {
+	t.Rr = -1
 	t.BaseComponent.Init()
 	for _, c := range t.Components {
 		c.SetParentSize(t.ComputedSizeX, t.ComputedSizeY) // Set parent size on each child component
@@ -72,10 +73,6 @@ type Axis struct {
 }
 
 func (t *Template) Render() image.Image {
-	if t.Ctx == nil {
-		t.Ctx = gg.NewContext(t.ComputedSizeX, t.ComputedSizeY)
-	}
-
 	t.Ctx.SetColor(color.RGBA{0, 0, 0, 255})
 	t.Ctx.Clear()
 
