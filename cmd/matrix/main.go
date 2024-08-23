@@ -57,6 +57,7 @@ func main() {
 	matrixConfig.InverseColors = config.AppConfig.Matrix.InverseColors
 	matrixConfig.DisableHardwarePulsing = config.AppConfig.Matrix.DisableHardwarePulsing
 	matrixConfig.GpioSlowdown = config.AppConfig.Matrix.GpioSlowdown
+	matrixConfig.RateLimitHz = config.AppConfig.Matrix.RateLimitHz
 
 	// init the store
 	appStore, err := store.NewStore(config.AppConfig.Data.StoreDir)

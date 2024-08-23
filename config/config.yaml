@@ -8,6 +8,7 @@ matrix:
   show_refresh: true
   inverse_colors: false
   disable_hardware_pulsing: true
+  rate_limit_hz: 20
 default:
   image_size_x: 32
   image_size_y: 32

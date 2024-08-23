@@ -8,6 +8,10 @@ import (
 	"log"
 	"time"
 	"context"
+
+	"image/color"
+	"image/draw"
+	"math/rand"
 )
 
 var (
@@ -57,13 +61,43 @@ func (a *Animation) startRendering(ctx context.Context) {
             return
         default:
 			if len(a.buffer) < cap(a.buffer) {
-				im := a.view.Template().Render()
+				//im := a.view.Template().Render()
+				im := generateRandomColorImage(192, 192)
 				a.buffer <- im
 			} else {
 				time.Sleep(100 * time.Millisecond)
 			}
         }
     }
+}
+
+var (
+	randomColor = color.RGBA{0,0,0,255}
+	count = 0
+)
+
+func generateRandomColorImage(width, height int) image.Image {
+	// Seed the random number generator
+	rand.Seed(time.Now().UnixNano())
+
+	// Generate random color
+	if (count > 15) {
+		r := uint8(rand.Intn(256))
+		g := uint8(rand.Intn(256))
+		b := uint8(rand.Intn(256))
+		randomColor = color.RGBA{r, g, b, 255}
+		count = 0
+	} else {
+		count = count + 1
+	}
+
+	// Create a new image with the specified size
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+
+	// Fill the image with the random color
+	draw.Draw(img, img.Bounds(), &image.Uniform{randomColor}, image.Point{}, draw.Src)
+
+	return img
 }
 
 func (a *Animation) Next() (image.Image, <-chan time.Time, error) {

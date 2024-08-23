@@ -18,6 +18,7 @@ type ApplicationConfig struct {
 		InverseColors          bool   `yaml:"inverse_colors"`
 		DisableHardwarePulsing bool   `yaml:"disable_hardware_pulsing"`
 		GpioSlowdown           int    `yaml:"gpio_slowdown"`
+		RateLimitHz            int    `yaml:"rate_limit_hz"`
 	} `yaml:"matrix"`
 	Default struct {
 		ImageSizeX int    `yaml:"image_size_x"`
