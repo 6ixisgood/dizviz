@@ -292,7 +292,7 @@ func GetAllViewDefinitions() ([]ViewDefinition, error) {
 
 // DeleteViewDefinition delete a given view def by id from the store 
 func DeleteViewDefinition(id string) error {
-	return CommonConfig.Store.DeleteItem(id)
+	return CommonConfig.Store.DeleteItem(viewDefinitionPrefix + "-" + id)
 } 
 
 // unmarshalViewDefinition helper function to get a ViewDefinition from []byte
