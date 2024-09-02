@@ -155,7 +155,7 @@ type SleeperLeague struct {
 	PreviousLeagueID      string                       `json:"previous_league_id"`
 	Name                  string                       `json:"name"`
 	Metadata              SleeperLeagueMetadata        `json:"metadata"`
-	LoserBracketID        int                       `json:"loser_bracket_id"`
+	LoserBracketID        int64                       `json:"loser_bracket_id"`
 	LeagueID              string                       `json:"league_id"`
 	LastReadID            string                       `json:"last_read_id"`
 	LastPinnedMessageID   string                       `json:"last_pinned_message_id"`
@@ -170,7 +170,7 @@ type SleeperLeague struct {
 	GroupID               string                       `json:"group_id"`
 	DraftID               string                       `json:"draft_id"`
 	CompanyID             string                       `json:"company_id"`
-	BracketID             int                       `json:"bracket_id"`
+	BracketID             int64                       `json:"bracket_id"`
 	Avatar                interface{}                  `json:"avatar"`
 }
 
@@ -318,6 +318,29 @@ type SleeperTeamFormatted struct {
 type SleeperLeagueFormatted struct {
 	Name              string
 	StartingPositions []string
+}
+
+type SleeperDraftPick struct {
+	PlayerID  string `json:"player_id"`
+	PickedBy  string `json:"picked_by"`
+	RosterID  int `json:"roster_id"`
+	Round     int    `json:"round"`
+	DraftSlot int    `json:"draft_slot"`
+	PickNo    int    `json:"pick_no"`
+	Metadata  struct {
+		Team         string `json:"team"`
+		Status       string `json:"status"`
+		Sport        string `json:"sport"`
+		Position     string `json:"position"`
+		PlayerID     string `json:"player_id"`
+		Number       string `json:"number"`
+		NewsUpdated  string `json:"news_updated"`
+		LastName     string `json:"last_name"`
+		InjuryStatus string `json:"injury_status"`
+		FirstName    string `json:"first_name"`
+	} `json:"metadata"`
+	IsKeeper any    `json:"is_keeper"`
+	DraftID  string `json:"draft_id"`
 }
 
 // Fetch the league info given the league's id
@@ -493,4 +516,92 @@ func (d *Sleeper) GetLeagueFormatted(leagueID string) SleeperLeagueFormatted {
 		StartingPositions: startingPositions,
 	}
 
+}
+
+
+// GetDraftPicks picks from the draft in a list
+func (d *Sleeper) GetDraftPicks(draftID string) []SleeperDraftPick {
+	request := &APIRequest{
+		Method:   http.MethodGet,
+		Endpoint: fmt.Sprintf("/draft/%s/picks", draftID),
+	}
+
+	var responseData []SleeperDraftPick
+	log.Println(request)
+	if err := d.Client.DoAndUnmarshal(request, &responseData); err != nil {
+		log.Fatalf("Failed to retrieve and unmarshal data. Error: %v", err)
+	}
+
+	return responseData
+}
+
+
+type SleeperDraftFormatted struct {
+	PrevPlayerName	string
+	PrevPlayerPosition string	
+	PrevPlayerTeam string
+	PrevPlayerNumber string
+	PrevTeam	SleeperTeamFormatted
+	CurrentTeam SleeperTeamFormatted
+	Round		string
+	PickNo		string
+	DraftSlot	string
+}
+
+func (d *Sleeper) GetDraftFormatted(leagueID string, draftID string) SleeperDraftFormatted {
+	picks := d.GetDraftPicks(draftID)
+
+	var prevPlayerName string
+	var prevPlayerTeam string
+	var prevPlayerPosition string
+	var prevPlayerNumber string
+	if len(picks) > 0 {
+		prevPlayerName = fmt.Sprintf("%s.%s", picks[len(picks)-1].Metadata.FirstName, picks[len(picks)-1].Metadata.LastName)
+		prevPlayerTeam = picks[len(picks)-1].Metadata.Team
+		prevPlayerPosition = picks[len(picks)-1].Metadata.Position
+		prevPlayerNumber = picks[len(picks)-1].Metadata.Number
+	}
+
+	// get team info
+	userIDToTeam := make(map[string]*SleeperTeamFormatted)
+
+	for _, rawUser := range d.GetUsers(leagueID) {
+		team := SleeperTeamFormatted{
+			UserID: rawUser.UserID,
+			Name:   rawUser.Metadata.TeamName,
+			Avatar: rawUser.Metadata.Avatar,
+		}
+		// add to dict for easier lookup
+		userIDToTeam[team.UserID] = &team
+	}
+
+	prevTeamID := picks[len(picks)-1].PickedBy
+
+	var prevTeam SleeperTeamFormatted
+	if (prevTeamID != "") {
+		prevTeam = *userIDToTeam[prevTeamID]
+	} else {
+		prevTeam = SleeperTeamFormatted{}
+	}
+
+
+
+	// // get all rosters in a league
+	// rosterIDToTeam := make(map[int]*SleeperTeamFormatted)
+
+
+	return SleeperDraftFormatted{
+		PrevPlayerName: prevPlayerName,
+		PrevPlayerPosition: prevPlayerPosition,	
+		PrevPlayerTeam: prevPlayerTeam,
+		PrevPlayerNumber: prevPlayerNumber,
+		CurrentTeam: SleeperTeamFormatted{
+			Name: "Current",
+			Avatar: "",
+		},
+		PrevTeam: prevTeam,
+		Round: "",
+		PickNo: "",
+		DraftSlot: "",
+	}
 }
