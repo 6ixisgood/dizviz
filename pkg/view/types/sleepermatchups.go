@@ -80,6 +80,7 @@ func (v *SleeperMatchupsView) TemplateData() map[string]interface{} {
 		"Team2":  v.matchups[v.matchIndex][1],
 		"League": v.league,
 		"Phase":  v.Phase,
+		"Week":	  v.Week,
 	}
 }
 
@@ -100,6 +101,7 @@ func (v *SleeperMatchupsView) TemplateString() string {
 	
 			<template dir="col" justify="center" align="center" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
 				<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">{{ .League.Name }}</rainbow-text>
+				<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">Week {{ .Week }}</rainbow-text>
 			</template>
 	
 			{{ else if gt .Phase 0 }}

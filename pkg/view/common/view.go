@@ -153,8 +153,8 @@ func TemplateRefresh(v View) {
 	}
 
 	// set new template and init
-	v.SetTemplate(&t)
 	t.Init()
+	v.SetTemplate(&t)
 }
 
 type ViewConfigFieldSpec struct {
