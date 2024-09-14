@@ -21,8 +21,8 @@ const (
 )
 
 type PlaylistViewConfigView struct {
-	ViewId string `json:"viewId spec:"label='The View ID in the store'`
-	Settings         PlaylistViewConfigSettings `json:"settings" spec:"label='Settings'"`
+	ViewId   string                     `json:"viewId spec:"label='The View ID in the store'`
+	Settings PlaylistViewConfigSettings `json:"settings" spec:"label='Settings'"`
 }
 
 type PlaylistViewConfigSettings struct {

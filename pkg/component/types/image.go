@@ -5,6 +5,8 @@ import (
 	"encoding/xml"
 	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
+	"github.com/srwiley/oksvg"
+	"github.com/srwiley/rasterx"
 	"image"
 	"image/gif"
 	"log"
@@ -56,6 +58,31 @@ func (i *Image) Init() {
 			log.Fatal(err)
 		}
 		i.frames = append(i.frames, img)
+	} else if extension == ".svg" {
+		// Handle SVG files
+		svg, err := oksvg.ReadIconStream(bytes.NewReader(data))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Set the desired size for the SVG (computed size)
+		width := 32  //int(i.ComputedSizeX)
+		height := 32 //int(i.ComputedSizeY)
+
+		// Create an RGBA canvas to render the SVG
+		rgba := image.NewRGBA(image.Rect(0, 0, width, height))
+
+		// Set the target size for the SVG
+		svg.SetTarget(0, 0, float64(width), float64(height))
+
+		// Create a new Dasher for drawing the SVG onto the canvas
+		scanner := rasterx.NewScannerGV(width, height, rgba, rgba.Bounds())
+		dasher := rasterx.NewDasher(width, height, scanner)
+
+		// Draw the SVG onto the RGBA canvas
+		svg.Draw(dasher, 1)
+
+		i.frames = append(i.frames, rgba)
 	} else {
 		log.Fatal("Unsupported file extension")
 	}

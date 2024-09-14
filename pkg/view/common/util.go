@@ -1,12 +1,12 @@
 package common
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
-	"encoding/json"
-	"errors"
 )
 
 // StructMetadata the tag metadata related to a specific struct and tag name
@@ -67,7 +67,7 @@ func parseStructMetadata(v interface{}, tagName string) *StructMetadata {
 				tagMetadata = append(tagMetadata, TagMetadata{
 					Key:   "root",
 					Value: tag,
-				})	
+				})
 				continue
 			}
 
@@ -238,7 +238,7 @@ func GenerateViewConfigSpecJson(v ViewConfig) map[string]interface{} {
 func mapViewConfigSpec(spec ViewConfigFieldSpec) map[string]interface{} {
 	specMap := map[string]interface{}{
 		"label":    spec.Label,
-		"key":   spec.JsonKey, 
+		"key":      spec.JsonKey,
 		"kind":     spec.Kind.String(),
 		"type":     spec.Type.String(),
 		"required": spec.Required,
@@ -247,7 +247,6 @@ func mapViewConfigSpec(spec ViewConfigFieldSpec) map[string]interface{} {
 	}
 	return specMap
 }
-
 
 // SaveViewDefinition saves a view definition to the store
 func SaveViewDefinition(definition ViewDefinition) error {
@@ -263,67 +262,70 @@ func SaveViewDefinition(definition ViewDefinition) error {
 func GetViewDefinition(id string) (ViewDefinition, error) {
 	data, err := CommonConfig.Store.GetItem(viewDefinitionPrefix + "-" + id)
 
-    if err != nil {
-        return ViewDefinition{}, err
-    }
-	
+	if err != nil {
+		return ViewDefinition{}, err
+	}
+
 	vd, err := unmarshalViewDefinition(data)
-    return vd, err
+	return vd, err
 }
 
 // GetAllViewDefinitions retrieves all saved view definitions from the store
 func GetAllViewDefinitions() ([]ViewDefinition, error) {
-    var definitions []ViewDefinition
+	var definitions []ViewDefinition
 	viewDatas, err := CommonConfig.Store.GetPrefix(viewDefinitionPrefix + "-")
 	if err != nil {
 		return nil, err
 	}
 
-	for _, viewData := range(viewDatas) {
+	for _, viewData := range viewDatas {
 		definition, err := unmarshalViewDefinition(viewData)
-        if err != nil {
-            return nil, err
-        }
-        definitions = append(definitions, definition)
+		if err != nil {
+			return nil, err
+		}
+		definitions = append(definitions, definition)
 	}
 
-    return definitions, nil
+	return definitions, nil
 }
 
-// DeleteViewDefinition delete a given view def by id from the store 
+// DeleteViewDefinition delete a given view def by id from the store
 func DeleteViewDefinition(id string) error {
 	return CommonConfig.Store.DeleteItem(viewDefinitionPrefix + "-" + id)
-} 
+}
 
 // unmarshalViewDefinition helper function to get a ViewDefinition from []byte
 func unmarshalViewDefinition(data []byte) (ViewDefinition, error) {
-    var definition ViewDefinition
+	var definition ViewDefinition
 
-    // Unmarshal the whole object
-    err := json.Unmarshal(data, &definition)
-    if err != nil {
-        return definition, err
-    }
+	// Unmarshal the whole object
+	err := json.Unmarshal(data, &definition)
+	if err != nil {
+		return definition, err
+	}
 
-    // Unmarshal into a map to get the raw config
-    var rawDef map[string]json.RawMessage
-    err = json.Unmarshal(data, &rawDef)
-    if err != nil {
-        return definition, err
-    }
+	// Unmarshal into a map to get the raw config
+	var rawDef map[string]json.RawMessage
+	err = json.Unmarshal(data, &rawDef)
+	if err != nil {
+		fmt.Println("HERE 1")
+		return definition, err
+	}
 
-    // Get the RegisteredView for this type
-    regView, ok := RegisteredViews[definition.Type]
-    if !ok {
-        return definition, errors.New(fmt.Sprintf("No registered view of type %s", definition.Type))
-    }
+	// Get the RegisteredView for this type
+	regView, ok := RegisteredViews[definition.Type]
+	if !ok {
+		fmt.Println("HERE 2")
+		return definition, errors.New(fmt.Sprintf("No registered view of type %s", definition.Type))
+	}
 
-    // Use the RegisteredView's NewConfig function to unmarshal the config
-    definition.Config = regView.NewConfig()
-    err = json.Unmarshal(rawDef["config"], &definition.Config)
-    if err != nil {
-        return definition, err
-    }
+	// Use the RegisteredView's NewConfig function to unmarshal the config
+	definition.Config = regView.NewConfig()
+	err = json.Unmarshal(rawDef["config"], &definition.Config)
+	if err != nil {
+		fmt.Println("HERE 3")
+		return definition, err
+	}
 
-    return definition, nil
+	return definition, nil
 }

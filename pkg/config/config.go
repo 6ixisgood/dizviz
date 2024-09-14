@@ -30,7 +30,7 @@ type ApplicationConfig struct {
 	}
 	Server struct {
 		AllowedHosts string `yaml:"allowed_hosts"`
-		Port string `yaml:"port"`
+		Port         string `yaml:"port"`
 	}
 	Data struct {
 		ImageDir string `yaml:"images"`

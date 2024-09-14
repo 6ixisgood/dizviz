@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	"github.com/6ixisgood/matrix-ticker/pkg/view/model"
 	"time"
@@ -19,7 +20,7 @@ type MatchupsScrollView struct {
 
 type MatchupsScrollViewConfig struct {
 	Layout string    `json:"layout" spec:"label='Layout'"`
-	Date   time.Time `json:"date" spec:"required='true',label='Date'"`
+	Date   util.Date `json:"date" spec:"required='true',label='Date'"`
 	League string    `json:"league" spec:"required='true',label='League'"`
 }
 
@@ -34,7 +35,7 @@ func MatchupsScrollViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 	}
 
 	return &MatchupsScrollView{
-		Date:   config.Date,
+		Date:   config.Date.Time,
 		Layout: config.Layout,
 		League: config.League,
 	}, nil
@@ -76,17 +77,17 @@ func (v *MatchupsScrollView) TemplateString() string {
 			    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ (index .Teams 1).Score }}</text>
 			    {{ end}}
 
+			    {{ if eq .PlayedStatus "COMPLETED" }}
+			    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}"> FINAL </text>
+			    {{ else if eq .Period nil }}
+			    {{ else }}
 			    {{ if eq .PeriodMinRemaining nil }}
 			    {{ else }}
 			    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .PeriodMinRemaining }}:{{ .PeriodSecRemaining }}</text>
 			    {{ end }}
-			    {{ if eq .PlayedStatus "COMPLETED" }}
-			    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">FINAL</text>
-			    {{ else if eq .Period nil }}
-			    {{ else }}
 			    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Period }}</text>
 			    {{ end }}
-			    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">•</text>
+			    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">  •  </text>
 			    {{ end }}
 			</template>
 		</scroller>

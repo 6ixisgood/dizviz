@@ -2,12 +2,12 @@ package data
 
 import (
 	"fmt"
+	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	"log"
 	"net/http"
 	"path/filepath"
 	"slices"
 	"sort"
-	"github.com/6ixisgood/matrix-ticker/pkg/util"
 )
 
 type Sleeper struct {
@@ -155,7 +155,7 @@ type SleeperLeague struct {
 	PreviousLeagueID      string                       `json:"previous_league_id"`
 	Name                  string                       `json:"name"`
 	Metadata              SleeperLeagueMetadata        `json:"metadata"`
-	LoserBracketID        int                       `json:"loser_bracket_id"`
+	LoserBracketID        int                          `json:"loser_bracket_id"`
 	LeagueID              string                       `json:"league_id"`
 	LastReadID            string                       `json:"last_read_id"`
 	LastPinnedMessageID   string                       `json:"last_pinned_message_id"`
@@ -170,7 +170,7 @@ type SleeperLeague struct {
 	GroupID               string                       `json:"group_id"`
 	DraftID               string                       `json:"draft_id"`
 	CompanyID             string                       `json:"company_id"`
-	BracketID             int                       `json:"bracket_id"`
+	BracketID             int                          `json:"bracket_id"`
 	Avatar                interface{}                  `json:"avatar"`
 }
 
@@ -328,7 +328,8 @@ func (d *Sleeper) GetLeague(id string) SleeperLeague {
 	}
 
 	var responseData SleeperLeague
-	if err := d.Client.DoAndUnmarshal(request, &responseData); err != nil {
+	_, err := d.Client.DoAndUnmarshal(request, &responseData)
+	if err != nil {
 		log.Fatalf("Failed to retrieve and unmarshal data. Error: %v", err)
 	}
 
@@ -343,7 +344,8 @@ func (d *Sleeper) GetUsers(league_id string) []SleeperLeagueUser {
 	}
 
 	var responseData []SleeperLeagueUser
-	if err := d.Client.DoAndUnmarshal(request, &responseData); err != nil {
+	_, err := d.Client.DoAndUnmarshal(request, &responseData)
+	if err != nil {
 		log.Fatalf("Failed to retrieve and unmarshal data. Error: %v", err)
 	}
 
@@ -358,7 +360,8 @@ func (d *Sleeper) GetRosters(league_id string) []SleeperLeagueRoster {
 	}
 
 	var responseData []SleeperLeagueRoster
-	if err := d.Client.DoAndUnmarshal(request, &responseData); err != nil {
+	_, err := d.Client.DoAndUnmarshal(request, &responseData)
+	if err != nil {
 		log.Fatalf("Failed to retrieve and unmarshal data. Error: %v", err)
 	}
 
@@ -373,7 +376,8 @@ func (d *Sleeper) GetMatchups(league_id string, week string) []SleeperLeagueMatc
 	}
 
 	var responseData []SleeperLeagueMatchup
-	if err := d.Client.DoAndUnmarshal(request, &responseData); err != nil {
+	_, err := d.Client.DoAndUnmarshal(request, &responseData)
+	if err != nil {
 		log.Fatalf("Failed to retrieve and unmarshal data. Error: %v", err)
 	}
 

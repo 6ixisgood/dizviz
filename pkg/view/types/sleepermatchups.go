@@ -80,7 +80,7 @@ func (v *SleeperMatchupsView) TemplateData() map[string]interface{} {
 		"Team2":  v.matchups[v.matchIndex][1],
 		"League": v.league,
 		"Phase":  v.Phase,
-		"Week":	  v.Week,
+		"Week":   v.Week,
 	}
 }
 

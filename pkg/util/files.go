@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/nfnt/resize"
 	"image"
@@ -12,14 +13,13 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"encoding/json"
-	"io"
 )
 
 // Like FetchFile, but will resize images and redraw gifs
@@ -36,7 +36,16 @@ func FetchImage(file string, x int, y int) ([]byte, string, error) {
 
 	extension := strings.ToLower(filepath.Ext(rawFilePath))
 	baseName := strings.TrimSuffix(filepath.Base(rawFilePath), extension)
-	newPath := filepath.Join(Config.CacheDir, fmt.Sprintf("%s_%dx%d%s", baseName, x, y, extension))
+
+	var filename string
+	if extension == ".svg" {
+		filename = fmt.Sprintf("%s%s", baseName, extension)
+	} else {
+		filename = fmt.Sprintf("%s_%dx%d%s", baseName, x, y, extension)
+	}
+
+	fmt.Println(filename, extension)
+	newPath := filepath.Join(Config.CacheDir, filename)
 
 	// check cache for already transformed image
 	_, err = os.Stat(newPath)

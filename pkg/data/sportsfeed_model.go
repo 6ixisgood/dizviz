@@ -1,6 +1,7 @@
 package data
 
 import (
+	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	"time"
 )
 
@@ -69,7 +70,7 @@ type DailyGamesNHLResponse struct {
 		} `json:"schedule"`
 		Score struct {
 			CurrentPeriod                 interface{} `json:"currentPeriod"`
-			CurrentPeriodSecondsRemaining interface{} `json:"currentPeriodSecondsRemaining"`
+			CurrentPeriodSecondsRemaining int         `json:"currentPeriodSecondsRemaining"`
 			CurrentIntermission           interface{} `json:"currentIntermission"`
 			AwayScoreTotal                int         `json:"awayScoreTotal"`
 			AwayShotsTotal                int         `json:"awayShotsTotal"`
@@ -127,7 +128,7 @@ type DailyGamesNFLResponse struct {
 	LastUpdatedOn time.Time `json:"lastUpdatedOn"`
 	Games         []struct {
 		Schedule struct {
-			ID        int       `json:"id"`
+			ID        string    `json:"id"`
 			Week      int       `json:"week"`
 			StartTime time.Time `json:"startTime"`
 			EndedTime time.Time `json:"endedTime"`
@@ -981,5 +982,182 @@ type NFLBoxScoreResponse struct {
 			Abbreviation string `json:"abbreviation"`
 			Type         string `json:"type"`
 		} `json:"teamStatReferences"`
+	} `json:"references"`
+}
+
+// NFLBoxScoreResponseFormatted formatted response for NFL box score
+type NFLBoxScoreResponseFormatted struct {
+	GameID              string
+	HomeAbbreviation    string
+	AwayAbbreviation    string
+	HomeScore           int
+	AwayScore           int
+	HomeLogo            string
+	AwayLogo            string
+	Quarter             int
+	QuarterMinRemaining int
+	QuarterSecRemaining int
+	Down                int
+	YardsRemaining      int
+	LineOfScrimmage     int
+	PlayedStatus        string
+	StartTime           time.Time
+	HomePassYards       int
+	AwayPassYards       int
+	HomeRushYards       int
+	AwayRushYards       int
+	HomeSacks           int
+	AwaySacks           int
+	HomeWins            int
+	AwayWins            int
+	HomeLosses          int
+	AwayLosses          int
+	HomeTies            int
+	AwayTies            int
+}
+
+// NFLCurrentSeasonResponse
+type NFLCurrentSeasonResponse struct {
+	LastUpdatedOn util.Date `json:"lastUpdatedOn"`
+	Seasons       []struct {
+		Name               string    `json:"name"`
+		Slug               string    `json:"slug"`
+		StartDate          util.Date `json:"startDate"`
+		EndDate            util.Date `json:"endDate"`
+		SeasonInterval     string    `json:"seasonInterval"`
+		SupportedTeamStats []struct {
+			Category     string `json:"category"`
+			FullName     string `json:"fullName"`
+			Description  string `json:"description"`
+			Abbreviation string `json:"abbreviation"`
+			Type         string `json:"type"`
+		} `json:"supportedTeamStats"`
+		SupportedPlayerStats []struct {
+			Category     string `json:"category"`
+			FullName     string `json:"fullName"`
+			Description  string `json:"description"`
+			Abbreviation string `json:"abbreviation"`
+			Type         string `json:"type"`
+		} `json:"supportedPlayerStats"`
+		Notes any `json:"notes"`
+	} `json:"seasons"`
+}
+
+type NFLCurrentWeek struct {
+	SeasonSlug string
+	Week       string
+}
+
+type NFLWeeklyGamesResponse struct {
+	LastUpdatedOn time.Time `json:"lastUpdatedOn"`
+	Games         []struct {
+		Schedule struct {
+			ID        int       `json:"id"`
+			Week      int       `json:"week"`
+			StartTime time.Time `json:"startTime"`
+			EndedTime time.Time `json:"endedTime"`
+			AwayTeam  struct {
+				ID           int    `json:"id"`
+				Abbreviation string `json:"abbreviation"`
+			} `json:"awayTeam"`
+			HomeTeam struct {
+				ID           int    `json:"id"`
+				Abbreviation string `json:"abbreviation"`
+			} `json:"homeTeam"`
+			Venue struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			} `json:"venue"`
+			VenueAllegiance          string   `json:"venueAllegiance"`
+			ScheduleStatus           string   `json:"scheduleStatus"`
+			OriginalStartTime        any      `json:"originalStartTime"`
+			DelayedOrPostponedReason any      `json:"delayedOrPostponedReason"`
+			PlayedStatus             string   `json:"playedStatus"`
+			Attendance               int      `json:"attendance"`
+			Officials                []any    `json:"officials"`
+			Broadcasters             []string `json:"broadcasters"`
+			Weather                  struct {
+				Type        string `json:"type"`
+				Description string `json:"description"`
+				Wind        struct {
+					Speed struct {
+						MilesPerHour      int `json:"milesPerHour"`
+						KilometersPerHour int `json:"kilometersPerHour"`
+					} `json:"speed"`
+					Direction struct {
+						Degrees int    `json:"degrees"`
+						Label   string `json:"label"`
+					} `json:"direction"`
+				} `json:"wind"`
+				Temperature struct {
+					Fahrenheit int `json:"fahrenheit"`
+					Celsius    int `json:"celsius"`
+				} `json:"temperature"`
+				Precipitation struct {
+					Type    string `json:"type"`
+					Percent any    `json:"percent"`
+					Amount  struct {
+						Millimeters int `json:"millimeters"`
+						Centimeters any `json:"centimeters"`
+						Inches      any `json:"inches"`
+						Feet        any `json:"feet"`
+					} `json:"amount"`
+				} `json:"precipitation"`
+				HumidityPercent int `json:"humidityPercent"`
+			} `json:"weather"`
+		} `json:"schedule"`
+		Score struct {
+			CurrentQuarter                 int `json:"currentQuarter"`
+			CurrentQuarterSecondsRemaining int `json:"currentQuarterSecondsRemaining"`
+			CurrentIntermission            any `json:"currentIntermission"`
+			TeamInPossession               any `json:"teamInPossession"`
+			CurrentDown                    any `json:"currentDown"`
+			CurrentYardsRemaining          any `json:"currentYardsRemaining"`
+			LineOfScrimmage                any `json:"lineOfScrimmage"`
+			AwayScoreTotal                 int `json:"awayScoreTotal"`
+			HomeScoreTotal                 int `json:"homeScoreTotal"`
+			Quarters                       []struct {
+				QuarterNumber int `json:"quarterNumber"`
+				AwayScore     int `json:"awayScore"`
+				HomeScore     int `json:"homeScore"`
+			} `json:"quarters"`
+		} `json:"score"`
+	} `json:"games"`
+	TeamsWithByes []any `json:"teamsWithByes"`
+	References    struct {
+		TeamReferences []struct {
+			ID           int    `json:"id"`
+			City         string `json:"city"`
+			Name         string `json:"name"`
+			Abbreviation string `json:"abbreviation"`
+			HomeVenue    struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			} `json:"homeVenue"`
+			TeamColoursHex      []string `json:"teamColoursHex"`
+			SocialMediaAccounts []struct {
+				MediaType string `json:"mediaType"`
+				Value     string `json:"value"`
+			} `json:"socialMediaAccounts"`
+			OfficialLogoImageSrc string `json:"officialLogoImageSrc"`
+		} `json:"teamReferences"`
+		VenueReferences []struct {
+			ID             int    `json:"id"`
+			Name           string `json:"name"`
+			City           string `json:"city"`
+			Country        string `json:"country"`
+			GeoCoordinates struct {
+				Latitude  float64 `json:"latitude"`
+				Longitude float64 `json:"longitude"`
+			} `json:"geoCoordinates"`
+			CapacitiesByEventType []struct {
+				EventType string `json:"eventType"`
+				Capacity  int    `json:"capacity"`
+			} `json:"capacitiesByEventType"`
+			PlayingSurface     string `json:"playingSurface"`
+			BaseballDimensions []any  `json:"baseballDimensions"`
+			HasRoof            bool   `json:"hasRoof"`
+			HasRetractableRoof bool   `json:"hasRetractableRoof"`
+		} `json:"venueReferences"`
 	} `json:"references"`
 }

@@ -10,8 +10,6 @@ type Store struct {
 	db *grocksdb.DB
 }
 
-
-
 // NewStore initializes and returns a new Store
 func NewStore(dbPath string) (*Store, error) {
 	opts := grocksdb.NewDefaultOptions()
@@ -25,66 +23,66 @@ func NewStore(dbPath string) (*Store, error) {
 
 // Save
 func (s *Store) SaveItem(prefix string, id string, data []byte) (string, error) {
-    wo := grocksdb.NewDefaultWriteOptions()
+	wo := grocksdb.NewDefaultWriteOptions()
 	defer wo.Destroy()
-    fullId := prefix + "-" + id 
+	fullId := prefix + "-" + id
 	return fullId, s.db.Put(wo, []byte(fullId), data)
 }
 
 // Get
 func (s *Store) GetItem(id string) ([]byte, error) {
-    ro := grocksdb.NewDefaultReadOptions()
-    defer ro.Destroy()
-    
-    rocksSlice, err := s.db.Get(ro, []byte(id))
-    if err != nil {
-        return nil, err
-    }
-    defer rocksSlice.Free()
+	ro := grocksdb.NewDefaultReadOptions()
+	defer ro.Destroy()
 
-    data := rocksSlice.Data()
-    dataCopy := make([]byte, len(data))
-    copy(dataCopy, data)
+	rocksSlice, err := s.db.Get(ro, []byte(id))
+	if err != nil {
+		return nil, err
+	}
+	defer rocksSlice.Free()
 
-    return dataCopy, nil
+	data := rocksSlice.Data()
+	dataCopy := make([]byte, len(data))
+	copy(dataCopy, data)
+
+	return dataCopy, nil
 }
 
 // GetPrefix
 func (s *Store) GetPrefix(prefix string) ([][]byte, error) {
-    var datas [][]byte
-    ro := grocksdb.NewDefaultReadOptions()
-    defer ro.Destroy()
-    it := s.db.NewIterator(ro)
-    defer it.Close()
+	var datas [][]byte
+	ro := grocksdb.NewDefaultReadOptions()
+	defer ro.Destroy()
+	it := s.db.NewIterator(ro)
+	defer it.Close()
 
-    prefixRaw := []byte(prefix)
-    for it.Seek(prefixRaw); it.ValidForPrefix(prefixRaw); it.Next() {
-        data := it.Value().Data()
-        datas = append(datas, data)
-    }
+	prefixRaw := []byte(prefix)
+	for it.Seek(prefixRaw); it.ValidForPrefix(prefixRaw); it.Next() {
+		data := it.Value().Data()
+		datas = append(datas, data)
+	}
 
-    if err := it.Err(); err != nil {
-        return nil, err
-    }
+	if err := it.Err(); err != nil {
+		return nil, err
+	}
 
-    return datas, nil
+	return datas, nil
 }
 
 // DeleteItem
 func (s *Store) DeleteItem(id string) error {
-    key := []byte(id)
+	key := []byte(id)
 
-    // Create a write options object
-    wo := grocksdb.NewDefaultWriteOptions()
-    defer wo.Destroy()
+	// Create a write options object
+	wo := grocksdb.NewDefaultWriteOptions()
+	defer wo.Destroy()
 
-    // Perform the deletion
-    err := s.db.Delete(wo, key)
-    if err != nil {
-        return fmt.Errorf("failed to delete item with ID %s: %w", id, err)
-    }
+	// Perform the deletion
+	err := s.db.Delete(wo, key)
+	if err != nil {
+		return fmt.Errorf("failed to delete item with ID %s: %w", id, err)
+	}
 
-    return nil
+	return nil
 }
 
 // Close closes the store and releases the database resources
@@ -103,4 +101,3 @@ func (s *Store) readData(name string) ([]byte, error) {
 	defer data.Free()
 	return data.Data(), nil
 }
-

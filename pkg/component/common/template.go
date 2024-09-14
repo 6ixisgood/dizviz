@@ -5,7 +5,6 @@ import (
 	"github.com/fogleman/gg"
 	"image"
 	"image/color"
-	"log"
 	"math"
 )
 
@@ -145,7 +144,6 @@ func (t *Template) Stop() {
 }
 
 func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	log.Printf("Starting Unmarshalling of Template")
 	tmpl.XMLName = start.Name
 
 	for _, attr := range start.Attr {

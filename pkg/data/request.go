@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -144,19 +144,34 @@ func (c *APIClient) Do(req *APIRequest) (*http.Response, error) {
 	return nil, lastError
 }
 
-// DoAndUnmarshal sends the API request, reads the response,
-// and unmarshals it into the provided output structure.
-func (c *APIClient) DoAndUnmarshal(req *APIRequest, out interface{}) error {
+// DoAndUnmarshal sends a request and unmarshals the response into a provided struct
+func (c *APIClient) DoAndUnmarshal(req *APIRequest, v interface{}) (int, error) {
+	// Send the request
 	resp, err := c.Do(req)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
-	if err := json.Unmarshal(body, out); err != nil {
-		return JSONUnmarshalError{Err: err}
+	// Read the response body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return resp.StatusCode, err
 	}
-	return nil
-}
 
+	// Handle status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		// Return error for non-2xx responses
+		return resp.StatusCode, errors.New(fmt.Sprintf("unexpected status code: %d", resp.StatusCode))
+	}
+
+	// Unmarshal the response body if the status code is 2xx and the body is not empty
+	if len(body) > 0 {
+		if err := json.Unmarshal(body, v); err != nil {
+			return resp.StatusCode, err
+		}
+	}
+
+	// Return the status code and no error
+	return resp.StatusCode, nil
+}

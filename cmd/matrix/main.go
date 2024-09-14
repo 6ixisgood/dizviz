@@ -11,10 +11,10 @@ import (
 	_ "github.com/6ixisgood/matrix-ticker/pkg/component"
 	"github.com/6ixisgood/matrix-ticker/pkg/config"
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
+	"github.com/6ixisgood/matrix-ticker/pkg/store"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	"github.com/6ixisgood/matrix-ticker/pkg/view"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
-	"github.com/6ixisgood/matrix-ticker/pkg/store"
 	"github.com/sixisgoood/go-rpi-rgb-led-matrix"
 )
 
@@ -78,7 +78,7 @@ func main() {
 		DefaultFontColor:  config.AppConfig.Default.FontColor,
 		DefaultFontStyle:  config.AppConfig.Default.FontStyle,
 		DefaultFontType:   config.AppConfig.Default.FontType,
-		Store: appStore,
+		Store:             appStore,
 	})
 
 	// configure utils
@@ -89,7 +89,7 @@ func main() {
 
 	// configure server
 	api.SetAppServerConfig(&api.AppServerConfig{
-		AllowedHost:  config.AppConfig.Server.AllowedHosts,
+		AllowedHost: config.AppConfig.Server.AllowedHosts,
 		Port:        config.AppConfig.Server.Port,
 	})
 
