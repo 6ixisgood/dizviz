@@ -8,19 +8,19 @@ import (
 type TextView struct {
 	c.BaseView
 
-	Text string
+	Text      string
 	Alignment string
-	Justify string
-	Color string
-	BgColor string
+	Justify   string
+	Color     string
+	BgColor   string
 }
 
 type TextViewConfig struct {
-	Text string `json:"text" spec:"required='true',min='1',label="Text"`
-	Alignment string `json:"alignment" spec:"required='false',label="Alignment"`
-	Justify string `json:"justify" spec:"required='false',label="Justify"`
-	Color string `json:"color" spec:"required='false',label="Color"`
-	BgColor string `json:"bg-color" spec:"required='false',label="Background Color"`
+	Text      string `json:"text" spec:"required='true',min='1',label='Text'"`
+	Alignment string `json:"alignment" spec:"required='false',label='Alignment'"`
+	Justify   string `json:"justify" spec:"required='false',label='Justify'"`
+	Color     string `json:"color" spec:"required='false',label='Color'"`
+	BgColor   string `json:"bg-color" spec:"required='false',label='Background Color'"`
 }
 
 func TextViewCreate(viewConfig c.ViewConfig) (c.View, error) {
@@ -42,21 +42,21 @@ func TextViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 	}
 
 	return &TextView{
-		Text: config.Text,
-		Justify: config.Justify,
+		Text:      config.Text,
+		Justify:   config.Justify,
 		Alignment: config.Alignment,
-		Color: config.Color,
-		BgColor: config.BgColor,
+		Color:     config.Color,
+		BgColor:   config.BgColor,
 	}, nil
 }
 
 func (v *TextView) TemplateData() map[string]interface{} {
 	return map[string]interface{}{
-		"Text": v.Text,
-		"Justify": v.Justify,
+		"Text":      v.Text,
+		"Justify":   v.Justify,
 		"Alignment": v.Alignment,
-		"Color": v.Color,
-		"BgColor": v.BgColor,
+		"Color":     v.Color,
+		"BgColor":   v.BgColor,
 	}
 }
 

@@ -74,7 +74,6 @@ func saveViewDefinition(c *gin.Context) {
 	}
 
 	configInstance := regView.NewConfig()
-	log.Printf(string(body.Config))
 	if err := json.Unmarshal(body.Config, &configInstance); err != nil {
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad view config passed"})

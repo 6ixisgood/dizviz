@@ -2,11 +2,11 @@ package common
 
 import (
 	"encoding/xml"
+	"fmt"
 	"github.com/fogleman/gg"
 	"image"
 	"image/color"
 	"math"
-	"fmt"
 )
 
 type Template struct {

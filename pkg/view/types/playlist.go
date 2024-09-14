@@ -21,12 +21,12 @@ const (
 )
 
 type PlaylistViewConfigView struct {
-	ViewId   string                     `json:"viewId spec:"label='The View ID in the store'`
+	ViewId   string                     `json:"viewId" spec:"label='The View ID in the store'"`
 	Settings PlaylistViewConfigSettings `json:"settings" spec:"label='Settings'"`
 }
 
 type PlaylistViewConfigSettings struct {
-	Time time.Duration `json:"time" spec:"label='Duration(s)',min='20',max='100'"`
+	Time time.Duration `json:"time" spec:"label='Duration(s)'"`
 }
 
 type PlaylistViewConfig struct {
