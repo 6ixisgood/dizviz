@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"fmt"
 )
 
 type Template struct {
@@ -16,6 +17,7 @@ type Template struct {
 	Align      string      `xml:"align,attr"`
 	Justify    string      `xml:"justify,attr"`
 	Direction  string      `xml:"dir,attr"`
+	BgColor    string      `xml:"bg-color,attr"`
 	Components []Component `xml:",any"`
 }
 
@@ -25,6 +27,10 @@ func (t *Template) Init() {
 	for _, c := range t.Components {
 		c.SetParentSize(t.ComputedSizeX, t.ComputedSizeY) // Set parent size on each child component
 		c.Init()
+	}
+
+	if t.BgColor == "" {
+		t.BgColor = "#000000FF"
 	}
 
 	// create context with sizes
@@ -72,7 +78,9 @@ type Axis struct {
 }
 
 func (t *Template) Render() image.Image {
-	t.Ctx.SetColor(color.RGBA{0, 0, 0, 255})
+	var r, g, b, a uint8
+	fmt.Sscanf(t.BgColor, "#%02x%02x%02x%02x", &r, &g, &b, &a)
+	t.Ctx.SetColor(color.RGBA{r, g, b, a})
 	t.Ctx.Clear()
 
 	var componentLengthX, componentLengthY int
@@ -148,9 +156,9 @@ func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 
 	for _, attr := range start.Attr {
 		switch attr.Name.Local {
-		case "sizeX":
+		case "size-x":
 			tmpl.SizeX = attr.Value
-		case "sizeY":
+		case "size-y":
 			tmpl.SizeY = attr.Value
 		case "justify":
 			tmpl.Justify = attr.Value
@@ -158,6 +166,8 @@ func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 			tmpl.Align = attr.Value
 		case "dir":
 			tmpl.Direction = attr.Value
+		case "bg-color":
+			tmpl.BgColor = attr.Value
 		}
 	}
 

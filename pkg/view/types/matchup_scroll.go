@@ -60,20 +60,20 @@ func (v *MatchupsScrollView) TemplateData() map[string]interface{} {
 func (v *MatchupsScrollView) TemplateString() string {
 	var s string
 	s = `
-	<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-		<scroller scrollX="-1" scrollY="0" sizeX="10000" sizeY="100%">
-			<template align="center" sizeX="10000" sizeY="{{ $MatrixSizey }}">
+	<template size-x="{{ $Matrixsize-x }}" size-y="{{ $Matrixsize-y }}">
+		<scroller scrollX="-1" scrollY="0" size-x="10000" size-y="100%">
+			<template align="center" size-x="10000" size-y="{{ $Matrixsize-y }}">
 			    {{ range .Matchups }}
 
 			    {{ if eq .PlayedStatus "UNPLAYED"}}
-				<image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ (index .Teams 0).LogoSrc }}"></image>
+				<image size-x="{{ $DefaultImagesize-x }}" size-y="{{ $DefaultImagesize-y }}" src="{{ (index .Teams 0).LogoSrc }}"></image>
 				<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">@</text>
-			    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ (index .Teams 1).LogoSrc }}"></image>
+			    <image size-x="{{ $DefaultImagesize-x }}" size-y="{{ $DefaultImagesize-y }}" src="{{ (index .Teams 1).LogoSrc }}"></image>
 				<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .StartTime }}</text>
 			    {{ else }}
-			    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ (index .Teams 0).LogoSrc }}"></image>
+			    <image size-x="{{ $DefaultImagesize-x }}" size-y="{{ $DefaultImagesize-y }}" src="{{ (index .Teams 0).LogoSrc }}"></image>
 			    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ (index .Teams 0).Score }}</text>
-			    <image sizeX="{{ $DefaultImageSizex }}" sizeY="{{ $DefaultImageSizey }}" src="{{ (index .Teams 1).LogoSrc }}"></image>
+			    <image size-x="{{ $DefaultImagesize-x }}" size-y="{{ $DefaultImagesize-y }}" src="{{ (index .Teams 1).LogoSrc }}"></image>
 			    <text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ (index .Teams 1).Score }}</text>
 			    {{ end}}
 

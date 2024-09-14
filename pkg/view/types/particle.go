@@ -26,8 +26,8 @@ func ParticlesViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 
 func (v *ParticlesView) TemplateString() string {
 	return `
-		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-			<gravity-particles sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}"></gravity-particles>
+		<template size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}">
+			<gravity-particles size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}"></gravity-particles>
 		 </template>
 	`
 }

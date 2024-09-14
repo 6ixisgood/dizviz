@@ -112,37 +112,37 @@ func (v *NFLBoxView) TemplateString() string {
 		{{ $DetailFontSize := 14}}
 		{{ $LogoSize := 64 }}
 
-		<template dir="col" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
+		<template dir="col" size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}">
 
-			<template justify="space-around" sizeX="100%" sizeY="50%">
-				<template dir="col" justify="space-between" align="center"  sizeX="40%" sizeY="100%">
-		    		<image sizeX="{{ $LogoSize }}" sizeY="{{ $LogoSize }}" src="{{ $ImageDir }}/nfl/{{ .Game.AwayAbbreviation }}.png"></image>
+			<template justify="space-around" size-x="100%" size-y="50%">
+				<template dir="col" justify="space-between" align="center"  size-x="40%" size-y="100%">
+		    		<image size-x="{{ $LogoSize }}" size-y="{{ $LogoSize }}" src="{{ $ImageDir }}/nfl/{{ .Game.AwayAbbreviation }}.png"></image>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">({{ .Game.AwayWins }}-{{ .Game.AwayLosses }}-{{ .Game.AwayTies }})</text>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.AwayScore }}</text>
 				</template>
 
-				<template dir="col" justify="space-around" align="center" sizeX="20%" sizeY="100%">
+				<template dir="col" justify="space-around" align="center" size-x="20%" size-y="100%">
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">{{ .Game.QuarterMinRemaining }}:{{ .Game.QuarterSecRemaining }}</text>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">{{ CardinalToOrdinal .Game.Quarter}}</text>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">{{ CardinalToOrdinal .Game.Down}}{{ "&" }}{{ .Game.YardsRemaining }}</text>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">{{ .Game.LineOfScrimmage }}</text>
 				</template>
 
-				<template dir="col" justify="space-between"  align="center" sizeX="40%" sizeY="100%">
-		    		<image sizeX="{{ $LogoSize }}" sizeY="{{ $LogoSize }}" src="{{ $ImageDir }}/nfl/{{ .Game.HomeAbbreviation }}.png"></image>
+				<template dir="col" justify="space-between"  align="center" size-x="40%" size-y="100%">
+		    		<image size-x="{{ $LogoSize }}" size-y="{{ $LogoSize }}" src="{{ $ImageDir }}/nfl/{{ .Game.HomeAbbreviation }}.png"></image>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">({{ .Game.HomeWins }}-{{ .Game.HomeLosses }}-{{ .Game.HomeTies }})</text>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.HomeScore }}</text>
 				</template>
 			</template>
 
-			<template justify="space-between" sizeX="100%" sizeY="50%">
-				<template sizeX="45%" sizeY="100%" dir="col" justify="space-around">
+			<template justify="space-between" size-x="100%" size-y="50%">
+				<template size-x="45%" size-y="100%" dir="col" justify="space-around">
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Passing: {{ .Game.AwayPassYards }}</text>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Rushing: {{ .Game.AwayRushYards }}</text>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Sacks: {{ .Game.AwaySacks }}</text>
 				</template>
 
-				<template sizeX="45%" sizeY="100%" dir="col" justify="space-around">
+				<template size-x="45%" size-y="100%" dir="col" justify="space-around">
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Passing: {{ .Game.HomePassYards }}</text>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Rushing: {{ .Game.HomeRushYards }}</text>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Sacks: {{ .Game.HomeSacks }}</text>

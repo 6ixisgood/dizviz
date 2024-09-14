@@ -9,10 +9,18 @@ type TextView struct {
 	c.BaseView
 
 	Text string
+	Alignment string
+	Justify string
+	Color string
+	BgColor string
 }
 
 type TextViewConfig struct {
 	Text string `json:"text" spec:"required='true',min='1',label="Text"`
+	Alignment string `json:"alignment" spec:"required='false',label="Alignment"`
+	Justify string `json:"justify" spec:"required='false',label="Justify"`
+	Color string `json:"color" spec:"required='false',label="Color"`
+	BgColor string `json:"bg-color" spec:"required='false',label="Background Color"`
 }
 
 func TextViewCreate(viewConfig c.ViewConfig) (c.View, error) {
@@ -25,27 +33,37 @@ func TextViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 		return nil, err
 	}
 
+	if config.Color == "" {
+		config.Color = "#FFFFFFFF"
+	}
+
+	if config.BgColor == "" {
+		config.BgColor = "#00000FF"
+	}
+
 	return &TextView{
 		Text: config.Text,
+		Justify: config.Justify,
+		Alignment: config.Alignment,
+		Color: config.Color,
+		BgColor: config.BgColor,
 	}, nil
 }
 
 func (v *TextView) TemplateData() map[string]interface{} {
 	return map[string]interface{}{
 		"Text": v.Text,
+		"Justify": v.Justify,
+		"Alignment": v.Alignment,
+		"Color": v.Color,
+		"BgColor": v.BgColor,
 	}
 }
 
 func (v *TextView) TemplateString() string {
 	return `
-		<template dir="col" justify="space-between" sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-				<template sizeX="100%" sizeY="45%">
-					<text sizeX="50%" sizeY="100%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
-					<text sizeX="50%" sizeY="100%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
-				</template>
-				<template sizeX="100%" sizeY="35%">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
-				</template>
+		<template dir="col" justify="{{ .Justify }}" align="{{ .Alignment }}" size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}" bg-color="{{ .BgColor }}">
+			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ .Color }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
 		</template>
 	`
 }

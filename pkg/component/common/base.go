@@ -9,14 +9,14 @@ import (
 )
 
 type BaseComponent struct {
-	SizeX         string `xml:"sizeX,attr"`
-	SizeY         string `xml:"sizeY,attr"`
+	SizeX         string `xml:"size-x,attr"`
+	SizeY         string `xml:"size-y,attr"`
 	ComputedSizeX int
 	ComputedSizeY int
 	ParentWidth   int
 	ParentHeight  int
-	PosX          int `xml:"posX,attr"`
-	PosY          int `xml:"posY,attr"`
+	PosX          int `xml:"pos-x,attr"`
+	PosY          int `xml:"pos-y,attr"`
 
 	Ctx     *gg.Context
 	prevImg image.Image

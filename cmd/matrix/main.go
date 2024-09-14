@@ -121,7 +121,11 @@ func main() {
 	t := "text"
 	config := []byte(`
 		{
-			"text": "HI"
+			"text": "Welcome to DizViz",
+			"alignment": "center",
+			"justify": "center",
+			"color": "#FF2244FF",
+			"bg-color": "#002288FF"
 		}
 	`)
 

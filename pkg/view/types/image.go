@@ -38,8 +38,8 @@ func (v *ImagePlayerView) TemplateData() map[string]interface{} {
 
 func (v *ImagePlayerView) TemplateString() string {
 	return `
-		<template sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}">
-			<image sizeX="{{ $MatrixSizex }}" sizeY="{{ $MatrixSizey }}" src="{{ .Src }}" loop="true"></image>
+		<template size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}">
+			<image size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}" src="{{ .Src }}" loop="true"></image>
 		 </template>
 	`
 }
