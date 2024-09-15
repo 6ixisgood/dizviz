@@ -116,7 +116,7 @@ func (v *NFLBoxView) TemplateString() string {
 
 			<template justify="space-around" size-x="100%" size-y="50%">
 				<template dir="col" justify="space-between" align="center"  size-x="40%" size-y="100%">
-		    		<image size-x="{{ $LogoSize }}" size-y="{{ $LogoSize }}" src="{{ $ImageDir }}/nfl/{{ .Game.AwayAbbreviation }}.png"></image>
+		    		<image size-x="{{ $LogoSize }}" size-y="{{ $LogoSize }}" src="{{ .Game.AwayLogo }}"></image>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">({{ .Game.AwayWins }}-{{ .Game.AwayLosses }}-{{ .Game.AwayTies }})</text>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.AwayScore }}</text>
 				</template>
@@ -129,7 +129,7 @@ func (v *NFLBoxView) TemplateString() string {
 				</template>
 
 				<template dir="col" justify="space-between"  align="center" size-x="40%" size-y="100%">
-		    		<image size-x="{{ $LogoSize }}" size-y="{{ $LogoSize }}" src="{{ $ImageDir }}/nfl/{{ .Game.HomeAbbreviation }}.png"></image>
+		    		<image size-x="{{ $LogoSize }}" size-y="{{ $LogoSize }}" src="{{ .Game.HomeLogo }}"></image>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">({{ .Game.HomeWins }}-{{ .Game.HomeLosses }}-{{ .Game.HomeTies }})</text>
 					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.HomeScore }}</text>
 				</template>
