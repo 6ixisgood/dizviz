@@ -42,6 +42,7 @@ func MatchupsScrollViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 }
 
 func (v *MatchupsScrollView) Init() {
+	v.BaseView.Init()
 	v.Refresh()
 }
 

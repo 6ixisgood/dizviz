@@ -21,11 +21,15 @@ type SleeperMatchupsView struct {
 	dataRefresh   *util.Refresher
 	phaseRefresh  *util.Refresher
 	league        d.SleeperLeagueFormatted
+	phaseDuration time.Duration
+	dataDuration  time.Duration
 }
 
 type SleeperMatchupsViewConfig struct {
-	LeagueID string `json:"league_id" spec:"required='true',label='League ID'"`
-	Week     int    `json:"week" spec:"required='true',min='1',max='18',label='Week'"`
+	LeagueID      string `json:"league_id" spec:"required='true',label='League ID'"`
+	Week          int    `json:"week" spec:"required='true',min='1',max='18',label='Week'"`
+	PhaseDuration int    `json:"phase-duration" spec:"required='false',label='Phase Duration'"`
+	DataDuration  int    `json:"data-duration" spec:"required='false',label='Data Duration'"`
 }
 
 func SleeperMatchupsViewCreate(viewConfig c.ViewConfig) (c.View, error) {
@@ -40,18 +44,29 @@ func SleeperMatchupsViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 
 	client := d.SleeperClient()
 
+	if config.PhaseDuration == 0 {
+		config.PhaseDuration = 15
+	}
+
+	if config.DataDuration == 0 {
+		config.DataDuration = 60
+	}
+
 	return &SleeperMatchupsView{
 		League:        config.LeagueID,
 		Week:          config.Week,
 		SleeperClient: client,
 		Phase:         0,
+		phaseDuration: time.Duration(config.PhaseDuration),
+		dataDuration:  time.Duration(config.DataDuration),
 	}, nil
 }
 
 func (v *SleeperMatchupsView) Init() {
+	v.BaseView.Init()
 	// init ticker and stop chan
-	v.dataRefresh = util.RefresherCreate(60*time.Second, v.RefreshData)
-	v.phaseRefresh = util.RefresherCreate(5*time.Second, v.RefreshPhase)
+	v.dataRefresh = util.RefresherCreate(v.dataDuration*time.Second, v.RefreshData)
+	v.phaseRefresh = util.RefresherCreate(v.phaseDuration*time.Second, v.RefreshPhase)
 	v.RefreshData()
 	v.dataRefresh.Start()
 	v.phaseRefresh.Start()

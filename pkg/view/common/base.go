@@ -12,15 +12,22 @@ type BaseView struct {
 	stopChan        chan struct{}
 }
 
-func (v *BaseView) Init() {}
+func (v *BaseView) Init() {
+	v.template = &compCommon.Template{}
+}
 
 func (v *BaseView) Template() *compCommon.Template {
 	return v.template
 }
 
+func (v *BaseView) SetTemplateValue(t compCommon.Template) {
+	*v.template = t
+}
+
 func (v *BaseView) SetTemplate(t *compCommon.Template) {
 	v.template = t
 }
+
 func (v *BaseView) TemplateData() map[string]interface{} {
 	return map[string]interface{}{}
 }

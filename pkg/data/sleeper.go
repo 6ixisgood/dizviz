@@ -448,7 +448,12 @@ func (d *Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]Sleeper
 
 			// fetch player details
 			pInfo := d.GetPlayer(id)
-			player.Name = fmt.Sprintf("%c.%s", pInfo.FirstName[0], pInfo.LastName)
+
+			firstName := byte(0)
+			if len(pInfo.FirstName) > 0 {
+				firstName = pInfo.FirstName[0]
+			}
+			player.Name = fmt.Sprintf("%c.%s", firstName, pInfo.LastName)
 			player.Position = pInfo.Position
 
 			// determine if starter

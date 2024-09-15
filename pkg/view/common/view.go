@@ -19,6 +19,7 @@ type View interface {
 	Init()
 	Template() *compCommon.Template
 	SetTemplate(*compCommon.Template)
+	SetTemplateValue(compCommon.Template)
 	TemplateString() string
 	TemplateData() map[string]interface{}
 	Stop()
@@ -154,7 +155,7 @@ func TemplateRefresh(v View) {
 
 	// set new template and init
 	t.Init()
-	v.SetTemplate(&t)
+	v.SetTemplateValue(t)
 }
 
 type ViewConfigFieldSpec struct {

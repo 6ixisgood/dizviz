@@ -119,18 +119,20 @@ func (v *PlaylistView) TemplateData() map[string]interface{} {
 
 func (v *PlaylistView) NextView() {
 	// init next view
-	fmt.Println(v.activeIndex)
+	prevIndex := v.activeIndex
 	nextIndex := (v.activeIndex + 1) % len(v.views)
 
-	// stop active view
-	if v.activeIndex > 0 {
-		v.views[v.activeIndex].Stop()
-	}
 	v.views[nextIndex].Init()
 
 	// set next view as active
+	v.SetTemplate(v.views[nextIndex].Template())
 	v.activeIndex = nextIndex
+
 	c.TemplateRefresh(v)
+	// stop active view
+	if prevIndex > 0 {
+		v.views[prevIndex].Stop()
+	}
 
 	// wait for next view
 	go func() {
@@ -140,6 +142,7 @@ func (v *PlaylistView) NextView() {
 }
 
 func (v *PlaylistView) Init() {
+	v.BaseView.Init()
 	v.NextView()
 }
 

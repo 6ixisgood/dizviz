@@ -67,6 +67,7 @@ func NFLBoxViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 }
 
 func (v *NFLBoxView) Init() {
+	v.BaseView.Init()
 	var f func()
 	if v.Auto {
 		// we're grabbing the current games and looping through them
@@ -98,6 +99,10 @@ func (v *NFLBoxView) RefreshPhase() {
 		v.RefreshPhase()
 	}
 	c.TemplateRefresh(v)
+}
+
+func (v *NFLBoxView) Stop() {
+	v.refresh.Stop()
 }
 
 func (v *NFLBoxView) TemplateData() map[string]interface{} {
