@@ -209,13 +209,22 @@ func (s *SportsFeed) FetchNFLBoxScore(matchup string, date time.Time) (NFLBoxSco
 	sec := int(secRem % 60)
 	min := int(secRem / 60)
 
+	homeTeamId := responseData.Game.HomeTeam.ID
+	var homeTeamReferenceIndex, awayTeamReferenceIndex int
+	for i, ref := range(responseData.References.TeamReferences) {
+		if ref.ID == homeTeamId {
+			homeTeamReferenceIndex = i
+			awayTeamReferenceIndex = 1 - i
+		}
+	}
+
 	formattedGameData = NFLBoxScoreResponseFormatted{
 		HomeAbbreviation:    responseData.Game.HomeTeam.Abbreviation,
 		AwayAbbreviation:    responseData.Game.AwayTeam.Abbreviation,
 		HomeScore:           responseData.Scoring.HomeScoreTotal,
 		AwayScore:           responseData.Scoring.AwayScoreTotal,
-		HomeLogo:            responseData.References.TeamReferences[0].OfficialLogoImageSrc,
-		AwayLogo:            responseData.References.TeamReferences[1].OfficialLogoImageSrc,
+		HomeLogo:            responseData.References.TeamReferences[homeTeamReferenceIndex].OfficialLogoImageSrc,
+		AwayLogo:            responseData.References.TeamReferences[awayTeamReferenceIndex].OfficialLogoImageSrc,
 		Quarter:             responseData.Scoring.CurrentQuarter,
 		QuarterMinRemaining: min,
 		QuarterSecRemaining: sec,
