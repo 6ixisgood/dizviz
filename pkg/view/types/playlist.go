@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +15,8 @@ type PlaylistView struct {
 	views       []c.View
 	activeIndex int
 	timings     []time.Duration
+	ctx      context.Context
+	cancel   context.CancelFunc
 }
 
 const (
@@ -118,31 +121,43 @@ func (v *PlaylistView) TemplateData() map[string]interface{} {
 }
 
 func (v *PlaylistView) NextView() {
-	// init next view
-	prevIndex := v.activeIndex
-	nextIndex := (v.activeIndex + 1) % len(v.views)
+	select {
+	case <-v.ctx.Done():
+		return
+	default:
+		prevIndex := v.activeIndex
+		nextIndex := (v.activeIndex + 1) % len(v.views)
 
-	v.views[nextIndex].Init()
+		v.views[nextIndex].Init()
 
-	// set next view as active
-	v.SetTemplate(v.views[nextIndex].Template())
-	v.activeIndex = nextIndex
+		// set next view as active
+		v.SetTemplate(v.views[nextIndex].Template())
+		v.activeIndex = nextIndex
 
-	c.TemplateRefresh(v)
-	// stop active view
-	if prevIndex > 0 {
-		v.views[prevIndex].Stop()
+		c.TemplateRefresh(v)
+		// stop active view
+		if prevIndex >= 0 {
+			v.views[prevIndex].Stop()
+		}
+
+		// wait for next view
+		go func() {	
+			time.Sleep(v.timings[v.activeIndex] * time.Second)
+			v.NextView()
+		}()
 	}
+}
 
-	// wait for next view
-	go func() {
-		time.Sleep(v.timings[v.activeIndex] * time.Second)
-		v.NextView()
-	}()
+func (v *PlaylistView) Stop() {
+	v.cancel()
 }
 
 func (v *PlaylistView) Init() {
 	v.BaseView.Init()
+	v.ctx, v.cancel = context.WithCancel(context.Background())
+
+
+
 	v.NextView()
 }
 
