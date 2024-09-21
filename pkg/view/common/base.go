@@ -14,6 +14,7 @@ type BaseView struct {
 
 func (v *BaseView) Init() {
 	v.template = &compCommon.Template{}
+	v.template.Init()
 }
 
 func (v *BaseView) Template() *compCommon.Template {
