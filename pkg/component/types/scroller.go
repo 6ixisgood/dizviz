@@ -12,8 +12,8 @@ type Scroller struct {
 	c.BaseComponent
 
 	XMLName xml.Name    `xml:"scroller"`
-	ScrollX int         `xml:"scrollX,attr"`
-	ScrollY int         `xml:"scrollY,attr"`
+	ScrollX int         `xml:"scroll-x,attr"`
+	ScrollY int         `xml:"scroll-y,attr"`
 	Slot    *c.Template `xml:"template"`
 }
 

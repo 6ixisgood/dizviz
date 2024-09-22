@@ -115,6 +115,8 @@ func (v *NFLBoxView) TemplateString() string {
 	return `
 		{{ $ScoreFontSize := 32 }}
 		{{ $DetailFontSize := 14}}
+		{{ $RecordFontSize := 10}}
+		{{ $ScoreFontColor := "#F2FF00FF" }}
 		{{ $LogoSize := 64 }}
 
 		<template dir="col" size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}">
@@ -122,8 +124,8 @@ func (v *NFLBoxView) TemplateString() string {
 			<template justify="space-around" size-x="100%" size-y="50%">
 				<template dir="col" justify="space-between" align="center"  size-x="40%" size-y="100%">
 		    		<image size-x="{{ $LogoSize }}" size-y="{{ $LogoSize }}" src="{{ .Game.AwayLogo }}"></image>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">({{ .Game.AwayWins }}-{{ .Game.AwayLosses }}-{{ .Game.AwayTies }})</text>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.AwayScore }}</text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $RecordFontSize }}">({{ .Game.AwayWins }}-{{ .Game.AwayLosses }}-{{ .Game.AwayTies }})</text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.AwayScore }}</text>
 				</template>
 
 				<template dir="col" justify="space-around" align="center" size-x="20%" size-y="100%">
@@ -135,8 +137,8 @@ func (v *NFLBoxView) TemplateString() string {
 
 				<template dir="col" justify="space-between"  align="center" size-x="40%" size-y="100%">
 		    		<image size-x="{{ $LogoSize }}" size-y="{{ $LogoSize }}" src="{{ .Game.HomeLogo }}"></image>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">({{ .Game.HomeWins }}-{{ .Game.HomeLosses }}-{{ .Game.HomeTies }})</text>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.HomeScore }}</text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $RecordFontSize }}">({{ .Game.HomeWins }}-{{ .Game.HomeLosses }}-{{ .Game.HomeTies }})</text>
+					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreFontColor }}" size="{{ $ScoreFontSize }}">{{ .Game.HomeScore }}</text>
 				</template>
 			</template>
 

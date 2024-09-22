@@ -66,8 +66,8 @@ func (i *Image) Init() {
 		}
 
 		// Set the desired size for the SVG (computed size)
-		width := 32  //int(i.ComputedSizeX)
-		height := 32 //int(i.ComputedSizeY)
+		width := int(i.ComputedSizeX)
+		height := int(i.ComputedSizeY)
 
 		// Create an RGBA canvas to render the SVG
 		rgba := image.NewRGBA(image.Rect(0, 0, width, height))

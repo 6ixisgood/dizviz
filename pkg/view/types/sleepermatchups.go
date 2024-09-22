@@ -28,8 +28,8 @@ type SleeperMatchupsView struct {
 type SleeperMatchupsViewConfig struct {
 	LeagueID      string `json:"league_id" spec:"required='true',label='League ID'"`
 	Week          int    `json:"week" spec:"required='true',min='1',max='18',label='Week'"`
-	PhaseDuration int    `json:"phase-duration" spec:"required='false',label='Phase Duration'"`
-	DataDuration  int    `json:"data-duration" spec:"required='false',label='Data Duration'"`
+	PhaseDuration int    `json:"phase_duration" spec:"required='false',label='Phase Duration'"`
+	DataDuration  int    `json:"data_duration" spec:"required='false',label='Data Duration'"`
 }
 
 func SleeperMatchupsViewCreate(viewConfig c.ViewConfig) (c.View, error) {
