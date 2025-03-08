@@ -26,6 +26,13 @@ type BaseComponent struct {
 
 func (bc *BaseComponent) Init() {
 	// determine sizing
+	if bc.SizeX == "" {
+		bc.SizeX = "100%"
+	}
+	if bc.SizeY == "" {
+		bc.SizeY = "100%"
+	}
+
 	if strings.HasSuffix(bc.SizeX, "%") {
 		percentage, _ := strconv.Atoi(bc.SizeX[:len(bc.SizeX)-1])
 		bc.ComputedSizeX = int(bc.ParentWidth * percentage / 100)

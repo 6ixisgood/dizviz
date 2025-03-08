@@ -43,12 +43,12 @@ func (t *Text) Init() {
 	w, h := t.Ctx.MeasureString(t.Text)
 	w_i := int(math.Ceil(w))
 	h_i := int(math.Ceil(h))
-	if t.ComputedSizeX == 0 {
-		t.ComputedSizeX = w_i
-	}
-	if t.ComputedSizeY == 0 {
-		t.ComputedSizeY = h_i
-	}
+	t.ComputedSizeX = w_i
+	t.ComputedSizeY = h_i
+
+	fmt.Println("-----")
+	fmt.Printf("w, h %d, %d", w_i, h_i)
+	fmt.Println("-----")
 
 	// resize context
 	t.Ctx = gg.NewContext(t.ComputedSizeX, t.ComputedSizeY)

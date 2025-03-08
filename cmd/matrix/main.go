@@ -87,12 +87,6 @@ func main() {
 		FontDir:  config.AppConfig.Data.FontDir,
 	})
 
-	// configure server
-	api.SetAppServerConfig(&api.AppServerConfig{
-		AllowedHost: config.AppConfig.Server.AllowedHosts,
-		Port:        config.AppConfig.Server.Port,
-	})
-
 	// init the sports feed client
 	d.InitSportsFeedClient(d.SportsFeedConfig{
 		BaseUrl:  config.AppConfig.Data.SportsFeed.BaseUrl,
@@ -121,7 +115,7 @@ func main() {
 	t := "text"
 	config := []byte(`
 		{
-			"text": "Welcome to DizViz",
+			"text": "Welcome to DizViz Welcome to DizViz Welcome to DizViz",
 			"alignment": "center",
 			"justify": "center",
 			"color": "#FF2244FF",
@@ -148,6 +142,9 @@ func main() {
 
 	// run the app server
 	api.Run()
+
+	router := api.Router()
+	router.Run(fmt.Sprintf("%s:%s", config.AppConfig.Server.AllowedHosts,, config.AppConfig.Server.Port))
 
 }
 

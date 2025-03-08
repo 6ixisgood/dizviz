@@ -6,6 +6,7 @@ import (
 	"github.com/fogleman/gg"
 	"image"
 	"image/color"
+	"fmt"
 )
 
 type Scroller struct {
@@ -28,6 +29,10 @@ func (s *Scroller) Render() image.Image {
 	// render the slot
 	im := s.Slot.Render()
 
+	width := s.Slot.ComputedSizeX
+	height := s.Slot.ComputedSizeY
+
+
 	if s.Ctx == nil {
 		s.Ctx = gg.NewContext(s.ComputedSizeX, s.ComputedSizeY)
 	}
@@ -37,8 +42,17 @@ func (s *Scroller) Render() image.Image {
 
 	s.Ctx.DrawImage(im, s.PosX, s.PosY)
 
-	s.PosX = s.PosX + s.ScrollX
-	s.PosY = s.PosY + s.ScrollY
+	fmt.Printf("SizeX:%d, SizeY:%d\n", s.ComputedSizeX, s.ComputedSizeY)
+	fmt.Printf("Width:%d, Height:%d\n", width, height)
+
+
+	if s.ComputedSizeX < width {
+		s.PosX = s.PosX + s.ScrollX
+	}
+
+	if s.ComputedSizeY < height {
+		s.PosY = s.PosY + s.ScrollY
+	}
 
 	// wrap around
 	if s.ScrollX < 0 {

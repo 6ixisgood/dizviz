@@ -6,6 +6,7 @@ import (
 	"github.com/fogleman/gg"
 	"image"
 	"image/color"
+	"image/draw"
 	"math"
 )
 
@@ -18,6 +19,9 @@ type Template struct {
 	Justify    string      `xml:"justify,attr"`
 	Direction  string      `xml:"dir,attr"`
 	BgColor    string      `xml:"bg-color,attr"`
+	Overflow   string 	   `xml:"overflow,attr"`
+	PosX	   int
+	PosY	   int
 	Components []Component `xml:",any"`
 }
 
@@ -31,6 +35,10 @@ func (t *Template) Init() {
 
 	if t.BgColor == "" {
 		t.BgColor = "#000000FF"
+	}
+
+	if t.Overflow == "" {
+		t.Overflow = "hidden"
 	}
 
 	// create context with sizes
@@ -88,6 +96,15 @@ func (t *Template) Render() image.Image {
 	var cIm image.Image
 	var imList []image.Image
 	for _, c := range t.Components {
+
+		// if display = inline then
+		// end
+		// elif display = block then
+		// end
+
+
+
+
 		// chan to check if we should re-render or just grab last image
 		select {
 		case <-c.TickerChan():
@@ -129,7 +146,7 @@ func (t *Template) Render() image.Image {
 		if t.Direction == "col" {
 			secondary.Length = bounds.Dx()
 			secondary.Position, _ = t.computePositionAndSpace(secondary, len(imList), t.Align)
-			t.Ctx.DrawImage(im, secondary.Position, primary.Position)
+			//t.Ctx.DrawImage(im, secondary.Position, primary.Position)
 			primary.Position += bounds.Dy()
 		} else {
 			secondary.Length = bounds.Dy()
@@ -141,7 +158,25 @@ func (t *Template) Render() image.Image {
 		primary.Position += primary.Space // Increment only if it's space-between or space-around.
 	}
 
-	return t.Ctx.Image()
+	im := t.Ctx.Image()
+	switch t.Overflow {
+	case "hidden":
+		bounds := image.Rect(0, 0, t.ComputedSizeX, t.ComputedSizeY)
+		clippedIm := image.NewRGBA(bounds)
+		draw.Draw(clippedIm, bounds, im, image.Point{}, draw.Src)
+		im = clippedIm
+	case "scroll":
+		bounds := image.Rect(0, 0, t.ComputedSizeX, t.ComputedSizeY)
+		scrollIm := image.NewRGBA(bounds)
+		draw.Draw(scrollIm, bounds, im, image.Point{t.PosX, t.PosY}, draw.Src)
+
+		t.PosX = t.PosX + (-1)
+		//t.PosY = t.PosY + t.ScrollY
+		im = scrollIm
+
+	}
+
+	return im
 }
 
 func (t *Template) Stop() {
@@ -168,6 +203,8 @@ func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 			tmpl.Direction = attr.Value
 		case "bg-color":
 			tmpl.BgColor = attr.Value
+		case "overflow":
+			tmpl.Overflow = attr.Value
 		}
 	}
 

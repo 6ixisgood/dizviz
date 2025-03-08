@@ -84,7 +84,6 @@ func (a *Animation) Next() (image.Image, <-chan time.Time, error) {
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
-
 }
 
 func GetAnimation() *Animation {
