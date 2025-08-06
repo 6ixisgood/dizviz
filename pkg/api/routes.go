@@ -2,8 +2,14 @@ package api
 
 import (
 	"github.com/6ixisgood/matrix-ticker/pkg/api/handlers"
+	"github.com/6ixisgood/matrix-ticker/pkg/app"
 	"github.com/gin-gonic/gin"
 )
+
+// SetApplication sets the application instance for the API handlers
+func SetApplication(application *app.Application) {
+	handlers.SetApplication(application)
+}
 
 
 // RegisterRoutes sets up all the API routes

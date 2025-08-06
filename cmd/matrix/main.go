@@ -8,14 +8,14 @@ import (
 	"encoding/json"
 
 	"github.com/6ixisgood/matrix-ticker/pkg/api"
+	"github.com/6ixisgood/matrix-ticker/pkg/app"
 	_ "github.com/6ixisgood/matrix-ticker/pkg/component"
-	"github.com/6ixisgood/matrix-ticker/pkg/config"
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
+	"github.com/6ixisgood/matrix-ticker/pkg/display"
 	"github.com/6ixisgood/matrix-ticker/pkg/store"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
-	"github.com/6ixisgood/matrix-ticker/pkg/view"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
-	"github.com/sixisgoood/go-rpi-rgb-led-matrix"
+	_ "github.com/6ixisgood/matrix-ticker/pkg/view/types"
 )
 
 /*
@@ -38,29 +38,30 @@ import (
 
 var (
 	configFilePath = flag.String("config", "./config.yaml", "path to yaml config file")
+	application    *app.Application
 )
 
 func main() {
 	flag.Parse()
 
-	config.LoadConfig(configFilePath)
+	LoadConfig(configFilePath)
 
 	// set the RBG matrix configs
-	matrixConfig := &rgbmatrix.DefaultConfig
-	matrixConfig.Rows = config.AppConfig.Matrix.Rows
-	matrixConfig.Cols = config.AppConfig.Matrix.Cols
-	matrixConfig.Parallel = config.AppConfig.Matrix.Parallel
-	matrixConfig.ChainLength = config.AppConfig.Matrix.Chain
-	matrixConfig.Brightness = config.AppConfig.Matrix.Brightness
-	matrixConfig.HardwareMapping = config.AppConfig.Matrix.HardwareMapping
-	matrixConfig.ShowRefreshRate = config.AppConfig.Matrix.ShowRefresh
-	matrixConfig.InverseColors = config.AppConfig.Matrix.InverseColors
-	matrixConfig.DisableHardwarePulsing = config.AppConfig.Matrix.DisableHardwarePulsing
-	matrixConfig.GpioSlowdown = config.AppConfig.Matrix.GpioSlowdown
-	matrixConfig.RateLimitHz = config.AppConfig.Matrix.RateLimitHz
+	matrixConfig := &DefaultConfig{}
+	matrixConfig.Rows = AppConfig.Matrix.Rows
+	matrixConfig.Cols = AppConfig.Matrix.Cols
+	matrixConfig.Parallel = AppConfig.Matrix.Parallel
+	matrixConfig.ChainLength = AppConfig.Matrix.Chain
+	matrixConfig.Brightness = AppConfig.Matrix.Brightness
+	matrixConfig.HardwareMapping = AppConfig.Matrix.HardwareMapping
+	matrixConfig.ShowRefreshRate = AppConfig.Matrix.ShowRefresh
+	matrixConfig.InverseColors = AppConfig.Matrix.InverseColors
+	matrixConfig.DisableHardwarePulsing = AppConfig.Matrix.DisableHardwarePulsing
+	matrixConfig.GpioSlowdown = AppConfig.Matrix.GpioSlowdown
+	matrixConfig.RateLimitHz = AppConfig.Matrix.RateLimitHz
 
 	// init the store
-	appStore, err := store.NewStore(config.AppConfig.Data.StoreDir)
+	appStore, err := store.NewStore(AppConfig.Data.StoreDir)
 	if err != nil {
 		panic(err)
 	}
@@ -68,53 +69,55 @@ func main() {
 
 	// configure the views
 	viewCommon.SetViewCommonConfig(&viewCommon.ViewCommonConfig{
-		MatrixRows:        config.AppConfig.Matrix.Rows * config.AppConfig.Matrix.Parallel,
-		MatrixCols:        config.AppConfig.Matrix.Cols * config.AppConfig.Matrix.Chain,
-		ImageDir:          config.AppConfig.Data.ImageDir,
-		CacheDir:          config.AppConfig.Data.CacheDir,
-		DefaultImageSizeX: config.AppConfig.Default.ImageSizeX,
-		DefaultImageSizeY: config.AppConfig.Default.ImageSizeY,
-		DefaultFontSize:   config.AppConfig.Default.FontSize,
-		DefaultFontColor:  config.AppConfig.Default.FontColor,
-		DefaultFontStyle:  config.AppConfig.Default.FontStyle,
-		DefaultFontType:   config.AppConfig.Default.FontType,
+		MatrixRows:        AppConfig.Matrix.Rows * AppConfig.Matrix.Parallel,
+		MatrixCols:        AppConfig.Matrix.Cols * AppConfig.Matrix.Chain,
+		ImageDir:          AppConfig.Data.ImageDir,
+		CacheDir:          AppConfig.Data.CacheDir,
+		DefaultImageSizeX: AppConfig.Default.ImageSizeX,
+		DefaultImageSizeY: AppConfig.Default.ImageSizeY,
+		DefaultFontSize:   AppConfig.Default.FontSize,
+		DefaultFontColor:  AppConfig.Default.FontColor,
+		DefaultFontStyle:  AppConfig.Default.FontStyle,
+		DefaultFontType:   AppConfig.Default.FontType,
 		Store:             appStore,
 	})
 
 	// configure utils
 	util.SetUtilConfig(&util.UtilConfig{
-		CacheDir: config.AppConfig.Data.CacheDir,
-		FontDir:  config.AppConfig.Data.FontDir,
+		CacheDir: AppConfig.Data.CacheDir,
+		FontDir:  AppConfig.Data.FontDir,
 	})
 
 	// init the sports feed client
 	d.InitSportsFeedClient(d.SportsFeedConfig{
-		BaseUrl:  config.AppConfig.Data.SportsFeed.BaseUrl,
-		Username: config.AppConfig.Data.SportsFeed.Username,
-		Password: config.AppConfig.Data.SportsFeed.Password,
+		BaseUrl:  AppConfig.Data.SportsFeed.BaseUrl,
+		Username: AppConfig.Data.SportsFeed.Username,
+		Password: AppConfig.Data.SportsFeed.Password,
 	})
 
 	// init the sleeper client
 	d.InitSleeperClient(d.SleeperConfig{
-		BaseUrl: config.AppConfig.Data.Sleeper.BaseUrl,
+		BaseUrl: AppConfig.Data.Sleeper.BaseUrl,
 	})
+
+	// Initialize global compositor
+	// view.InitGlobalCompositor()
+
+	// Create application
+	application = app.New()
+
+	// Create matrix display
+	matrixDisplay := display.NewMatrixDisplay()
 
 	// setup matrix
 	fmt.Println("Starting Matrix\n")
-	m, err := rgbmatrix.NewRGBLedMatrix(matrixConfig)
-	fatal(err)
 
-	tk := rgbmatrix.NewToolKit(m)
-	defer tk.Close()
-
-	// start the root animation
-	animation := view.GetAnimation()
-
-	log.Printf("Initializing the starting animation")
+	log.Printf("Initializing the starting view")
 
 	t := "text"
-	config := []byte(`
+	configJSON := []byte(`
 		{
+			"text": "Welcome to DizViz Welcome to DizViz Welcome to DizViz",
 			"text": "Welcome to DizViz Welcome to DizViz Welcome to DizViz",
 			"alignment": "center",
 			"justify": "center",
@@ -126,7 +129,7 @@ func main() {
 	// go from []byte to specific ViewConfig type
 	regView := viewCommon.RegisteredViews[t]
 	configInstance := regView.NewConfig()
-	if err := json.Unmarshal(config, &configInstance); err != nil {
+	if err := json.Unmarshal(configJSON, &configInstance); err != nil {
 		log.Printf(fmt.Sprintf("Config for view type %s is invalid", t))
 		return
 	}
@@ -137,14 +140,22 @@ func main() {
 		return
 	}
 
-	animation.Init(newView)
-	go tk.PlayAnimation(animation)
+	// Set the initial view and start the application
+	application.SetInitialView(newView)
+	if err := application.Start(matrixDisplay, matrixConfig); err != nil {
+		log.Printf("Failed to start application: %v", err)
+		return
+	}
+
+	// Set the application instance for API handlers
+	api.SetApplication(application)
+
+	// Cleanup on exit
+	defer application.Stop()
 
 	// run the app server
-	api.Run()
-
 	router := api.Router()
-	router.Run(fmt.Sprintf("%s:%s", config.AppConfig.Server.AllowedHosts,, config.AppConfig.Server.Port))
+	router.Run(fmt.Sprintf("%s:%s", AppConfig.Server.AllowedHosts, AppConfig.Server.Port))
 
 }
 

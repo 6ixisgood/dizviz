@@ -6,7 +6,6 @@ import (
 	"github.com/fogleman/gg"
 	"image"
 	"image/color"
-	"fmt"
 )
 
 type Scroller struct {
@@ -41,9 +40,6 @@ func (s *Scroller) Render() image.Image {
 	s.Ctx.Clear()
 
 	s.Ctx.DrawImage(im, s.PosX, s.PosY)
-
-	fmt.Printf("SizeX:%d, SizeY:%d\n", s.ComputedSizeX, s.ComputedSizeY)
-	fmt.Printf("Width:%d, Height:%d\n", width, height)
 
 
 	if s.ComputedSizeX < width {

@@ -1,74 +1,105 @@
+// +build !noled
+
 package display
 
 import (
-	"os"
-	"time"
+	"fmt"
+	"image"
+	"image/draw"
+	"log"
+
 	"github.com/sixisgoood/go-rpi-rgb-led-matrix"
 )
 
-type Display interface {
-	StartDisplay(view view.View)
-	StopDisplay()
-	Next() (image.Image, <-chan time.Time)
-}
-
+// MatrixDisplay implements Display for RGB LED matrix hardware
 type MatrixDisplay struct {
-	config *rgbmatrix.DefaultConfig
-	animation *Animation
-	stopChan  chan struct{}
-	imageBuffer chan image.Image
+	matrix   rgbmatrix.Matrix
+	canvas   *rgbmatrix.Canvas
+	config   *rgbmatrix.HardwareConfig
+	stopChan chan struct{}
+	running  bool
 }
 
-func (d *MatrixDisplay) StartDisplay(view viewCommon.View, config *rgbmatrix.DefaultConfig)  {
-	fmt.Println("Starting Matrix\n")
-
-	// create animation
-
-	a := newMatrixAnimation()
-
-	// setup matrix
-	d.config, err := rgbmatrix.NewRGBLedMatrix(config)
-	fatal(err)
-
-	// create and init the controller
-	d.controller = viewCommon.NewController()
-	d.controller.Init(view)
-
-	// create toolkit and start playing
-	tk := rgbmatrix.NewToolKit(d.config)
-	go tk.PlayAnimation(d)
-}
-
-
-func (d *MatrixDisplay) StopDisplay() {
-	close(d.stopChan)
-}
-
-
-type MatrixAnimation struct {
-	buffer		chan image.Image
-	stopChan  chan struct{}
-
-}
-
-func newMatrixAnimation() MatrixAnimation{
-	return MatrixAnimation{
-		buffer: make(chan image.Image, 10),
-		stopChan: make(chan stuct{}),
+// NewMatrixDisplay creates a new matrix display
+func NewMatrixDisplay() *MatrixDisplay {
+	return &MatrixDisplay{
+		stopChan: make(chan struct{}),
 	}
 }
 
+// Start initializes the matrix hardware with the given config
+func (d *MatrixDisplay) Start(config interface{}) error {
+	hardwareConfig, ok := config.(*rgbmatrix.HardwareConfig)
+	if !ok {
+		return fmt.Errorf("invalid config type for MatrixDisplay, expected *rgbmatrix.HardwareConfig")
+	}
 
-func (a *MatrixAnimation) Next() (image.Image, <-chan time.Time, error) {
-	var im image.Image
-	for {
-		select {
-		case im = <-a.Buffer:
-			return im, time.After(time.Millisecond * 10), nil
-		case <-d.stopChan:
-			return nil, io.EOF
-		default:
-			time.Sleep(100 * time.Millisecond)
-		}
+	// Setup matrix hardware
+	matrix, err := rgbmatrix.NewRGBLedMatrix(hardwareConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create matrix: %w", err)
+	}
+	
+	d.matrix = matrix
+	d.canvas = rgbmatrix.NewCanvas(matrix)
+	d.config = hardwareConfig
+	d.running = true
+
+	log.Printf("Matrix display started successfully")
+	return nil
+}
+
+// Stop shuts down the matrix display
+func (d *MatrixDisplay) Stop() {
+	if !d.running {
+		return
+	}
+
+	close(d.stopChan)
+	d.running = false
+
+	if d.canvas != nil {
+		d.canvas.Close()
+	}
+
+	if d.matrix != nil {
+		d.matrix.Close()
+	}
+
+	log.Printf("Matrix display stopped")
+}
+
+// Render displays a single frame on the matrix
+func (d *MatrixDisplay) Render(frame image.Image) error {
+	if !d.running || d.matrix == nil || d.canvas == nil {
+		return fmt.Errorf("matrix display not started")
+	}
+
+	if frame == nil {
+		return fmt.Errorf("nil frame provided")
+	}
+
+	// Clear the canvas first
+	d.canvas.Clear()
+
+	// Use draw.Draw to efficiently copy the frame to the canvas
+	draw.Draw(d.canvas, d.canvas.Bounds(), frame, frame.Bounds().Min, draw.Src)
+
+	// Render to the physical display
+	return d.canvas.Render()
+}
+
+// GetCapabilities returns the display's capabilities
+func (d *MatrixDisplay) GetCapabilities() DisplayCapabilities {
+	width, height := 64, 32 // default matrix size
+	if d.matrix != nil {
+		width, height = d.matrix.Geometry()
+	}
+
+	return DisplayCapabilities{
+		MaxFrameRate: 60,
+		Width:        width,
+		Height:       height,
+		ColorDepth:   24, // RGB
 	}
 }

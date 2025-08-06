@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
-	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 )
 
 func DisplayViewById(c *gin.Context) {
@@ -39,14 +40,26 @@ func DisplayViewById(c *gin.Context) {
 	}
 
 	log.Printf("Initializing the %s view", viewDefinition.Id)
-	animation := view.GetAnimation()
-	animation.Init(newView)
+	
+	// Use the application to change views
+	app := GetApplication()
+	if app == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Application not initialized"})
+		return
+	}
+
+	if err := app.ChangeView(newView); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to set view", "error": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"Status": "Created"})
 }
 
-func DisplayView(c *gin.Context) {
-	var body viewCommon.ViewDefinitionRaw
+func PostView(c *gin.Context) {
+	log.Printf("POST /view")
+
+	var body viewCommon.ViewDefinition
 	if err := c.BindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad request body"})
 		return
@@ -58,21 +71,25 @@ func DisplayView(c *gin.Context) {
 		return
 	}
 
-	configInstance := regView.NewConfig()
-	if err := json.Unmarshal(body.Config, &configInstance); err != nil {
+	newView, err := regView.NewView(body.Config)
+	if err != nil {
+		log.Printf("Failed to create view of type %s with given config. Error: %s", body.Type, err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad view config passed"})
 		return
 	}
 
-	newView, err := regView.NewView(configInstance)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Failed to create view with given config", "error": err.Error()})
+	// Use the application to change views
+	app := GetApplication()
+	if app == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Application not initialized"})
 		return
 	}
 
-	log.Printf("Initializing the %s view", body.Type)
-	animation := view.GetAnimation()
-	animation.Init(newView)
+	if err := app.ChangeView(newView); err != nil {
+		log.Printf("Failed to change view: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to change view"})
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"Status": "Created"})
+	c.JSON(http.StatusOK, gin.H{"message": "View updated successfully"})
 }

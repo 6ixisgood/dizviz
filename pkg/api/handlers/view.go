@@ -3,10 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
-	"github.com/google/uuid"
 	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 )
 
 func GetAllViewDefinitions(c *gin.Context) {

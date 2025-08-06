@@ -3,7 +3,6 @@ module github.com/6ixisgood/matrix-ticker
 go 1.19
 
 require (
-	github.com/disintegration/imaging v1.6.2
 	github.com/fogleman/gg v1.3.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
@@ -55,4 +54,4 @@ require (
 
 // replace syntax
 // replace github.com/sixisgoood/go-rpi-rgb-led-matrix => <CLONED_DIR>
-replace github.com/sixisgoood/go-rpi-rgb-led-matrix => /home/andrew/Lab/go-rpi-rgb-led-matrix
+replace github.com/sixisgoood/go-rpi-rgb-led-matrix => /home/andrew/lab/go-rpi-rgb-led-matrix
