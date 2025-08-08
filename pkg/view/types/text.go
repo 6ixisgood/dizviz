@@ -63,7 +63,7 @@ func (v *TextView) TemplateData() map[string]interface{} {
 
 func (v *TextView) TemplateString() string {
 	return `
-		<template dir="col" justify="{{ .Justify }}" align="{{ .Alignment }}" size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}" bg-color="{{ .BgColor }}" overflow-x="scroll-bounce" scroll-speed="1">
+		<template dir="col" justify="{{ .Justify }}" align="{{ .Alignment }}" size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}" bg-color="{{ .BgColor }}" overflow-x="scroll-ease" scroll-speed="15">
 			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ .Color }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
 		</template>
 	`

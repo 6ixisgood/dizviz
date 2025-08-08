@@ -8,6 +8,7 @@ import (
 	"image/draw"
 	"math"
 	"strconv"
+	"time"
 
 	"github.com/fogleman/gg"
 )
@@ -17,22 +18,27 @@ type Template struct {
 
 	XMLName xml.Name `xml:"template"`
 
-	Align       string `xml:"align,attr"`
-	Justify     string `xml:"justify,attr"`
-	Direction   string `xml:"dir,attr"`
-	BgColor     string `xml:"bg-color,attr"`
-	Overflow    string `xml:"overflow,attr"`
-	OverflowX   string `xml:"overflow-x,attr"`
-	OverflowY   string `xml:"overflow-y,attr"`
-	ScrollSpeed int    `xml:"scroll-speed,attr"`
-	BounceDelay int    `xml:"bounce-delay,attr"`
-	PosX        int
-	PosY        int
+	Align           string `xml:"align,attr"`
+	Justify         string `xml:"justify,attr"`
+	Direction       string `xml:"dir,attr"`
+	BgColor         string `xml:"bg-color,attr"`
+	Overflow        string `xml:"overflow,attr"`
+	OverflowX       string `xml:"overflow-x,attr"`
+	OverflowY       string `xml:"overflow-y,attr"`
+	ScrollSpeed     int    `xml:"scroll-speed,attr"`
+	BounceDelay     int    `xml:"bounce-delay,attr"`
+	EasingMode      string `xml:"easing,attr"`
+	CycleDurationMs int    `xml:"cycle-duration-ms,attr"`
+	DwellPercent    int    `xml:"dwell-percent,attr"`
+	PosX            int
+	PosY            int
 	// Internal scroll state
 	bounceBackX       bool        // for horizontal bounce mode
 	bounceBackY       bool        // for vertical bounce mode
 	bounceDelayCountX int         // delay counter for horizontal bounce
 	bounceDelayCountY int         // delay counter for vertical bounce
+	easingStartTimeX  time.Time   // easing start time for X axis
+	easingStartTimeY  time.Time   // easing start time for Y axis
 	Components        []Component `xml:",any"`
 }
 
@@ -73,12 +79,24 @@ func (t *Template) Init() {
 	if t.BounceDelay == 0 {
 		t.BounceDelay = 10 // Default bounce delay (frames to pause at each end)
 	}
+	if t.EasingMode == "" {
+		t.EasingMode = "ease-in-out-sine" // Default easing mode
+	}
+	if t.DwellPercent == 0 {
+		t.DwellPercent = 20 // Default 20% dwell time at each end
+	}
+	// CycleDurationMs = 0 means auto-calculate based on content and scroll speed
 
 	// Initialize bounce state for separate axes
 	t.bounceBackX = false
 	t.bounceBackY = false
 	t.bounceDelayCountX = 0
 	t.bounceDelayCountY = 0
+
+	// Initialize easing start times
+	now := time.Now()
+	t.easingStartTimeX = now
+	t.easingStartTimeY = now
 
 	// create context with sizes
 	ctxTmp := gg.NewContext(t.ComputedSizeX, t.ComputedSizeY)
@@ -263,6 +281,109 @@ func (t *Template) calculateScrollOffset(contentLength, contentMaxSecondary int)
 	return offsetX, offsetY
 }
 
+// easeInOutSine provides smooth sine-based easing
+func easeInOutSine(t float64) float64 {
+	return 0.5 * (1 - math.Cos(math.Pi*t))
+}
+
+// easeInOutQuad provides quadratic easing
+func easeInOutQuad(t float64) float64 {
+	if t < 0.5 {
+		return 2 * t * t
+	}
+	return 1 - 2*(1-t)*(1-t)
+}
+
+// easeWithDwell provides easing with dwell time at start and end
+// Pattern: 0000->1 1 1 1 1 1 1->0000
+// This works for half-cycle (0->1), ping-pong conversion handles the return
+func easeWithDwell(t float64, dwellPercent float64) float64 {
+	if dwellPercent <= 0 || dwellPercent >= 0.5 {
+		dwellPercent = 0.2 // Default 20% dwell time at each end
+	}
+
+	if t < dwellPercent {
+		// Dwell at start (0)
+		return 0.0
+	} else if t > (1.0 - dwellPercent) {
+		// Dwell at end (1)
+		return 1.0
+	} else {
+		// Active movement phase - map to 0->1 using smooth easing
+		activePhase := (t - dwellPercent) / (1.0 - 2*dwellPercent)
+		return easeInOutSine(activePhase)
+	}
+}
+
+// calculateEasedPosition calculates smooth eased scrolling position based on overflow distance
+func (t *Template) calculateEasedPosition(startTime time.Time, overflow int) int {
+	if overflow <= 0 {
+		return 0
+	}
+
+	elapsed := time.Since(startTime)
+
+	// Calculate speed-based duration: time to traverse full overflow distance
+	// ScrollSpeed now represents pixels per second directly for better control
+	// Lower values like 0.1, 0.5, 1.0 give much slower, more readable scrolling
+	pixelsPerSecond := float64(t.ScrollSpeed)
+	if pixelsPerSecond <= 0 {
+		pixelsPerSecond = 10.0 // Default to 10 pixels per second if invalid
+	}
+
+	traversalTime := float64(overflow) / pixelsPerSecond
+	fullCycleDuration := time.Duration(traversalTime*2000) * time.Millisecond // *2 for round trip, *1000 for ms
+
+	// Use CycleDurationMs if provided, otherwise use calculated duration
+	var cycleDuration time.Duration
+	if t.CycleDurationMs > 0 {
+		cycleDuration = time.Duration(t.CycleDurationMs) * time.Millisecond
+	} else {
+		cycleDuration = fullCycleDuration
+	}
+
+	// Calculate progress in current cycle (0.0 to 1.0)
+	progress := float64(elapsed%cycleDuration) / float64(cycleDuration)
+
+	var easedProgress float64
+	dwellPercent := float64(t.DwellPercent) / 100.0 // Convert percentage to decimal
+
+	// Handle full cycle with ping-pong motion and dwell at both ends
+	var halfCycleProgress float64
+
+	if progress < 0.5 {
+		// First half: 0 -> 1 (forward)
+		halfCycleProgress = progress * 2.0
+	} else {
+		// Second half: 1 -> 0 (returning)
+		halfCycleProgress = (1.0 - progress) * 2.0
+	}
+
+	switch t.EasingMode {
+	case "ease-in-out-sine":
+		easedProgress = easeWithDwell(halfCycleProgress, dwellPercent)
+	case "ease-in-out-quad":
+		// Apply dwell to quad easing too
+		if halfCycleProgress < dwellPercent {
+			easedProgress = 0.0
+		} else if halfCycleProgress > (1.0 - dwellPercent) {
+			easedProgress = 1.0
+		} else {
+			activePhase := (halfCycleProgress - dwellPercent) / (1.0 - 2*dwellPercent)
+			easedProgress = easeInOutQuad(activePhase)
+		}
+	case "linear":
+		easedProgress = halfCycleProgress
+	default:
+		easedProgress = easeWithDwell(halfCycleProgress, dwellPercent)
+	}
+
+	// No need for ping-pong conversion since we handled it above
+
+	// Map to scroll position range - now covers full overflow distance
+	return -int(easedProgress * float64(overflow))
+}
+
 // calculateHorizontalOffset handles X-axis scrolling based on overflow-x
 func (t *Template) calculateHorizontalOffset(contentLength, contentMaxSecondary int) int {
 	var overflow int
@@ -292,34 +413,39 @@ func (t *Template) calculateHorizontalOffset(contentLength, contentMaxSecondary 
 		return t.PosX
 
 	case "scroll-bounce":
-		if t.bounceBackX {
-			// Check if we're in delay period at the end
-			if t.bounceDelayCountX > 0 {
-				t.bounceDelayCountX--
-				return -t.PosX // Stay at current position during delay
+		if t.EasingMode == "linear" {
+			// Keep original bounce logic for linear mode
+			if t.bounceBackX {
+				if t.bounceDelayCountX > 0 {
+					t.bounceDelayCountX--
+					return -t.PosX
+				}
+				t.PosX -= t.ScrollSpeed
+				if t.PosX <= 0 {
+					t.PosX = 0
+					t.bounceBackX = false
+					t.bounceDelayCountX = t.BounceDelay
+				}
+			} else {
+				if t.bounceDelayCountX > 0 {
+					t.bounceDelayCountX--
+					return -t.PosX
+				}
+				t.PosX += t.ScrollSpeed
+				if t.PosX >= overflow {
+					t.PosX = overflow
+					t.bounceBackX = true
+					t.bounceDelayCountX = t.BounceDelay
+				}
 			}
-
-			t.PosX -= t.ScrollSpeed
-			if t.PosX <= 0 {
-				t.PosX = 0
-				t.bounceBackX = false
-				t.bounceDelayCountX = t.BounceDelay // Start delay at the beginning
-			}
+			return -t.PosX
 		} else {
-			// Check if we're in delay period at the beginning
-			if t.bounceDelayCountX > 0 {
-				t.bounceDelayCountX--
-				return -t.PosX // Stay at current position during delay
-			}
-
-			t.PosX += t.ScrollSpeed
-			if t.PosX >= overflow {
-				t.PosX = overflow
-				t.bounceBackX = true
-				t.bounceDelayCountX = t.BounceDelay // Start delay at the end
-			}
+			// Use eased scrolling
+			return t.calculateEasedPosition(t.easingStartTimeX, overflow)
 		}
-		return -t.PosX
+
+	case "scroll-ease":
+		return t.calculateEasedPosition(t.easingStartTimeX, overflow)
 
 	case "auto":
 		// Auto horizontal scroll (left direction by default)
@@ -363,34 +489,39 @@ func (t *Template) calculateVerticalOffset(contentLength, contentMaxSecondary in
 		return t.PosY
 
 	case "scroll-bounce":
-		if t.bounceBackY {
-			// Check if we're in delay period at the end
-			if t.bounceDelayCountY > 0 {
-				t.bounceDelayCountY--
-				return -t.PosY // Stay at current position during delay
+		if t.EasingMode == "linear" {
+			// Keep original bounce logic for linear mode
+			if t.bounceBackY {
+				if t.bounceDelayCountY > 0 {
+					t.bounceDelayCountY--
+					return -t.PosY
+				}
+				t.PosY -= t.ScrollSpeed
+				if t.PosY <= 0 {
+					t.PosY = 0
+					t.bounceBackY = false
+					t.bounceDelayCountY = t.BounceDelay
+				}
+			} else {
+				if t.bounceDelayCountY > 0 {
+					t.bounceDelayCountY--
+					return -t.PosY
+				}
+				t.PosY += t.ScrollSpeed
+				if t.PosY >= overflow {
+					t.PosY = overflow
+					t.bounceBackY = true
+					t.bounceDelayCountY = t.BounceDelay
+				}
 			}
-
-			t.PosY -= t.ScrollSpeed
-			if t.PosY <= 0 {
-				t.PosY = 0
-				t.bounceBackY = false
-				t.bounceDelayCountY = t.BounceDelay // Start delay at the beginning
-			}
+			return -t.PosY
 		} else {
-			// Check if we're in delay period at the beginning
-			if t.bounceDelayCountY > 0 {
-				t.bounceDelayCountY--
-				return -t.PosY // Stay at current position during delay
-			}
-
-			t.PosY += t.ScrollSpeed
-			if t.PosY >= overflow {
-				t.PosY = overflow
-				t.bounceBackY = true
-				t.bounceDelayCountY = t.BounceDelay // Start delay at the end
-			}
+			// Use eased scrolling
+			return t.calculateEasedPosition(t.easingStartTimeY, overflow)
 		}
-		return -t.PosY
+
+	case "scroll-ease":
+		return t.calculateEasedPosition(t.easingStartTimeY, overflow)
 
 	case "auto":
 		// Auto vertical scroll (up direction by default)
@@ -442,6 +573,16 @@ func (tmpl *Template) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 		case "bounce-delay":
 			if delay, err := strconv.Atoi(attr.Value); err == nil {
 				tmpl.BounceDelay = delay
+			}
+		case "easing":
+			tmpl.EasingMode = attr.Value
+		case "cycle-duration-ms":
+			if duration, err := strconv.Atoi(attr.Value); err == nil {
+				tmpl.CycleDurationMs = duration
+			}
+		case "dwell-percent":
+			if dwell, err := strconv.Atoi(attr.Value); err == nil {
+				tmpl.DwellPercent = dwell
 			}
 		}
 	}
