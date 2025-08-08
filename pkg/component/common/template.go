@@ -43,7 +43,7 @@ type Template struct {
 }
 
 func (t *Template) Init() {
-	t.Rr = -1
+	t.Rr = 30
 	t.BaseComponent.Init()
 	for _, c := range t.Components {
 		c.SetParentSize(t.ComputedSizeX, t.ComputedSizeY) // Set parent size on each child component
@@ -317,6 +317,7 @@ func easeWithDwell(t float64, dwellPercent float64) float64 {
 
 // calculateEasedPosition calculates smooth eased scrolling position based on overflow distance
 func (t *Template) calculateEasedPosition(startTime time.Time, overflow int) int {
+	// Ensure overflow is positive - negative values mean no scrolling needed
 	if overflow <= 0 {
 		return 0
 	}
@@ -331,7 +332,8 @@ func (t *Template) calculateEasedPosition(startTime time.Time, overflow int) int
 		pixelsPerSecond = 10.0 // Default to 10 pixels per second if invalid
 	}
 
-	traversalTime := float64(overflow) / pixelsPerSecond
+	// Use absolute value to ensure positive calculation
+	traversalTime := math.Abs(float64(overflow)) / pixelsPerSecond
 	fullCycleDuration := time.Duration(traversalTime*2000) * time.Millisecond // *2 for round trip, *1000 for ms
 
 	// Use CycleDurationMs if provided, otherwise use calculated duration
@@ -381,19 +383,31 @@ func (t *Template) calculateEasedPosition(startTime time.Time, overflow int) int
 	// No need for ping-pong conversion since we handled it above
 
 	// Map to scroll position range - now covers full overflow distance
-	return -int(easedProgress * float64(overflow))
+	return -int(easedProgress * math.Abs(float64(overflow)))
 }
 
 // calculateHorizontalOffset handles X-axis scrolling based on overflow-x
 func (t *Template) calculateHorizontalOffset(contentLength, contentMaxSecondary int) int {
 	var overflow int
-	if t.Direction == "row" {
+
+	// For horizontal scrolling, we always want to compare the widest content
+	// against the available horizontal space, regardless of layout direction
+	if t.Direction == "row" || t.Direction == "" {
+		// In row direction (or unset), contentLength is horizontal extent
 		overflow = contentLength - t.ComputedSizeX
 	} else {
+		// In column direction, contentMaxSecondary is the width of widest item
 		overflow = contentMaxSecondary - t.ComputedSizeX
 	}
 
-	if overflow <= 0 {
+	// For scroll-ease, we want to scroll even if there's minimal overflow
+	// This handles cases where text is just slightly smaller than container
+	if t.OverflowX == "scroll-ease" && overflow >= -5 {
+		// Force scrolling for text that's close to the container width
+		if overflow < 5 {
+			overflow = 5 // Minimum scroll distance
+		}
+	} else if overflow <= 0 {
 		return 0 // No horizontal overflow
 	}
 
@@ -463,9 +477,13 @@ func (t *Template) calculateHorizontalOffset(contentLength, contentMaxSecondary 
 // calculateVerticalOffset handles Y-axis scrolling based on overflow-y
 func (t *Template) calculateVerticalOffset(contentLength, contentMaxSecondary int) int {
 	var overflow int
+	// For vertical overflow, always measure vertical content vs vertical space
+	// regardless of template direction
 	if t.Direction == "col" {
+		// In column direction, contentLength is the total height of all items
 		overflow = contentLength - t.ComputedSizeY
 	} else {
+		// In row direction, contentMaxSecondary is the height of the tallest item
 		overflow = contentMaxSecondary - t.ComputedSizeY
 	}
 

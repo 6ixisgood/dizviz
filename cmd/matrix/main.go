@@ -125,13 +125,14 @@ func main() {
 		}
 	`)
 
-	// t = "sleeper-matchups"
-	// configJSON = []byte(`
-	// 	{
-	// 		"league_id": "1236008483879403520",
-	// 		"week": 1
-	// 	}
-	// `)
+	leagueId := "1259377273417502720" // "1236008483879403520"
+	t = "sleeper-matchups"
+	configJSON = []byte(`
+		{
+			"league_id": "` + leagueId + `",
+			"week": 1
+		}
+	`)
 
 	// go from []byte to specific ViewConfig type
 	regView := viewCommon.RegisteredViews[t]

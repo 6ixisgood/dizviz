@@ -3,15 +3,16 @@ package types
 import (
 	"encoding/xml"
 	"fmt"
+	"image"
+	"log"
+	"math"
+
 	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
 	fontpkg "golang.org/x/image/font"
-	"image"
-	"log"
-	"math"
 )
 
 type Text struct {
@@ -46,11 +47,6 @@ func (t *Text) Init() {
 	t.ComputedSizeX = w_i
 	t.ComputedSizeY = h_i
 
-	fmt.Println("-----")
-	fmt.Printf("w, h %d, %d", w_i, h_i)
-	fmt.Println("-----")
-
-	// resize context
 	t.Ctx = gg.NewContext(t.ComputedSizeX, t.ComputedSizeY)
 	// set up a blank image
 	t.img = image.NewRGBA(image.Rect(0, 0, t.ComputedSizeX, t.ComputedSizeY))

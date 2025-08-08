@@ -2,11 +2,12 @@ package types
 
 import (
 	"errors"
+	"strconv"
+	"time"
+
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
-	"strconv"
-	"time"
 )
 
 type SleeperMatchupsView struct {
@@ -56,7 +57,7 @@ func SleeperMatchupsViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 		League:        config.LeagueID,
 		Week:          config.Week,
 		SleeperClient: client,
-		Phase:         0,
+		Phase:         1,
 		phaseDuration: time.Duration(config.PhaseDuration),
 		dataDuration:  time.Duration(config.DataDuration),
 	}, nil
@@ -126,12 +127,16 @@ func (v *SleeperMatchupsView) TemplateString() string {
 				<template size-x="100%" size-y="35%">
 					<template justify="space-around" align="center" size-x="50%" size-y="100%" dir="col">
 						<text size-x="90%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
-						<image size-x="{{ $DefaultImageSizex }}" size-y="{{ $DefaultImageSizey }}" src="{{ .Team1.Avatar }}"></image>
+						{{ if .Team1.Avatar }}
+							<image size-x="{{ $DefaultImageSizex }}" size-y="{{ $DefaultImageSizey }}" src="{{ .Team1.Avatar }}"></image>
+						{{ end}}
 						<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team1.Score }}</text>
 					</template>
 					<template justify="space-around" align="center" size-x="50%" size-y="100%" dir="col">
 						<text size-x="90%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
-						<image size-x="{{ $DefaultImageSizex }}" size-y="{{ $DefaultImageSizey }}" src="{{ .Team2.Avatar }}"></image>
+						{{ if .Team2.Avatar }}
+							<image size-x="{{ $DefaultImageSizex }}" size-y="{{ $DefaultImageSizey }}" src="{{ .Team2.Avatar }}"></image>
+						{{ end}}
 						<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team2.Score }}</text>
 					</template>
 				</template>
@@ -143,14 +148,18 @@ func (v *SleeperMatchupsView) TemplateString() string {
 						{{ if eq .Phase 1 }}	
 							{{ range $index, $element := .Team1.Starters }}
 							<template size-x="100%" size-y="10%" justify="space-between">
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+								<template size-x="75%" size-y="100%" justify="start" overflow-x="scroll-ease" scroll-speed="5">
+									<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+								</template>
 								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
 							</template>
 							{{ end }}
 						{{ else if eq .Phase 2 }}
 							{{ range $index, $element := .Team1.Bench }}
 							<template size-x="100%" size-y="10%" justify="space-between">
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+								<template size-x="75%" size-y="100%" justify="start" overflow-x="scroll-ease" scroll-speed="5">
+									<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+								</template>
 								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
 							</template>
 							{{ end }}
@@ -172,14 +181,18 @@ func (v *SleeperMatchupsView) TemplateString() string {
 							{{ range $index, $element := .Team2.Starters }}
 							<template size-x="100%" size-y="10%" justify="space-between">
 								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+								<template size-x="75%" size-y="100%" justify="end" overflow-x="scroll-ease" scroll-speed="5">
+									<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+								</template>
 							</template>
 							{{ end }}
 						{{ else if eq .Phase 2 }}
 							{{ range $index, $element := .Team2.Bench }}
 							<template size-x="100%" size-y="10%" justify="space-between">
 								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+								<template size-x="75%" size-y="100%" justify="end" overflow-x="scroll-ease" scroll-speed="5">
+									<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+								</template>
 							</template>
 							{{ end }}
 						{{ end }}

@@ -303,7 +303,7 @@ type SleeperPlayerFormatted struct {
 }
 
 type SleeperTeamFormatted struct {
-	UserID    string
+	OwnerID   string
 	RosterID  int
 	Name      string
 	Avatar    string
@@ -405,27 +405,32 @@ func (d *Sleeper) GetPlayer(id string) SleeperPlayer {
 
 func (d *Sleeper) GetMatchupsFormatted(leagueID string, week string) [][]SleeperTeamFormatted {
 	// get all users in league
-	userIDToTeam := make(map[string]*SleeperTeamFormatted)
-
-	for _, rawUser := range d.GetUsers(leagueID) {
-		team := SleeperTeamFormatted{
-			UserID: rawUser.UserID,
-			Name:   rawUser.Metadata.TeamName,
-			Avatar: rawUser.Metadata.Avatar,
-		}
-		// add to dict for easier lookup
-		userIDToTeam[team.UserID] = &team
-	}
+	users := d.GetUsers(leagueID)
 
 	// get all rosters in a league
 	rosterIDToTeam := make(map[int]*SleeperTeamFormatted)
-
 	for _, rawRoster := range d.GetRosters(leagueID) {
-		team := userIDToTeam[rawRoster.OwnerID]
-		team.RosterID = rawRoster.RosterID
-		team.Wins = rawRoster.Settings.Wins
-		team.Losses = rawRoster.Settings.Losses
-		team.Ties = rawRoster.Settings.Ties
+		team := &SleeperTeamFormatted{
+			OwnerID:  rawRoster.OwnerID,
+			RosterID: rawRoster.RosterID,
+			Wins:     rawRoster.Settings.Wins,
+			Losses:   rawRoster.Settings.Losses,
+			Ties:     rawRoster.Settings.Ties,
+		}
+
+		// if the OwnerID is set, find the user and set the team name and avatar
+		if rawRoster.OwnerID != "" {
+			for _, user := range users {
+				if user.UserID == rawRoster.OwnerID {
+					team.Name = user.Metadata.TeamName
+					team.Avatar = user.Metadata.Avatar
+					break
+				}
+			}
+		} else {
+			team.Name = fmt.Sprintf("Roster %d", rawRoster.RosterID)
+		}
+
 		rosterIDToTeam[team.RosterID] = team
 	}
 
