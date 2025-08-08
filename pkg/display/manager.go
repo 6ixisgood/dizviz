@@ -18,7 +18,7 @@ type Manager struct {
 	ctx     context.Context
 	cancel  context.CancelFunc
 	running bool
-	
+
 	// Compositor functionality built-in
 	fps    int
 	frames chan image.Image
@@ -28,8 +28,8 @@ type Manager struct {
 func NewManager(display Display) *Manager {
 	return &Manager{
 		display: display,
-		fps:     1,
-		frames:  make(chan image.Image, 10),
+		fps:     30,
+		frames:  make(chan image.Image, 20),
 	}
 }
 
@@ -123,22 +123,27 @@ func (m *Manager) SetFPS(fps int) {
 	m.fps = fps
 }
 
-// compositionLoop generates frames from the current view
+// compositionLoop generates frames on demand from the current view
 func (m *Manager) compositionLoop() {
-	ticker := time.NewTicker(time.Second / time.Duration(m.fps))
-	defer ticker.Stop()
-
 	for {
 		select {
 		case <-m.ctx.Done():
 			return
-		case <-ticker.C:
+		default:
 			// Only compose if buffer has space and we have a view
 			if len(m.frames) < cap(m.frames) && m.view != nil {
 				frame := m.composeFrame()
 				if frame != nil {
-					m.frames <- frame
+					select {
+					case m.frames <- frame:
+						// Frame sent successfully
+					case <-m.ctx.Done():
+						return
+					}
 				}
+			} else {
+				// Buffer is full or no view, wait a bit to avoid spinning
+				time.Sleep(time.Millisecond)
 			}
 		}
 	}
@@ -160,21 +165,29 @@ func (m *Manager) composeFrame() image.Image {
 	bounds := source.Bounds()
 	frame := image.NewRGBA(bounds)
 	draw.Draw(frame, bounds, source, bounds.Min, draw.Src)
-	
+
 	return frame
 }
 
-// renderLoop continuously renders frames from composition to display
+// renderLoop continuously renders frames at the configured FPS
 func (m *Manager) renderLoop() {
+	ticker := time.NewTicker(time.Second / time.Duration(m.fps))
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-m.ctx.Done():
 			return
-		case frame := <-m.frames:
-			if err := m.display.Render(frame); err != nil {
-				log.Printf("Error rendering frame: %v", err)
-				// Continue trying to render despite errors
-				time.Sleep(100 * time.Millisecond)
+		case <-ticker.C:
+			// Try to get a frame from the buffer
+			select {
+			case frame := <-m.frames:
+				if err := m.display.Render(frame); err != nil {
+					log.Printf("Error rendering frame: %v", err)
+				}
+			default:
+				// No frame available, skip this tick
+				// This is normal and prevents blocking
 			}
 		}
 	}

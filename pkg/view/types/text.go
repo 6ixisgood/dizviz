@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 )
 
@@ -62,12 +63,8 @@ func (v *TextView) TemplateData() map[string]interface{} {
 
 func (v *TextView) TemplateString() string {
 	return `
-		<template dir="col" justify="{{ .Justify }}" align="{{ .Alignment }}" size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}" bg-color="{{ .BgColor }}">
-			<scroller scroll-x="5">
-				<template overflow="scroll">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ .Color }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
-				</template>
-			</scroller>
+		<template dir="col" justify="{{ .Justify }}" align="{{ .Alignment }}" size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}" bg-color="{{ .BgColor }}" overflow-x="scroll-bounce" scroll-speed="1">
+			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ .Color }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
 		</template>
 	`
 }

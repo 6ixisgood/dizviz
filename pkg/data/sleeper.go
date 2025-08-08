@@ -2,12 +2,13 @@ package data
 
 import (
 	"fmt"
-	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	"log"
 	"net/http"
 	"path/filepath"
 	"slices"
 	"sort"
+
+	"github.com/6ixisgood/matrix-ticker/pkg/util"
 )
 
 type Sleeper struct {

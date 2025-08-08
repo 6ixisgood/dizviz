@@ -1,3 +1,4 @@
+//go:build !noled
 // +build !noled
 
 package display
@@ -8,7 +9,7 @@ import (
 	"image/draw"
 	"log"
 
-	"github.com/sixisgoood/go-rpi-rgb-led-matrix"
+	rgbmatrix "github.com/sixisgoood/go-rpi-rgb-led-matrix"
 )
 
 // MatrixDisplay implements Display for RGB LED matrix hardware
@@ -39,7 +40,7 @@ func (d *MatrixDisplay) Start(config interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed to create matrix: %w", err)
 	}
-	
+
 	d.matrix = matrix
 	d.canvas = rgbmatrix.NewCanvas(matrix)
 	d.config = hardwareConfig
@@ -78,9 +79,6 @@ func (d *MatrixDisplay) Render(frame image.Image) error {
 	if frame == nil {
 		return fmt.Errorf("nil frame provided")
 	}
-
-	// Clear the canvas first
-	d.canvas.Clear()
 
 	// Use draw.Draw to efficiently copy the frame to the canvas
 	draw.Draw(d.canvas, d.canvas.Bounds(), frame, frame.Bounds().Min, draw.Src)
