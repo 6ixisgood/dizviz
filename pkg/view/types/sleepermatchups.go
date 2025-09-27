@@ -112,6 +112,9 @@ func (v *SleeperMatchupsView) TemplateString() string {
 			{{ $PlayingColor := "#FFFFFFFF"}}
 			{{ $TeamNameColor := "#66CCFFFF"}}
 			{{ $PositionColor := "#5FE512FF"}}
+			{{ $PlayerFontSize := 10 }}
+			{{ $PlayerScoreFontSize := 9 }}
+			{{ $TeamNameFontSize := 10 }}
 	
 			{{ if eq .Phase 0 }}
 	
@@ -124,75 +127,118 @@ func (v *SleeperMatchupsView) TemplateString() string {
 			<template justify="space-between" align="center" dir="col" size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}">
 
 				<!-- Team Headers -->
-				<template size-x="100%" size-y="35%">
-					<template justify="space-around" align="center" size-x="50%" size-y="100%" dir="col">
-						<text size-x="90%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team1.Name }}</text>
-						{{ if .Team1.Avatar }}
-							<image size-x="{{ $DefaultImageSizex }}" size-y="{{ $DefaultImageSizey }}" src="{{ .Team1.Avatar }}"></image>
-						{{ end}}
-						<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team1.Score }}</text>
+				<template dir="col" size-x="100%" size-y="40%" justify="space-around" overflow-y="auto">
+					<!-- Team Names Row -->
+					<template dir="row" size-x="100%" size-y="30%" justify="space-around" align="center" overflow-y="auto">
+						<template size-x="45%" size-y="100%" justify="center" align="center" overflow-y="auto">
+							<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $TeamNameFontSize }}">{{ .Team1.Name }}</text>
+						</template>
+						<template size-x="10%" size-y="100%">
+						</template>
+						<template size-x="45%" size-y="100%" justify="center" align="center" overflow-y="auto">
+							<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $TeamNameFontSize }}">{{ .Team2.Name }}</text>
+						</template>
 					</template>
-					<template justify="space-around" align="center" size-x="50%" size-y="100%" dir="col">
-						<text size-x="90%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $TeamNameColor }}" size="{{ $DefaultFontSize }}">{{ .Team2.Name }}</text>
-						{{ if .Team2.Avatar }}
-							<image size-x="{{ $DefaultImageSizex }}" size-y="{{ $DefaultImageSizey }}" src="{{ .Team2.Avatar }}"></image>
-						{{ end}}
-						<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16"> {{ .Team2.Score }}</text>
+					
+					<!-- Team Avatars Row -->
+					<template dir="row" size-x="100%" size-y="40%" justify="space-around" align="center">
+						<template size-x="45%" size-y="100%" justify="center" align="center">
+							{{ if .Team1.Avatar }}
+								<image size-x="{{ $DefaultImageSizex }}" size-y="{{ $DefaultImageSizey }}" src="{{ .Team1.Avatar }}"></image>
+							{{ end}}
+						</template>
+						<template size-x="10%" size-y="100%">
+						</template>
+						<template size-x="45%" size-y="100%" justify="center" align="center">
+							{{ if .Team2.Avatar }}
+								<image size-x="{{ $DefaultImageSizex }}" size-y="{{ $DefaultImageSizey }}" src="{{ .Team2.Avatar }}"></image>
+							{{ end}}
+						</template>
+					</template>
+					
+					<!-- Team Scores Row -->
+					<template dir="row" size-x="100%" size-y="30%" justify="space-around" align="center">
+						<template size-x="45%" size-y="100%" justify="center" align="center">
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16">{{ .Team1.Score }}</text>
+						</template>
+						<template size-x="10%" size-y="100%">
+						</template>
+						<template size-x="45%" size-y="100%" justify="center" align="center">
+							<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="16">{{ .Team2.Score }}</text>
+						</template>
 					</template>
 				</template>
 
 
 				<!-- Player Info -->
-				<template dir="col" size-x="100%" size-y="65%" overflow-y="scroll-bounce" scroll-speed="5">
+				<template dir="col" size-x="100%" size-y="60%" overflow-y="scroll-bounce" scroll-speed="5">
 					{{ if eq .Phase 1 }}
 						{{ range $index, $element := .Team1.Starters }}
 						<!-- Player Row {{ $index }} -->
-						<template dir="row" size-x="100%" size-y="15%" justify="space-between" overflow-y="auto">
+						<template dir="row" size-x="100%" size-y="12%" justify="space-between" overflow-y="auto">
 							<!-- Team1 Player -->
 							<template size-x="45%" size-y="100%" justify="space-between" overflow-y="auto">
-								<template size-x="50%" size-y="100%" justify="start" overflow-y="auto">
-									<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+								<template size-x="70%" size-y="100%" justify="start" overflow-y="auto">
+									<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $PlayerFontSize }}">{{ printf "%s" $element.Name }}</text>
 								</template>
-								<text size-x="50%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+								<text size-x="30%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $PlayerScoreFontSize }}">{{ printf "%.2f" $element.Points }}</text>
 							</template>
 							
 							<!-- Position -->
 							<template size-x="10%" size-y="100%" justify="center">
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $PositionColor }}" size="{{ $DefaultFontSize }}">{{ index $.League.StartingPositions $index }}</text>
+								{{ if lt $index (len $.League.StartingPositions) }}
+									<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $PositionColor }}" size="{{ $PlayerScoreFontSize }}">{{ index $.League.StartingPositions $index }}</text>
+								{{ else }}
+									<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $PositionColor }}" size="{{ $PlayerScoreFontSize }}">--</text>
+								{{ end }}
 							</template>
 							
 							<!-- Team2 Player -->
 							<template size-x="45%" size-y="100%" justify="space-between" overflow-y="auto">
-								<text size-x="50%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" (index $.Team2.Starters $index).Points }}</text>
-								<template size-x="50%" size-y="100%" justify="end" overflow-y="auto">
-									<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" (index $.Team2.Starters $index).Name }}</text>
-								</template>
+								{{ if lt $index (len $.Team2.Starters) }}
+									<text size-x="30%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $PlayerScoreFontSize }}">{{ printf "%.2f" (index $.Team2.Starters $index).Points }}</text>
+									<template size-x="70%" size-y="100%" justify="end" overflow-y="auto">
+										<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $PlayerFontSize }}">{{ printf "%s" (index $.Team2.Starters $index).Name }}</text>
+									</template>
+								{{ else }}
+									<text size-x="30%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $PlayerScoreFontSize }}">--</text>
+									<template size-x="70%" size-y="100%" justify="end" overflow-y="auto">
+										<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $PlayerFontSize }}">No Player</text>
+									</template>
+								{{ end }}
 							</template>
 						</template>
 						{{ end }}
 					{{ else if eq .Phase 2 }}
 						{{ range $index, $element := .Team1.Bench }}
 						<!-- Bench Row {{ $index }} -->
-						<template dir="row" size-x="100%" size-y="15%" justify="space-between" overflow-y="auto">
+						<template dir="row" size-x="100%" size-y="12%" justify="space-between" overflow-y="auto">
 							<!-- Team1 Bench Player -->
 							<template size-x="45%" size-y="100%" justify="space-between">
 								<template size-x="70%" size-y="100%" justify="start" overflow-y="auto">
-									<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+									<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $PlayerFontSize }}">{{ printf "%s" $element.Name }}</text>
 								</template>
-								<text size-x="30%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+								<text size-x="30%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $PlayerScoreFontSize }}">{{ printf "%.2f" $element.Points }}</text>
 							</template>
 							
 							<!-- Empty Position Column for Bench -->
 							<template size-x="10%" size-y="100%" justify="center">
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $PositionColor }}" size="{{ $DefaultFontSize }}">BN</text>
+								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $PositionColor }}" size="{{ $PlayerScoreFontSize }}">BN</text>
 							</template>
 							
 							<!-- Team2 Bench Player -->
 							<template size-x="45%" size-y="100%" justify="space-between">
-								<text size-x="30%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" (index $.Team2.Bench $index).Points }}</text>
-								<template size-x="70%" size-y="100%" justify="end" overflow-y="auto">
-									<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" (index $.Team2.Bench $index).Name }}</text>
-								</template>
+								{{ if lt $index (len $.Team2.Bench) }}
+									<text size-x="30%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $PlayerScoreFontSize }}">{{ printf "%.2f" (index $.Team2.Bench $index).Points }}</text>
+									<template size-x="70%" size-y="100%" justify="end" overflow-y="auto">
+										<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $PlayerFontSize }}">{{ printf "%s" (index $.Team2.Bench $index).Name }}</text>
+									</template>
+								{{ else }}
+									<text size-x="30%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $PlayerScoreFontSize }}">--</text>
+									<template size-x="70%" size-y="100%" justify="end" overflow-y="auto">
+										<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $PlayerFontSize }}">No Player</text>
+									</template>
+								{{ end }}
 							</template>
 						</template>
 						{{ end }}

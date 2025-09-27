@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
-	"github.com/6ixisgood/matrix-ticker/pkg/store"
 	"html/template"
 	"log"
 	"maps"
 	"reflect"
 	"time"
+
+	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
+	"github.com/6ixisgood/matrix-ticker/pkg/store"
 )
 
 // View a structure to describe a layout of components at a given time
@@ -139,6 +140,7 @@ func TemplateRefresh(v View) {
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, data)
 	if err != nil {
+		log.Printf("Template execution failed: %v", err)
 		log.Fatalf("Unable to execute view template")
 		panic(err)
 	}
