@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"image"
+	"image/color"
 	"log"
 	"math"
 	"strings"
@@ -25,15 +26,21 @@ type Text struct {
 	FontSize  float64   `xml:"size,attr"`
 	Color     util.RGBA `xml:"color,attr"`
 	WordWrap  bool      `xml:"word-wrap,attr"`
+	Rainbow   bool      `xml:"rainbow,attr"`
 	Text      string    `xml:",chardata"`
 
-	img   *image.RGBA
-	ftCtx *freetype.Context
-	lines []string // Store computed lines from Init()
+	img        *image.RGBA
+	ftCtx      *freetype.Context
+	lines      []string
+	colorIndex int
 }
 
 func (t *Text) Init() {
-	t.Rr = -1 // no need to rerender this once created
+	if t.Rainbow {
+		t.Rr = 100
+	} else {
+		t.Rr = -1 // no need to rerender this once created
+	}
 	t.BaseComponent.Init()
 
 	t.Ctx = gg.NewContext(0, 0)
@@ -141,7 +148,59 @@ func (t *Text) breakWordByCharacter(word string, maxWidth int) []string {
 	return lines
 }
 
+func (t *Text) renderRainbow() image.Image {
+	t.Ctx.SetColor(color.RGBA{0, 0, 0, 255})
+	t.Ctx.Clear()
+
+	rainbowColors := []color.RGBA{
+		{255, 0, 0, 255},   // Red
+		{255, 127, 0, 255}, // Orange
+		{255, 255, 0, 255}, // Yellow
+		{0, 255, 0, 255},   // Green
+		{0, 0, 255, 255},   // Blue
+		{75, 0, 130, 255},  // Indigo
+		{148, 0, 211, 255}, // Violet
+	}
+
+	if t.WordWrap && len(t.lines) > 0 {
+		lineHeight := int(t.FontSize * 1.2)
+		for i, line := range t.lines {
+			y := float64((i + 1) * lineHeight)
+			startX := 0.0
+			for _, char := range line {
+				currentColor := rainbowColors[t.colorIndex]
+				t.Ctx.SetColor(currentColor)
+				charStr := string(char)
+				t.Ctx.DrawString(charStr, startX, y)
+
+				cw, _ := t.Ctx.MeasureString(charStr)
+				startX += cw
+				t.colorIndex = (t.colorIndex + 1) % len(rainbowColors)
+			}
+		}
+	} else {
+		_, h := t.Ctx.MeasureString(t.Text)
+		startX := 0.0
+		for _, char := range t.Text {
+			currentColor := rainbowColors[t.colorIndex]
+			t.Ctx.SetColor(currentColor)
+			charStr := string(char)
+			t.Ctx.DrawString(charStr, startX, h)
+
+			cw, _ := t.Ctx.MeasureString(charStr)
+			startX += cw
+			t.colorIndex = (t.colorIndex + 1) % len(rainbowColors)
+		}
+	}
+
+	return t.Ctx.Image()
+}
+
 func (t *Text) Render() image.Image {
+	if t.Rainbow {
+		return t.renderRainbow()
+	}
+
 	if t.WordWrap && len(t.lines) > 0 {
 		lineHeight := int(t.FontSize * 1.2)
 
@@ -166,4 +225,7 @@ func (t *Text) Render() image.Image {
 
 func init() {
 	c.RegisterComponent("text", func() c.Component { return &Text{} })
+	c.RegisterComponent("rainbow-text", func() c.Component {
+		return &Text{Rainbow: true}
+	})
 }

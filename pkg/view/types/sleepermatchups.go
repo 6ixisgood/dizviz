@@ -118,9 +118,11 @@ func (v *SleeperMatchupsView) TemplateString() string {
 	
 			{{ if eq .Phase 0 }}
 	
-			<template dir="col" justify="center" align="center" size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}">
-				<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">{{ .League.Name }}</rainbow-text>
-				<rainbow-text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12" color="{{ $DefaultFontColor }}">Week {{ .Week }}</rainbow-text>
+			<template justify="center" align="center" size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}">
+				<template dir="col" justify="center" align="center" size-x="75%" size-y="75%">
+					<text rainbow="true" word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12">{{ .League.Name }}</text>
+					<text rainbow="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" size="12">Week {{ .Week }}</text>
+				</template>
 			</template>
 	
 			{{ else if gt .Phase 0 }}
@@ -171,7 +173,7 @@ func (v *SleeperMatchupsView) TemplateString() string {
 
 
 				<!-- Player Info -->
-				<template dir="col" size-x="100%" size-y="60%" overflow-y="scroll-bounce" scroll-speed="5">
+				<template dir="col" size-x="100%" size-y="60%" overflow-y="scroll-bounce" scroll-speed="2">
 					{{ if eq .Phase 1 }}
 						{{ range $index, $element := .Team1.Starters }}
 						<!-- Player Row {{ $index }} -->
