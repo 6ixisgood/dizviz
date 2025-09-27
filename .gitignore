@@ -2,3 +2,4 @@ config/.*
 *.png
 cmd/test/
 README-local.md
+.vscode/

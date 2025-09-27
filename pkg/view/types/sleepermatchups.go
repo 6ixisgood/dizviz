@@ -144,23 +144,23 @@ func (v *SleeperMatchupsView) TemplateString() string {
 
 				<!-- Player Info -->
 				<template size-x="100%" size-y="65%">
-					<template dir="col" size-x="45%" size-y="100%" justify="space-around">
+					<template dir="col" size-x="45%" size-y="100%" justify="space-around" overflow-y="auto">
 						{{ if eq .Phase 1 }}	
 							{{ range $index, $element := .Team1.Starters }}
-							<template size-x="100%" size-y="10%" justify="space-between">
-								<template size-x="75%" size-y="100%" justify="start" overflow-x="scroll-ease" scroll-speed="5">
-									<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+							<template size-x="100%" size-y="10%"justify="space-between" overflow-y="auto">
+								<template size-x="70%" size-y="100%" justify="start" overflow-y="auto">
+									<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
 								</template>
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+								<text size-x="30%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
 							</template>
 							{{ end }}
 						{{ else if eq .Phase 2 }}
 							{{ range $index, $element := .Team1.Bench }}
-							<template size-x="100%" size-y="10%" justify="space-between">
-								<template size-x="75%" size-y="100%" justify="start" overflow-x="scroll-ease" scroll-speed="5">
-									<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+							<template size-x="100%" size-y="10%" justify="space-between" overflow-y="auto">
+								<template size-x="70%" size-y="100%" justify="start" overflow-y="auto">
+									<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
 								</template>
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+								<text size-x="30%" word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
 							</template>
 							{{ end }}
 						{{ end }}
@@ -176,22 +176,22 @@ func (v *SleeperMatchupsView) TemplateString() string {
 						{{ end}}
 					</template>
 
-					<template dir="col" size-x="45%" size-y="100%" justify="space-around">
+					<template dir="col" size-x="45%" size-y="100%" justify="space-around" overflow-y="auto">
 						{{ if eq .Phase 1 }}	
 							{{ range $index, $element := .Team2.Starters }}
-							<template size-x="100%" size-y="10%" justify="space-between">
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
-								<template size-x="75%" size-y="100%" justify="end" overflow-x="scroll-ease" scroll-speed="5">
-									<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+							<template size-x="100%" size-y="10%" justify="space-between" overflow-y="auto">
+								<text size-x="30%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $ScoreColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+								<template size-x="70%" size-y="100%" justify="end" overflow-y="auto">
+									<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
 								</template>
 							</template>
 							{{ end }}
 						{{ else if eq .Phase 2 }}
 							{{ range $index, $element := .Team2.Bench }}
-							<template size-x="100%" size-y="10%" justify="space-between">
-								<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
-								<template size-x="75%" size-y="100%" justify="end" overflow-x="scroll-ease" scroll-speed="5">
-									<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
+							<template size-x="100%" size-y="10%" justify="space-between" overflow-y="auto">
+								<text size-x="30%" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $BenchedColor }}" size="{{ $DefaultFontSize }}">{{ printf "%.2f" $element.Points }}</text>
+								<template size-x="70%" size-y="100%" justify="end" overflow-y="auto">
+									<text word-wrap="true" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DefaultFontSize }}">{{ printf "%s" $element.Name }}</text>
 								</template>
 							</template>
 							{{ end }}

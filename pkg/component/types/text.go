@@ -6,6 +6,7 @@ import (
 	"image"
 	"log"
 	"math"
+	"strings"
 
 	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
@@ -23,10 +24,12 @@ type Text struct {
 	FontStyle string    `xml:"style,attr"`
 	FontSize  float64   `xml:"size,attr"`
 	Color     util.RGBA `xml:"color,attr"`
+	WordWrap  bool      `xml:"word-wrap,attr"`
 	Text      string    `xml:",chardata"`
 
 	img   *image.RGBA
 	ftCtx *freetype.Context
+	lines []string // Store computed lines from Init()
 }
 
 func (t *Text) Init() {
@@ -41,9 +44,26 @@ func (t *Text) Init() {
 	t.Ctx.SetFontFace(face)
 
 	// get the size of the string
-	w, h := t.Ctx.MeasureString(t.Text)
-	w_i := int(math.Ceil(w))
-	h_i := int(math.Ceil(h))
+	var w_i, h_i int
+	if t.WordWrap && t.ComputedSizeX > 0 {
+		t.lines = t.breakIntoLines(t.ComputedSizeX)
+
+		// Find the width of the widest line
+		maxLineWidth := 0
+		for _, line := range t.lines {
+			lineWidth, _ := t.Ctx.MeasureString(line)
+			if int(math.Ceil(lineWidth)) > maxLineWidth {
+				maxLineWidth = int(math.Ceil(lineWidth))
+			}
+		}
+
+		w_i = int(math.Min(float64(t.ComputedSizeX), float64(maxLineWidth)))
+		h_i = len(t.lines) * int(math.Ceil(t.FontSize*1.2))
+	} else {
+		w, h := t.Ctx.MeasureString(t.Text)
+		w_i = int(math.Ceil(w))
+		h_i = int(math.Ceil(h))
+	}
 	t.ComputedSizeX = w_i
 	t.ComputedSizeY = h_i
 
@@ -62,14 +82,83 @@ func (t *Text) Init() {
 	t.ftCtx.SetHinting(fontpkg.HintingNone)
 }
 
-func (t *Text) Render() image.Image {
-	// Convert the point to fixed.Point26_6 format for freetype
-	pt := freetype.Pt(0, int(t.FontSize))
+func (t *Text) breakIntoLines(maxWidth int) []string {
+	words := strings.Fields(t.Text)
+	var lines []string
+	var currentLine string
 
-	// draw to the image
-	_, err := t.ftCtx.DrawString(t.Text, pt)
-	if err != nil {
-		log.Fatal(err)
+	for _, word := range words {
+		testLine := currentLine
+		if currentLine != "" {
+			testLine += " "
+		}
+		testLine += word
+
+		w, _ := t.Ctx.MeasureString(testLine)
+		if w > float64(maxWidth) {
+			if currentLine == "" {
+				lines = append(lines, t.breakWordByCharacter(word, maxWidth)...)
+			} else {
+				lines = append(lines, currentLine)
+				wordWidth, _ := t.Ctx.MeasureString(word)
+				if wordWidth > float64(maxWidth) {
+					lines = append(lines, t.breakWordByCharacter(word, maxWidth)...)
+				} else {
+					currentLine = word
+				}
+			}
+		} else {
+			currentLine = testLine
+		}
+	}
+
+	if currentLine != "" {
+		lines = append(lines, currentLine)
+	}
+
+	return lines
+}
+
+func (t *Text) breakWordByCharacter(word string, maxWidth int) []string {
+	var lines []string
+	var currentLine string
+
+	for _, char := range word {
+		testLine := currentLine + string(char)
+		w, _ := t.Ctx.MeasureString(testLine)
+		if w > float64(maxWidth) && currentLine != "" {
+			lines = append(lines, currentLine)
+			currentLine = string(char)
+		} else {
+			currentLine = testLine
+		}
+	}
+
+	if currentLine != "" {
+		lines = append(lines, currentLine)
+	}
+
+	return lines
+}
+
+func (t *Text) Render() image.Image {
+	if t.WordWrap && len(t.lines) > 0 {
+		lineHeight := int(t.FontSize * 1.2)
+
+		for i, line := range t.lines {
+			y := (i + 1) * lineHeight
+			pt := freetype.Pt(0, y)
+			_, err := t.ftCtx.DrawString(line, pt)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	} else {
+		pt := freetype.Pt(0, int(t.FontSize))
+		_, err := t.ftCtx.DrawString(t.Text, pt)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	return t.img

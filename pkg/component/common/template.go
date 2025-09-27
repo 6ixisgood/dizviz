@@ -207,6 +207,11 @@ func (t *Template) Render() image.Image {
 	primary.Position, primary.Space = t.computePositionAndSpace(primary, len(imList), t.Justify)
 	secondary.Position, _ = t.computePositionAndSpace(secondary, len(imList), t.Align)
 
+	// Handle auto-expansion before calculating scroll offsets
+	if t.OverflowX == "auto" || t.OverflowY == "auto" {
+		t.handleAutoExpansion(componentLengthPrimary, componentMaxSecondary)
+	}
+
 	// Apply scroll offset to the starting position based on overflow mode
 	scrollOffsetX, scrollOffsetY := t.calculateScrollOffset(componentLengthPrimary, componentMaxSecondary)
 
@@ -254,7 +259,7 @@ func (t *Template) Render() image.Image {
 	// Handle both axes separately now
 	needsClipping := false
 	if t.OverflowX == "hidden" || t.OverflowY == "hidden" ||
-		(t.OverflowX != "visible" && t.OverflowY != "visible") {
+		(t.OverflowX != "visible" && t.OverflowX != "auto" && t.OverflowY != "visible" && t.OverflowY != "auto") {
 		needsClipping = true
 	}
 
@@ -266,6 +271,45 @@ func (t *Template) Render() image.Image {
 	}
 
 	return im
+}
+
+// handleAutoExpansion expands the template size when overflow="auto" is set
+func (t *Template) handleAutoExpansion(contentLength, contentMaxSecondary int) {
+	// Handle horizontal auto-expansion
+	if t.OverflowX == "auto" {
+		var requiredWidth int
+		if t.Direction == "row" || t.Direction == "" {
+			// In row direction, contentLength is the total width needed
+			requiredWidth = contentLength
+		} else {
+			// In column direction, contentMaxSecondary is the width of widest item
+			requiredWidth = contentMaxSecondary
+		}
+
+		if requiredWidth > t.ComputedSizeX {
+			t.ComputedSizeX = requiredWidth
+			// Recreate context with new width
+			t.Ctx = gg.NewContext(t.ComputedSizeX, t.ComputedSizeY)
+		}
+	}
+
+	// Handle vertical auto-expansion
+	if t.OverflowY == "auto" {
+		var requiredHeight int
+		if t.Direction == "col" {
+			// In column direction, contentLength is the total height needed
+			requiredHeight = contentLength
+		} else {
+			// In row direction, contentMaxSecondary is the height of tallest item
+			requiredHeight = contentMaxSecondary
+		}
+
+		if requiredHeight > t.ComputedSizeY {
+			t.ComputedSizeY = requiredHeight
+			// Recreate context with new height
+			t.Ctx = gg.NewContext(t.ComputedSizeX, t.ComputedSizeY)
+		}
+	}
 }
 
 // calculateScrollOffset calculates the scroll offset based on overflow mode and content size
@@ -462,12 +506,8 @@ func (t *Template) calculateHorizontalOffset(contentLength, contentMaxSecondary 
 		return t.calculateEasedPosition(t.easingStartTimeX, overflow)
 
 	case "auto":
-		// Auto horizontal scroll (left direction by default)
-		t.PosX -= t.ScrollSpeed
-		if t.PosX < -overflow {
-			t.PosX = t.ComputedSizeX
-		}
-		return t.PosX
+		// Auto-expansion mode - no scrolling needed as template expands
+		return 0
 
 	default: // "hidden", "visible", etc.
 		return 0
@@ -542,12 +582,8 @@ func (t *Template) calculateVerticalOffset(contentLength, contentMaxSecondary in
 		return t.calculateEasedPosition(t.easingStartTimeY, overflow)
 
 	case "auto":
-		// Auto vertical scroll (up direction by default)
-		t.PosY -= t.ScrollSpeed
-		if t.PosY < -overflow {
-			t.PosY = t.ComputedSizeY
-		}
-		return t.PosY
+		// Auto-expansion mode - no scrolling needed as template expands
+		return 0
 
 	default: // "hidden", "visible", etc.
 		return 0
