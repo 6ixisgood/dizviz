@@ -57,7 +57,7 @@ func SleeperMatchupsViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 		League:        config.LeagueID,
 		Week:          config.Week,
 		SleeperClient: client,
-		Phase:         1,
+		Phase:         0,
 		phaseDuration: time.Duration(config.PhaseDuration),
 		dataDuration:  time.Duration(config.DataDuration),
 	}, nil

@@ -117,8 +117,8 @@ func main() {
 	t := "text"
 	configJSON := []byte(`
 		{
-			"text": "Welcome to DizViz Welcome to DizViz Welcome to DizViz",
-			"alignment": "start",
+			"text": "Welcome",
+			"alignment": "center",
 			"justify": "center",
 			"color": "#FF2244FF",
 			"bg-color": "#002288FF"
@@ -127,14 +127,17 @@ func main() {
 
 	// leagueId := "1259377273417502720" // "1236008483879403520"
 	// leagueId :=  "1236008483879403520" // BH&TM
-	leagueId := "1253787285682409472"
-	t = "sleeper-matchups"
-	configJSON = []byte(`
-		{
-			"league_id": "` + leagueId + `",
-			"week": 1
-		}
-	`)
+	// leagueId := "1253787285682409472"
+	// t = "sleeper-matchups"
+	// configJSON = []byte(`
+	// 	{
+	// 		"league_id": "` + leagueId + `",
+	// 		"week": 1
+	// 	}
+	// `)
+
+	// t = "nflbox"
+	// configJSON = []byte(`{"auto": true}`)
 
 	// go from []byte to specific ViewConfig type
 	regView := viewCommon.RegisteredViews[t]
