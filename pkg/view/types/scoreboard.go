@@ -2,10 +2,11 @@ package types
 
 import (
 	"errors"
+	"time"
+
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
-	"time"
 )
 
 type NFLBoxView struct {
@@ -142,21 +143,46 @@ func (v *NFLBoxView) TemplateString() string {
 				</template>
 			</template>
 
-			<template justify="space-between" size-x="100%" size-y="50%">
-				<template size-x="45%" size-y="100%" dir="col" justify="space-around">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Passing: {{ .Game.AwayPassYards }}</text>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Rushing: {{ .Game.AwayRushYards }}</text>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Sacks: {{ .Game.AwaySacks }}</text>
-				</template>
+		<template dir="col" size-x="100%" size-y="50%">
+			<comparison-bar 
+				value-placement="side"
+				left-value="{{ .Game.AwayPassYards }}"
+				right-value="{{ .Game.HomePassYards }}"
+				center-label="PY"
+				left-color="{{ .Game.AwayColor }}"
+				right-color="{{ .Game.HomeColor }}"
+				bar-height="6"
+				show-values="true"
+				size-x="100%"
+				size-y="33%">
+			</comparison-bar>
 
-				<template size-x="45%" size-y="100%" dir="col" justify="space-around">
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Passing: {{ .Game.HomePassYards }}</text>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Rushing: {{ .Game.HomeRushYards }}</text>
-					<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ $DefaultFontColor }}" size="{{ $DetailFontSize }}">Sacks: {{ .Game.HomeSacks }}</text>
-				</template>
-			</template>
+			<comparison-bar 
+				value-placement="side"
+				left-value="{{ .Game.AwayRushYards }}"
+				right-value="{{ .Game.HomeRushYards }}"
+				center-label="RY"
+				left-color="{{ .Game.AwayColor }}"
+				right-color="{{ .Game.HomeColor }}"
+				bar-height="6"
+				show-values="true"
+				size-x="100%"
+				size-y="33%">
+			</comparison-bar>
 
-		 </template>
+			<comparison-bar 
+				value-placement="side"
+				left-value="{{ .Game.AwaySacks }}"
+				right-value="{{ .Game.HomeSacks }}"
+				center-label="S"
+				left-color="{{ .Game.AwayColor }}"
+				right-color="{{ .Game.HomeColor }}"
+				bar-height="6"
+				show-values="true"
+				size-x="100%"
+				size-y="33%">
+			</comparison-bar>
+		</template>		 </template>
 		`
 }
 

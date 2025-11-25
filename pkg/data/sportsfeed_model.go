@@ -1,8 +1,9 @@
 package data
 
 import (
-	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	"time"
+
+	"github.com/6ixisgood/matrix-ticker/pkg/util"
 )
 
 // DailyGamesNHLResponse represents daily NHL games response from Sportsfeed
@@ -347,12 +348,12 @@ type NFLBoxScoreResponse struct {
 					RecFumbles  int     `json:"recFumbles"`
 				} `json:"receiving"`
 				Tackles struct {
-					TackleSolo     int `json:"tackleSolo"`
-					TackleTotal    int `json:"tackleTotal"`
-					TackleAst      int `json:"tackleAst"`
-					Sacks          int `json:"sacks"`
-					SackYds        int `json:"sackYds"`
-					TacklesForLoss int `json:"tacklesForLoss"`
+					TackleSolo     int     `json:"tackleSolo"`
+					TackleTotal    int     `json:"tackleTotal"`
+					TackleAst      int     `json:"tackleAst"`
+					Sacks          float64 `json:"sacks"`
+					SackYds        int     `json:"sackYds"`
+					TacklesForLoss float64 `json:"tacklesForLoss"`
 				} `json:"tackles"`
 				Interceptions struct {
 					Interceptions  int     `json:"interceptions"`
@@ -517,7 +518,7 @@ type NFLBoxScoreResponse struct {
 						TackleAst      int     `json:"tackleAst"`
 						Sacks          float64 `json:"sacks"`
 						SackYds        int     `json:"sackYds"`
-						TacklesForLoss int     `json:"tacklesForLoss"`
+						TacklesForLoss float64 `json:"tacklesForLoss"`
 					} `json:"tackles"`
 					Interceptions struct {
 						Interceptions  int     `json:"interceptions"`
@@ -680,12 +681,12 @@ type NFLBoxScoreResponse struct {
 					RecFumbles  int     `json:"recFumbles"`
 				} `json:"receiving"`
 				Tackles struct {
-					TackleSolo     int `json:"tackleSolo"`
-					TackleTotal    int `json:"tackleTotal"`
-					TackleAst      int `json:"tackleAst"`
-					Sacks          int `json:"sacks"`
-					SackYds        int `json:"sackYds"`
-					TacklesForLoss int `json:"tacklesForLoss"`
+					TackleSolo     int     `json:"tackleSolo"`
+					TackleTotal    int     `json:"tackleTotal"`
+					TackleAst      int     `json:"tackleAst"`
+					Sacks          float64 `json:"sacks"`
+					SackYds        int     `json:"sackYds"`
+					TacklesForLoss float64 `json:"tacklesForLoss"`
 				} `json:"tackles"`
 				Interceptions struct {
 					Interceptions  int     `json:"interceptions"`
@@ -850,7 +851,7 @@ type NFLBoxScoreResponse struct {
 						TackleAst      int     `json:"tackleAst"`
 						Sacks          float64 `json:"sacks"`
 						SackYds        int     `json:"sackYds"`
-						TacklesForLoss int     `json:"tacklesForLoss"`
+						TacklesForLoss float64 `json:"tacklesForLoss"`
 					} `json:"tackles"`
 					Interceptions struct {
 						Interceptions  int     `json:"interceptions"`
@@ -994,6 +995,8 @@ type NFLBoxScoreResponseFormatted struct {
 	AwayScore           int
 	HomeLogo            string
 	AwayLogo            string
+	HomeColor           string
+	AwayColor           string
 	Quarter             int
 	QuarterMinRemaining int
 	QuarterSecRemaining int

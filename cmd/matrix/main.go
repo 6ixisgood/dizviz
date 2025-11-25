@@ -100,9 +100,6 @@ func main() {
 		BaseUrl: AppConfig.Data.Sleeper.BaseUrl,
 	})
 
-	// Initialize global compositor
-	// view.InitGlobalCompositor()
-
 	// Create application
 	application = app.New()
 
@@ -136,8 +133,8 @@ func main() {
 	// 	}
 	// `)
 
-	// t = "nflbox"
-	// configJSON = []byte(`{"auto": true}`)
+	t = "nflbox"
+	configJSON = []byte(`{"auto": true}`)
 
 	// go from []byte to specific ViewConfig type
 	regView := viewCommon.RegisteredViews[t]

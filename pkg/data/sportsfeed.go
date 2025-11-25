@@ -211,11 +211,22 @@ func (s *SportsFeed) FetchNFLBoxScore(matchup string, date time.Time) (NFLBoxSco
 
 	homeTeamId := responseData.Game.HomeTeam.ID
 	var homeTeamReferenceIndex, awayTeamReferenceIndex int
-	for i, ref := range(responseData.References.TeamReferences) {
+	for i, ref := range responseData.References.TeamReferences {
 		if ref.ID == homeTeamId {
 			homeTeamReferenceIndex = i
 			awayTeamReferenceIndex = 1 - i
 		}
+	}
+
+	// Get primary team colors (first color in the array)
+	// SportsFeed provides 6-byte hex colors, we need to add alpha channel (FF) for 8-byte RGBA
+	homeColor := "#FFFFFFFF" // default white
+	awayColor := "#FFFFFFFF"
+	if len(responseData.References.TeamReferences[homeTeamReferenceIndex].TeamColoursHex) > 0 {
+		homeColor = responseData.References.TeamReferences[homeTeamReferenceIndex].TeamColoursHex[0] + "FF"
+	}
+	if len(responseData.References.TeamReferences[awayTeamReferenceIndex].TeamColoursHex) > 0 {
+		awayColor = responseData.References.TeamReferences[awayTeamReferenceIndex].TeamColoursHex[0] + "FF"
 	}
 
 	formattedGameData = NFLBoxScoreResponseFormatted{
@@ -225,6 +236,8 @@ func (s *SportsFeed) FetchNFLBoxScore(matchup string, date time.Time) (NFLBoxSco
 		AwayScore:           responseData.Scoring.AwayScoreTotal,
 		HomeLogo:            responseData.References.TeamReferences[homeTeamReferenceIndex].OfficialLogoImageSrc,
 		AwayLogo:            responseData.References.TeamReferences[awayTeamReferenceIndex].OfficialLogoImageSrc,
+		HomeColor:           homeColor,
+		AwayColor:           awayColor,
 		Quarter:             responseData.Scoring.CurrentQuarter,
 		QuarterMinRemaining: min,
 		QuarterSecRemaining: sec,
@@ -237,8 +250,8 @@ func (s *SportsFeed) FetchNFLBoxScore(matchup string, date time.Time) (NFLBoxSco
 		AwayPassYards:       responseData.Stats.Away.TeamStats[0].Passing.PassNetYards,
 		HomeRushYards:       responseData.Stats.Home.TeamStats[0].Rushing.RushYards,
 		AwayRushYards:       responseData.Stats.Away.TeamStats[0].Rushing.RushYards,
-		HomeSacks:           responseData.Stats.Home.TeamStats[0].Tackles.Sacks,
-		AwaySacks:           responseData.Stats.Away.TeamStats[0].Tackles.Sacks,
+		HomeSacks:           int(responseData.Stats.Home.TeamStats[0].Tackles.Sacks),
+		AwaySacks:           int(responseData.Stats.Away.TeamStats[0].Tackles.Sacks),
 		HomeWins:            responseData.Stats.Home.TeamStats[0].Standings.Wins,
 		AwayWins:            responseData.Stats.Away.TeamStats[0].Standings.Wins,
 		HomeLosses:          responseData.Stats.Home.TeamStats[0].Standings.Losses,
