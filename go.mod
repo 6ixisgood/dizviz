@@ -42,16 +42,15 @@ require (
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.9.0 // indirect
-	golang.org/x/exp/shiny v0.0.0-20230210204819-062eb4c674ab // indirect
-	golang.org/x/mobile v0.0.0-20221110043201-43a038452099 // indirect
+	golang.org/x/exp/shiny v0.0.0-20230304125523-9ff063c70017 // indirect
+	golang.org/x/mobile v0.0.0-20230301163155-e0f57694e12c // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 // replace syntax
 // replace github.com/sixisgoood/go-rpi-rgb-led-matrix => <CLONED_DIR>
-replace github.com/sixisgoood/go-rpi-rgb-led-matrix => /home/andrew/lab/go-rpi-rgb-led-matrix
+replace github.com/sixisgoood/go-rpi-rgb-led-matrix => /home/pi/Matrix/go-rpi-rgb-led-matrix
