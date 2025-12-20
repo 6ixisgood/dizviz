@@ -52,7 +52,7 @@ func NFLBoxViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 
 	if config.Duration == 0 {
 		if config.Auto {
-			config.Duration = 15
+			config.Duration = 30
 		} else {
 			config.Duration = 60
 		}
@@ -107,8 +107,116 @@ func (v *NFLBoxView) Stop() {
 }
 
 func (v *NFLBoxView) TemplateData() map[string]interface{} {
+	// Create a list of stats for the comparison bars
+	stats := []map[string]interface{}{
+		// Offensive Stats
+		{
+			"Label":     "Passing Yards",
+			"AwayValue": v.Game.AwayPassYards,
+			"HomeValue": v.Game.HomePassYards,
+		},
+		{
+			"Label":     "Rushing Yards",
+			"AwayValue": v.Game.AwayRushYards,
+			"HomeValue": v.Game.HomeRushYards,
+		},
+		{
+			"Label":     "Passing TDs",
+			"AwayValue": v.Game.AwayPassTD,
+			"HomeValue": v.Game.HomePassTD,
+		},
+		{
+			"Label":     "Rushing TDs",
+			"AwayValue": v.Game.AwayRushTD,
+			"HomeValue": v.Game.HomeRushTD,
+		},
+		{
+			"Label":     "Completions",
+			"AwayValue": v.Game.AwayPassCompletions,
+			"HomeValue": v.Game.HomePassCompletions,
+		},
+		{
+			"Label":     "Pass Attempts",
+			"AwayValue": v.Game.AwayPassAttempts,
+			"HomeValue": v.Game.HomePassAttempts,
+		},
+		{
+			"Label":     "QB Rating",
+			"AwayValue": v.Game.AwayQBRating,
+			"HomeValue": v.Game.HomeQBRating,
+		},
+		{
+			"Label":     "Total Yards",
+			"AwayValue": v.Game.AwayTotalYards,
+			"HomeValue": v.Game.HomeTotalYards,
+		},
+		// Defensive Stats
+		{
+			"Label":     "Sacks",
+			"AwayValue": v.Game.AwaySacks,
+			"HomeValue": v.Game.HomeSacks,
+		},
+		{
+			"Label":     "Interceptions",
+			"AwayValue": v.Game.AwayInterceptions,
+			"HomeValue": v.Game.HomeInterceptions,
+		},
+		{
+			"Label":     "Fumbles Lost",
+			"AwayValue": v.Game.AwayFumblesLost,
+			"HomeValue": v.Game.HomeFumblesLost,
+		},
+		{
+			"Label":     "Turnovers",
+			"AwayValue": v.Game.AwayTurnovers,
+			"HomeValue": v.Game.HomeTurnovers,
+		},
+		{
+			"Label":     "Tackles",
+			"AwayValue": v.Game.AwayTackles,
+			"HomeValue": v.Game.HomeTackles,
+		},
+		{
+			"Label":     "Tackles for Loss",
+			"AwayValue": v.Game.AwayTacklesForLoss,
+			"HomeValue": v.Game.HomeTacklesForLoss,
+		},
+		{
+			"Label":     "Passes Defended",
+			"AwayValue": v.Game.AwayPassesDefended,
+			"HomeValue": v.Game.HomePassesDefended,
+		},
+		// Efficiency Stats
+		{
+			"Label":     "3rd Down %",
+			"AwayValue": v.Game.AwayThirdDownPct,
+			"HomeValue": v.Game.HomeThirdDownPct,
+		},
+		{
+			"Label":     "3rd Down Conv",
+			"AwayValue": v.Game.AwayThirdDowns,
+			"HomeValue": v.Game.HomeThirdDowns,
+		},
+		{
+			"Label":     "First Downs",
+			"AwayValue": v.Game.AwayFirstDowns,
+			"HomeValue": v.Game.HomeFirstDowns,
+		},
+		{
+			"Label":     "Penalty Yards",
+			"AwayValue": v.Game.AwayPenaltyYards,
+			"HomeValue": v.Game.HomePenaltyYards,
+		},
+		{
+			"Label":     "Time of Possession",
+			"AwayValue": v.Game.AwayTimeOfPossession,
+			"HomeValue": v.Game.HomeTimeOfPossession,
+		},
+	}
+
 	return map[string]interface{}{
-		"Game": v.Game,
+		"Game":  v.Game,
+		"Stats": stats,
 	}
 }
 
@@ -143,46 +251,24 @@ func (v *NFLBoxView) TemplateString() string {
 				</template>
 			</template>
 
-		<template dir="col" size-x="100%" size-y="50%">
-			<comparison-bar 
-				value-placement="side"
-				left-value="{{ .Game.AwayPassYards }}"
-				right-value="{{ .Game.HomePassYards }}"
-				center-label="PY"
-				left-color="{{ .Game.AwayColor }}"
-				right-color="{{ .Game.HomeColor }}"
-				bar-height="6"
-				show-values="true"
-				size-x="100%"
-				size-y="33%">
-			</comparison-bar>
-
-			<comparison-bar 
-				value-placement="side"
-				left-value="{{ .Game.AwayRushYards }}"
-				right-value="{{ .Game.HomeRushYards }}"
-				center-label="RY"
-				left-color="{{ .Game.AwayColor }}"
-				right-color="{{ .Game.HomeColor }}"
-				bar-height="6"
-				show-values="true"
-				size-x="100%"
-				size-y="33%">
-			</comparison-bar>
-
-			<comparison-bar 
-				value-placement="side"
-				left-value="{{ .Game.AwaySacks }}"
-				right-value="{{ .Game.HomeSacks }}"
-				center-label="S"
-				left-color="{{ .Game.AwayColor }}"
-				right-color="{{ .Game.HomeColor }}"
-				bar-height="6"
-				show-values="true"
-				size-x="100%"
-				size-y="33%">
-			</comparison-bar>
-		</template>		 </template>
+			<template dir="col" size-x="100%" size-y="50%" overflow-y="scroll-bounce" scroll-speed="10">
+				{{ range .Stats }}
+				<comparison-bar 
+					value-placement="side"
+					left-value="{{ .AwayValue }}"
+					right-value="{{ .HomeValue }}"
+					stat-label="{{ .Label }}"
+					show-stat-label="true"
+					left-color="{{ $.Game.AwayColor }}"
+					right-color="{{ $.Game.HomeColor }}"
+					bar-height="6"
+					show-values="true"
+					size-x="100%"
+					size-y="30%">
+				</comparison-bar>
+				{{ end }}
+			</template>
+		</template>
 		`
 }
 

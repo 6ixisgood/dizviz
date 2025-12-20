@@ -229,6 +229,10 @@ func (s *SportsFeed) FetchNFLBoxScore(matchup string, date time.Time) (NFLBoxSco
 		awayColor = responseData.References.TeamReferences[awayTeamReferenceIndex].TeamColoursHex[0] + "FF"
 	}
 
+	// Calculate turnovers (interceptions thrown + fumbles lost)
+	homeTurnovers := responseData.Stats.Home.TeamStats[0].Passing.PassInt + responseData.Stats.Home.TeamStats[0].Fumbles.FumLost
+	awayTurnovers := responseData.Stats.Away.TeamStats[0].Passing.PassInt + responseData.Stats.Away.TeamStats[0].Fumbles.FumLost
+
 	formattedGameData = NFLBoxScoreResponseFormatted{
 		HomeAbbreviation:    responseData.Game.HomeTeam.Abbreviation,
 		AwayAbbreviation:    responseData.Game.AwayTeam.Abbreviation,
@@ -246,18 +250,56 @@ func (s *SportsFeed) FetchNFLBoxScore(matchup string, date time.Time) (NFLBoxSco
 		LineOfScrimmage:     responseData.Scoring.LineOfScrimmage.YardLine,
 		PlayedStatus:        responseData.Game.PlayedStatus,
 		StartTime:           responseData.Game.StartTime,
+		// Offensive Stats
 		HomePassYards:       responseData.Stats.Home.TeamStats[0].Passing.PassNetYards,
 		AwayPassYards:       responseData.Stats.Away.TeamStats[0].Passing.PassNetYards,
 		HomeRushYards:       responseData.Stats.Home.TeamStats[0].Rushing.RushYards,
 		AwayRushYards:       responseData.Stats.Away.TeamStats[0].Rushing.RushYards,
-		HomeSacks:           int(responseData.Stats.Home.TeamStats[0].Tackles.Sacks),
-		AwaySacks:           int(responseData.Stats.Away.TeamStats[0].Tackles.Sacks),
-		HomeWins:            responseData.Stats.Home.TeamStats[0].Standings.Wins,
-		AwayWins:            responseData.Stats.Away.TeamStats[0].Standings.Wins,
-		HomeLosses:          responseData.Stats.Home.TeamStats[0].Standings.Losses,
-		AwayLosses:          responseData.Stats.Away.TeamStats[0].Standings.Losses,
-		HomeTies:            responseData.Stats.Home.TeamStats[0].Standings.Ties,
-		AwayTies:            responseData.Stats.Away.TeamStats[0].Standings.Ties,
+		HomePassTD:          responseData.Stats.Home.TeamStats[0].Passing.PassTD,
+		AwayPassTD:          responseData.Stats.Away.TeamStats[0].Passing.PassTD,
+		HomeRushTD:          responseData.Stats.Home.TeamStats[0].Rushing.RushTD,
+		AwayRushTD:          responseData.Stats.Away.TeamStats[0].Rushing.RushTD,
+		HomePassCompletions: responseData.Stats.Home.TeamStats[0].Passing.PassCompletions,
+		AwayPassCompletions: responseData.Stats.Away.TeamStats[0].Passing.PassCompletions,
+		HomePassAttempts:    responseData.Stats.Home.TeamStats[0].Passing.PassAttempts,
+		AwayPassAttempts:    responseData.Stats.Away.TeamStats[0].Passing.PassAttempts,
+		HomeQBRating:        responseData.Stats.Home.TeamStats[0].Passing.QbRating,
+		AwayQBRating:        responseData.Stats.Away.TeamStats[0].Passing.QbRating,
+		HomeTotalYards:      responseData.Stats.Home.TeamStats[0].Miscellaneous.OffenseYds,
+		AwayTotalYards:      responseData.Stats.Away.TeamStats[0].Miscellaneous.OffenseYds,
+		// Defensive Stats
+		HomeSacks:          int(responseData.Stats.Home.TeamStats[0].Tackles.Sacks),
+		AwaySacks:          int(responseData.Stats.Away.TeamStats[0].Tackles.Sacks),
+		HomeInterceptions:  responseData.Stats.Home.TeamStats[0].Interceptions.Interceptions,
+		AwayInterceptions:  responseData.Stats.Away.TeamStats[0].Interceptions.Interceptions,
+		HomeFumblesLost:    responseData.Stats.Home.TeamStats[0].Fumbles.FumLost,
+		AwayFumblesLost:    responseData.Stats.Away.TeamStats[0].Fumbles.FumLost,
+		HomeTurnovers:      homeTurnovers,
+		AwayTurnovers:      awayTurnovers,
+		HomeTackles:        responseData.Stats.Home.TeamStats[0].Tackles.TackleTotal,
+		AwayTackles:        responseData.Stats.Away.TeamStats[0].Tackles.TackleTotal,
+		HomeTacklesForLoss: responseData.Stats.Home.TeamStats[0].Tackles.TacklesForLoss,
+		AwayTacklesForLoss: responseData.Stats.Away.TeamStats[0].Tackles.TacklesForLoss,
+		HomePassesDefended: responseData.Stats.Home.TeamStats[0].Interceptions.PassesDefended,
+		AwayPassesDefended: responseData.Stats.Away.TeamStats[0].Interceptions.PassesDefended,
+		// Efficiency Stats
+		HomeThirdDowns:       responseData.Stats.Home.TeamStats[0].Miscellaneous.ThirdDowns,
+		AwayThirdDowns:       responseData.Stats.Away.TeamStats[0].Miscellaneous.ThirdDowns,
+		HomeThirdDownPct:     responseData.Stats.Home.TeamStats[0].Miscellaneous.ThirdDownsPct,
+		AwayThirdDownPct:     responseData.Stats.Away.TeamStats[0].Miscellaneous.ThirdDownsPct,
+		HomeFirstDowns:       responseData.Stats.Home.TeamStats[0].Miscellaneous.FirstDownsTotal,
+		AwayFirstDowns:       responseData.Stats.Away.TeamStats[0].Miscellaneous.FirstDownsTotal,
+		HomePenaltyYards:     responseData.Stats.Home.TeamStats[0].Miscellaneous.PenaltyYds,
+		AwayPenaltyYards:     responseData.Stats.Away.TeamStats[0].Miscellaneous.PenaltyYds,
+		HomeTimeOfPossession: 0, // TODO: Need to check if this is available in the API
+		AwayTimeOfPossession: 0, // TODO: Need to check if this is available in the API
+		// Team Record
+		HomeWins:   responseData.Stats.Home.TeamStats[0].Standings.Wins,
+		AwayWins:   responseData.Stats.Away.TeamStats[0].Standings.Wins,
+		HomeLosses: responseData.Stats.Home.TeamStats[0].Standings.Losses,
+		AwayLosses: responseData.Stats.Away.TeamStats[0].Standings.Losses,
+		HomeTies:   responseData.Stats.Home.TeamStats[0].Standings.Ties,
+		AwayTies:   responseData.Stats.Away.TeamStats[0].Standings.Ties,
 	}
 
 	return formattedGameData, nil

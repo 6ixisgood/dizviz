@@ -1005,18 +1005,56 @@ type NFLBoxScoreResponseFormatted struct {
 	LineOfScrimmage     int
 	PlayedStatus        string
 	StartTime           time.Time
+	// Offensive Stats
 	HomePassYards       int
 	AwayPassYards       int
 	HomeRushYards       int
 	AwayRushYards       int
-	HomeSacks           int
-	AwaySacks           int
-	HomeWins            int
-	AwayWins            int
-	HomeLosses          int
-	AwayLosses          int
-	HomeTies            int
-	AwayTies            int
+	HomePassTD          int
+	AwayPassTD          int
+	HomeRushTD          int
+	AwayRushTD          int
+	HomePassCompletions int
+	AwayPassCompletions int
+	HomePassAttempts    int
+	AwayPassAttempts    int
+	HomeQBRating        float64
+	AwayQBRating        float64
+	HomeTotalYards      int
+	AwayTotalYards      int
+	// Defensive Stats
+	HomeSacks          int
+	AwaySacks          int
+	HomeInterceptions  int
+	AwayInterceptions  int
+	HomeFumblesLost    int
+	AwayFumblesLost    int
+	HomeTurnovers      int
+	AwayTurnovers      int
+	HomeTackles        int
+	AwayTackles        int
+	HomeTacklesForLoss float64
+	AwayTacklesForLoss float64
+	HomePassesDefended int
+	AwayPassesDefended int
+	// Efficiency Stats
+	HomeThirdDowns       int
+	AwayThirdDowns       int
+	HomeThirdDownPct     float64
+	AwayThirdDownPct     float64
+	HomeFirstDowns       int
+	AwayFirstDowns       int
+	HomePenaltyYards     int
+	AwayPenaltyYards     int
+	HomeTimeOfPossession int
+	AwayTimeOfPossession int
+	// Team Record
+	HomeWins   int
+	AwayWins   int
+	HomeLosses int
+	AwayLosses int
+	HomeTies   int
+	AwayTies   int
 }
 
 // NFLCurrentSeasonResponse

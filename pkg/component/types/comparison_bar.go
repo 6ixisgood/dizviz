@@ -108,7 +108,7 @@ func (cb *ComparisonBar) calculateBarWidths() {
 		maxValueWidth := math.Max(leftValueWidth, rightValueWidth)
 
 		// Reserve space for value text plus padding (4px padding + 4px between value and bar)
-		valueSpace := int(maxValueWidth) + 8
+		valueSpace := int(math.Max(maxValueWidth+16, 20))
 		maxBarSpace = maxBarSpace - valueSpace
 	}
 
