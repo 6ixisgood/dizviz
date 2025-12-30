@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+package dizviz.agent;
+
+option go_package = "github.com/6ixisgood/matrix-ticker/proto/agent";
+
+// AgentService defines the gRPC interface between agents and control plane
+service AgentService {
+  // RegisterAgent registers an agent with the control plane
+  rpc RegisterAgent(RegisterRequest) returns (RegisterResponse);
+  
+  // StreamCommands establishes a bidirectional stream for commands and status
+  rpc StreamCommands(stream AgentMessage) returns (stream ControlPlaneMessage);
+  
+  // Heartbeat sends periodic heartbeat to control plane
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  
+  // UpdateStatus sends agent status update
+  rpc UpdateStatus(StatusUpdate) returns (StatusResponse);
+}
+
+// RegisterRequest sent when agent first connects
+message RegisterRequest {
+  string agent_name = 1;
+  Capabilities capabilities = 2;
+  string version = 3;
+}
+
+// RegisterResponse contains assigned agent ID
+message RegisterResponse {
+  string agent_id = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+// Capabilities describes what the agent can do
+message Capabilities {
+  string display_type = 1;  // "led-matrix", "hdmi", "monitor", "file"
+  int32 width = 2;
+  int32 height = 3;
+  int32 max_fps = 4;
+  int32 color_depth = 5;
+  repeated string supported_views = 6;
+}
+
+// HeartbeatRequest sent periodically to keep connection alive
+message HeartbeatRequest {
+  string agent_id = 1;
+  int64 timestamp = 2;
+}
+
+// HeartbeatResponse acknowledges heartbeat
+message HeartbeatResponse {
+  bool success = 1;
+}
+
+// StatusUpdate contains current agent status
+message StatusUpdate {
+  string agent_id = 1;
+  AgentStatus status = 2;
+  int64 timestamp = 3;
+}
+
+// AgentStatus describes current state
+message AgentStatus {
+  string health = 1;  // "healthy", "degraded", "unhealthy"
+  string current_view = 2;
+  int32 current_fps = 3;
+  int64 uptime_seconds = 4;
+  int64 memory_usage_bytes = 5;
+  string error_message = 6;
+}
+
+// StatusResponse acknowledges status update
+message StatusResponse {
+  bool success = 1;
+}
+
+// AgentMessage sent from agent to control plane
+message AgentMessage {
+  string agent_id = 1;
+  oneof payload {
+    StatusUpdate status = 2;
+    CommandResponse response = 3;
+  }
+}
+
+// ControlPlaneMessage sent from control plane to agent
+message ControlPlaneMessage {
+  oneof payload {
+    AssignViewCommand assign_view = 1;
+    UpdateConfigCommand update_config = 2;
+    StopCommand stop = 3;
+    PingCommand ping = 4;
+  }
+}
+
+// AssignViewCommand instructs agent to display a specific view
+message AssignViewCommand {
+  string view_type = 1;
+  string view_config_json = 2;  // JSON-encoded view configuration
+}
+
+// UpdateConfigCommand modifies agent runtime configuration
+message UpdateConfigCommand {
+  optional int32 fps = 1;
+  optional int32 buffer_size = 2;
+}
+
+// StopCommand instructs agent to shut down
+message StopCommand {
+  bool graceful = 1;
+  string reason = 2;
+}
+
+// PingCommand checks if agent is responsive
+message PingCommand {
+  int64 timestamp = 1;
+}
+
+// CommandResponse acknowledges command execution
+message CommandResponse {
+  bool success = 1;
+  string message = 2;
+  string command_type = 3;
+}

@@ -4,3 +4,12 @@ config/.*
 cmd/test/
 README-local.md
 .vscode/
+bin/
+proto/*.pb.go
+Makefile.local
+
+# Go workspace file (local development only)
+go.work
+go.work.sum
+
+Makefile.local
