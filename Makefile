@@ -1,4 +1,4 @@
-.PHONY: all proto agent matrix clean deps dev help
+.PHONY: all proto agent controlplane matrix clean deps dev help
 
 # Load user-specific configuration if it exists
 -include Makefile.local
@@ -7,7 +7,7 @@
 export PATH := $(PATH):$(HOME)/go/bin
 
 # Default target
-all: agent
+all: agent controlplane
 
 # Generate protobuf code
 proto:
@@ -18,6 +18,9 @@ proto:
 # Build binaries
 agent:
 	@go build -o bin/agent cmd/agent/main.go
+
+controlplane:
+	@go build -o bin/controlplane cmd/controlplane/main.go
 
 matrix:
 	@go build -o bin/matrix cmd/matrix/main.go
@@ -40,13 +43,14 @@ help:
 	@echo "DizViz Makefile"
 	@echo ""
 	@echo "Targets:"
-	@echo "  all     - Build agent (default)"
-	@echo "  agent   - Build agent binary"
-	@echo "  matrix  - Build matrix binary (legacy)"
-	@echo "  proto   - Generate protobuf code"
-	@echo "  dev     - Run agent without building (use ARGS for custom flags)"
-	@echo "  clean   - Remove build artifacts"
-	@echo "  deps    - Install Go dependencies"
+	@echo "  all          - Build agent and control plane (default)"
+	@echo "  agent        - Build agent binary"
+	@echo "  controlplane - Build control plane server binary"
+	@echo "  matrix       - Build matrix binary (legacy)"
+	@echo "  proto        - Generate protobuf code"
+	@echo "  dev          - Run agent without building (use ARGS for custom flags)"
+	@echo "  clean        - Remove build artifacts"
+	@echo "  deps         - Install Go dependencies"
 	@echo ""
 	@echo "Configuration:"
 	@echo "  Create Makefile.local to customize CGO flags and paths"

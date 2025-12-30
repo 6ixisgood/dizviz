@@ -10,6 +10,7 @@ import (
 	"github.com/6ixisgood/matrix-ticker/pkg/app"
 	"github.com/6ixisgood/matrix-ticker/pkg/display"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	pb "github.com/6ixisgood/matrix-ticker/proto"
 )
 
 // Agent represents a display agent that runs views and connects to control plane
@@ -239,6 +240,9 @@ func (a *Agent) heartbeatLoop() {
 	ticker := time.NewTicker(a.config.HeartbeatInterval)
 	defer ticker.Stop()
 
+	consecutiveFailures := 0
+	maxFailures := 3
+
 	for {
 		select {
 		case <-a.ctx.Done():
@@ -246,18 +250,180 @@ func (a *Agent) heartbeatLoop() {
 		case <-ticker.C:
 			if a.controlPlaneClient != nil {
 				if err := a.controlPlaneClient.SendHeartbeat(a.ctx); err != nil {
-					log.Printf("[Agent:%s] Heartbeat failed: %v", a.name, err)
+					consecutiveFailures++
+					log.Printf("[Agent:%s] Heartbeat failed (%d/%d): %v", a.name, consecutiveFailures, maxFailures, err)
+
+					// If too many consecutive failures and auto-reconnect is enabled, attempt reconnection
+					if consecutiveFailures >= maxFailures && a.config.EnableAutoReconnect {
+						log.Printf("[Agent:%s] Too many heartbeat failures, attempting reconnection", a.name)
+						go a.attemptReconnection()
+					}
+				} else {
+					// Reset failure counter on success
+					if consecutiveFailures > 0 {
+						consecutiveFailures = 0
+						log.Printf("[Agent:%s] Heartbeat recovered", a.name)
+					}
 				}
 			}
 		}
 	}
 }
 
+// attemptReconnection tries to reconnect to the control plane
+func (a *Agent) attemptReconnection() {
+	log.Printf("[Agent:%s] Starting reconnection process", a.name)
+
+	// Disconnect current client
+	if a.controlPlaneClient != nil {
+		a.controlPlaneClient.Disconnect()
+	}
+
+	// Attempt to reconnect
+	if err := a.connectToControlPlane(); err != nil {
+		log.Printf("[Agent:%s] Reconnection failed: %v", a.name, err)
+		a.setHealth("degraded", fmt.Sprintf("control plane disconnected: %v", err))
+
+		// Schedule another retry if auto-reconnect is enabled
+		if a.config.EnableAutoReconnect {
+			time.Sleep(a.config.ReconnectDelay)
+			go a.attemptReconnection()
+		}
+		return
+	}
+
+	log.Printf("[Agent:%s] Reconnection successful", a.name)
+	a.setHealth("healthy", "")
+}
+
 // commandLoop listens for commands from control plane
 func (a *Agent) commandLoop() {
-	// This will be implemented in Phase 2
-	// For now, just a placeholder
-	<-a.ctx.Done()
+	if a.controlPlaneClient == nil {
+		log.Printf("[Agent:%s] No control plane client, command loop exiting", a.name)
+		return
+	}
+
+	// Start command stream
+	commandChan, err := a.controlPlaneClient.StartCommandStream(a.ctx)
+	if err != nil {
+		log.Printf("[Agent:%s] Failed to start command stream: %v", a.name, err)
+		return
+	}
+
+	log.Printf("[Agent:%s] Command loop started", a.name)
+
+	for {
+		select {
+		case <-a.ctx.Done():
+			log.Printf("[Agent:%s] Command loop shutting down", a.name)
+			return
+
+		case cmd, ok := <-commandChan:
+			if !ok {
+				log.Printf("[Agent:%s] Command channel closed", a.name)
+				return
+			}
+
+			// Handle command based on type
+			a.handleCommand(cmd)
+		}
+	}
+}
+
+// handleCommand processes a command from the control plane
+func (a *Agent) handleCommand(msg *pb.ControlPlaneMessage) {
+	if msg == nil {
+		return
+	}
+
+	switch payload := msg.Payload.(type) {
+	case *pb.ControlPlaneMessage_AssignView:
+		a.handleAssignView(payload.AssignView)
+	case *pb.ControlPlaneMessage_UpdateConfig:
+		a.handleUpdateConfig(payload.UpdateConfig)
+	case *pb.ControlPlaneMessage_Stop:
+		a.handleStopCommand(payload.Stop)
+	case *pb.ControlPlaneMessage_Ping:
+		a.handlePing(payload.Ping)
+	default:
+		log.Printf("[Agent:%s] Unknown command type", a.name)
+	}
+}
+
+// handleAssignView handles view assignment command
+func (a *Agent) handleAssignView(cmd *pb.AssignViewCommand) {
+	log.Printf("[Agent:%s] Received AssignView command: %s", a.name, cmd.ViewType)
+
+	// TODO: Deserialize view_config_json and create appropriate view
+	// For now, just acknowledge the command
+	success := false
+	message := "View assignment not yet implemented"
+
+	if err := a.controlPlaneClient.SendCommandResponse(a.ctx, success, message, "AssignView"); err != nil {
+		log.Printf("[Agent:%s] Failed to send command response: %v", a.name, err)
+	}
+}
+
+// handleUpdateConfig handles configuration update command
+func (a *Agent) handleUpdateConfig(cmd *pb.UpdateConfigCommand) {
+	log.Printf("[Agent:%s] Received UpdateConfig command", a.name)
+
+	success := true
+	message := "Configuration updated"
+
+	// Update FPS if provided
+	if cmd.Fps != nil {
+		newFPS := int(*cmd.Fps)
+		a.mu.Lock()
+		a.currentFPS = newFPS
+		a.mu.Unlock()
+		log.Printf("[Agent:%s] Updated FPS to %d", a.name, newFPS)
+		// TODO: Apply FPS change to running application
+	}
+
+	// Update buffer size if provided
+	if cmd.BufferSize != nil {
+		newBufferSize := int(*cmd.BufferSize)
+		a.mu.Lock()
+		a.config.BufferSize = newBufferSize
+		a.mu.Unlock()
+		log.Printf("[Agent:%s] Updated buffer size to %d", a.name, newBufferSize)
+		// TODO: Apply buffer size change to running application
+	}
+
+	if err := a.controlPlaneClient.SendCommandResponse(a.ctx, success, message, "UpdateConfig"); err != nil {
+		log.Printf("[Agent:%s] Failed to send command response: %v", a.name, err)
+	}
+}
+
+// handleStopCommand handles stop command from control plane
+func (a *Agent) handleStopCommand(cmd *pb.StopCommand) {
+	log.Printf("[Agent:%s] Received Stop command: %s (graceful=%v)", a.name, cmd.Reason, cmd.Graceful)
+
+	// Send response before stopping
+	if err := a.controlPlaneClient.SendCommandResponse(a.ctx, true, "Shutting down", "Stop"); err != nil {
+		log.Printf("[Agent:%s] Failed to send command response: %v", a.name, err)
+	}
+
+	// Stop the agent
+	if cmd.Graceful {
+		go func() {
+			time.Sleep(100 * time.Millisecond) // Brief delay to send response
+			a.Stop()
+		}()
+	} else {
+		a.Stop()
+	}
+}
+
+// handlePing handles ping command from control plane
+func (a *Agent) handlePing(cmd *pb.PingCommand) {
+	log.Printf("[Agent:%s] Received Ping command", a.name)
+
+	message := fmt.Sprintf("Pong at %d", time.Now().Unix())
+	if err := a.controlPlaneClient.SendCommandResponse(a.ctx, true, message, "Ping"); err != nil {
+		log.Printf("[Agent:%s] Failed to send command response: %v", a.name, err)
+	}
 }
 
 // setHealth updates the agent's health status

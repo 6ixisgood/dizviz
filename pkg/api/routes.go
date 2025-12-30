@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/6ixisgood/matrix-ticker/pkg/api/handlers"
 	"github.com/6ixisgood/matrix-ticker/pkg/app"
+	"github.com/6ixisgood/matrix-ticker/pkg/controlplane"
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,6 +12,10 @@ func SetApplication(application *app.Application) {
 	handlers.SetApplication(application)
 }
 
+// SetRegistry sets the agent registry instance for the API handlers
+func SetRegistry(registry *controlplane.AgentRegistry) {
+	handlers.SetRegistry(registry)
+}
 
 // RegisterRoutes sets up all the API routes
 func Router() *gin.Engine {
@@ -20,6 +25,7 @@ func Router() *gin.Engine {
 
 	registerViewRoutes(r)
 	registerDisplayRoutes(r)
+	registerControlPlaneRoutes(r)
 
 	return engine
 }
@@ -39,4 +45,13 @@ func registerViewRoutes(r *gin.RouterGroup) {
 func registerDisplayRoutes(r *gin.RouterGroup) {
 	display := r.Group("/display")
 	display.POST("/:id", handlers.DisplayViewById)
+}
+
+// registerControlPlaneRoutes sets up the /controlplane routes
+func registerControlPlaneRoutes(r *gin.RouterGroup) {
+	cp := r.Group("/controlplane")
+	cp.GET("/agents", handlers.ListAgents)
+	cp.GET("/agents/:id", handlers.GetAgent)
+	cp.GET("/stats", handlers.GetControlPlaneStats)
+	cp.GET("/health", handlers.GetControlPlaneHealth)
 }
