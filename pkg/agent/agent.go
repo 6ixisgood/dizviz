@@ -187,10 +187,19 @@ func (a *Agent) GetStatus() Status {
 		uptime = time.Since(a.startTime)
 	}
 
+	// Build display statuses (for now, single display backward compat)
+	displays := []DisplayStatus{
+		{
+			DisplayID:   "primary",
+			CurrentView: a.currentView,
+			CurrentFPS:  a.currentFPS,
+			Active:      a.running,
+		},
+	}
+
 	return Status{
 		Health:        a.health,
-		CurrentView:   a.currentView,
-		CurrentFPS:    a.currentFPS,
+		Displays:      displays,
 		UptimeSeconds: int64(uptime.Seconds()),
 		ErrorMessage:  a.errorMsg,
 	}
@@ -437,9 +446,16 @@ func (a *Agent) setHealth(health, errorMsg string) {
 // Status represents the current status of an agent
 type Status struct {
 	Health        string
-	CurrentView   string
-	CurrentFPS    int
+	Displays      []DisplayStatus
 	UptimeSeconds int64
 	MemoryUsage   int64
 	ErrorMessage  string
+}
+
+// DisplayStatus represents the status of a single display
+type DisplayStatus struct {
+	DisplayID   string
+	CurrentView string
+	CurrentFPS  int
+	Active      bool
 }

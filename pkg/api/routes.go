@@ -50,8 +50,20 @@ func registerDisplayRoutes(r *gin.RouterGroup) {
 // registerControlPlaneRoutes sets up the /controlplane routes
 func registerControlPlaneRoutes(r *gin.RouterGroup) {
 	cp := r.Group("/controlplane")
-	cp.GET("/agents", handlers.ListAgents)
-	cp.GET("/agents/:id", handlers.GetAgent)
+
+	// Control plane stats and health (no params)
 	cp.GET("/stats", handlers.GetControlPlaneStats)
 	cp.GET("/health", handlers.GetControlPlaneHealth)
+
+	// Agent management
+	cp.GET("/agents", handlers.ListAgents)
+	cp.GET("/agents/:agent_id", handlers.GetAgent)
+
+	// Display management for specific agent
+	cp.GET("/agents/:agent_id/displays", handlers.GetAgentDisplays)
+	cp.GET("/agents/:agent_id/displays/:display_id", handlers.GetAgentDisplay)
+
+	// View assignment to specific display
+	cp.POST("/agents/:agent_id/displays/:display_id/view", handlers.AssignViewToDisplay)
+	cp.GET("/agents/:agent_id/displays/:display_id/view", handlers.GetDisplayCurrentView)
 }

@@ -53,16 +53,26 @@ func (r *AgentRegistry) Register(name string, caps *pb.Capabilities, version str
 		RegisteredAt:  now,
 		LastHeartbeat: now,
 		Status: &pb.AgentStatus{
-			Health:        "healthy",
-			CurrentView:   "",
-			CurrentFps:    0,
-			UptimeSeconds: 0,
+			Health:           "healthy",
+			Displays:         []*pb.DisplayStatus{},
+			UptimeSeconds:    0,
+			MemoryUsageBytes: 0,
+			ErrorMessage:     "",
 		},
 	}
 
 	r.agents[agentID] = info
-	log.Printf("[Registry] Agent registered: %s (%s) - Display: %s (%dx%d)",
-		name, agentID, caps.DisplayType, caps.Width, caps.Height)
+
+	// Log registration with display info
+	displayCount := len(caps.Displays)
+	if displayCount > 0 {
+		log.Printf("[Registry] Agent registered: %s (%s) - %d display(s)", name, agentID, displayCount)
+		for _, disp := range caps.Displays {
+			log.Printf("[Registry]   - %s: %s (%dx%d)", disp.DisplayId, disp.DisplayType, disp.Width, disp.Height)
+		}
+	} else {
+		log.Printf("[Registry] Agent registered: %s (%s) - No displays", name, agentID)
+	}
 
 	return agentID, nil
 }
@@ -191,8 +201,14 @@ func (r *AgentRegistry) GetAgentsByDisplayType(displayType string) []*AgentInfo 
 
 	agents := make([]*AgentInfo, 0)
 	for _, info := range r.agents {
-		if info.Capabilities != nil && info.Capabilities.DisplayType == displayType {
-			agents = append(agents, info)
+		if info.Capabilities != nil {
+			// Check if any of the agent's displays match the requested type
+			for _, display := range info.Capabilities.Displays {
+				if display.DisplayType == displayType {
+					agents = append(agents, info)
+					break // Found a match, no need to check other displays
+				}
+			}
 		}
 	}
 

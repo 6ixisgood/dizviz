@@ -35,12 +35,18 @@ message RegisterResponse {
 
 // Capabilities describes what the agent can do
 message Capabilities {
-  string display_type = 1;  // "led-matrix", "hdmi", "monitor", "file"
-  int32 width = 2;
-  int32 height = 3;
-  int32 max_fps = 4;
-  int32 color_depth = 5;
-  repeated string supported_views = 6;
+  repeated DisplayCapability displays = 1;
+  repeated string supported_views = 2;
+}
+
+// DisplayCapability describes a single display device
+message DisplayCapability {
+  string display_id = 1;        // "led-matrix-0", "hdmi-main", etc.
+  string display_type = 2;      // "led-matrix", "hdmi", "monitor", "file"
+  int32 width = 3;
+  int32 height = 4;
+  int32 max_fps = 5;
+  int32 color_depth = 6;
 }
 
 // HeartbeatRequest sent periodically to keep connection alive
@@ -64,11 +70,18 @@ message StatusUpdate {
 // AgentStatus describes current state
 message AgentStatus {
   string health = 1;  // "healthy", "degraded", "unhealthy"
+  repeated DisplayStatus displays = 2;
+  int64 uptime_seconds = 3;
+  int64 memory_usage_bytes = 4;
+  string error_message = 5;
+}
+
+// DisplayStatus describes the status of a single display
+message DisplayStatus {
+  string display_id = 1;
   string current_view = 2;
   int32 current_fps = 3;
-  int64 uptime_seconds = 4;
-  int64 memory_usage_bytes = 5;
-  string error_message = 6;
+  bool active = 4;
 }
 
 // StatusResponse acknowledges status update
@@ -97,8 +110,9 @@ message ControlPlaneMessage {
 
 // AssignViewCommand instructs agent to display a specific view
 message AssignViewCommand {
-  string view_type = 1;
-  string view_config_json = 2;  // JSON-encoded view configuration
+  string display_id = 1;        // Which display to target (empty = default/primary)
+  string view_type = 2;
+  string view_config_json = 3;  // JSON-encoded view configuration
 }
 
 // UpdateConfigCommand modifies agent runtime configuration

@@ -176,7 +176,9 @@ func (s *Server) UpdateStatus(ctx context.Context, req *pb.StatusUpdate) (*pb.St
 		return &pb.StatusResponse{Success: false}, status.Error(codes.NotFound, "agent not found")
 	}
 
-	log.Printf("[ControlPlane] Status update from %s: health=%s, view=%s", req.AgentId, req.Status.Health, req.Status.CurrentView)
+	// Log status update with display count
+	displayCount := len(req.Status.Displays)
+	log.Printf("[ControlPlane] Status update from %s: health=%s, displays=%d", req.AgentId, req.Status.Health, displayCount)
 
 	return &pb.StatusResponse{Success: true}, nil
 }

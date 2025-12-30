@@ -96,15 +96,24 @@ func (c *ControlPlaneClient) Register(ctx context.Context, name string, caps Cap
 
 	log.Printf("[ControlPlaneClient] Registering agent: %s", name)
 
+	// Convert agent capabilities to protobuf format
+	pbDisplays := make([]*pb.DisplayCapability, 0, len(caps.Displays))
+	for _, display := range caps.Displays {
+		pbDisplays = append(pbDisplays, &pb.DisplayCapability{
+			DisplayId:   display.DisplayID,
+			DisplayType: display.DisplayType,
+			Width:       int32(display.Width),
+			Height:      int32(display.Height),
+			MaxFps:      int32(display.MaxFPS),
+			ColorDepth:  int32(display.ColorDepth),
+		})
+	}
+
 	req := &pb.RegisterRequest{
 		AgentName: name,
 		Version:   version,
 		Capabilities: &pb.Capabilities{
-			DisplayType:    caps.DisplayType,
-			Width:          int32(caps.Width),
-			Height:         int32(caps.Height),
-			MaxFps:         int32(caps.MaxFPS),
-			ColorDepth:     int32(caps.ColorDepth),
+			Displays:       pbDisplays,
 			SupportedViews: caps.SupportedViews,
 		},
 	}
@@ -163,13 +172,23 @@ func (c *ControlPlaneClient) UpdateStatus(ctx context.Context, status Status) er
 		return fmt.Errorf("not connected to control plane")
 	}
 
+	// Convert display statuses to protobuf format
+	pbDisplays := make([]*pb.DisplayStatus, 0, len(status.Displays))
+	for _, display := range status.Displays {
+		pbDisplays = append(pbDisplays, &pb.DisplayStatus{
+			DisplayId:   display.DisplayID,
+			CurrentView: display.CurrentView,
+			CurrentFps:  int32(display.CurrentFPS),
+			Active:      display.Active,
+		})
+	}
+
 	req := &pb.StatusUpdate{
 		AgentId:   agentID,
 		Timestamp: time.Now().Unix(),
 		Status: &pb.AgentStatus{
 			Health:           status.Health,
-			CurrentView:      status.CurrentView,
-			CurrentFps:       int32(status.CurrentFPS),
+			Displays:         pbDisplays,
 			UptimeSeconds:    status.UptimeSeconds,
 			MemoryUsageBytes: status.MemoryUsage,
 			ErrorMessage:     status.ErrorMessage,

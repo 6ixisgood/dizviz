@@ -191,7 +191,8 @@ func main() {
 	// Create capabilities from display
 	capabilities := agent.NewCapabilitiesFromDisplay(
 		disp,
-		*displayType,
+		"primary",    // display ID
+		*displayType, // display type
 		agent.DefaultSupportedViews(),
 	)
 
