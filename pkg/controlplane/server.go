@@ -18,18 +18,20 @@ import (
 type Server struct {
 	pb.UnimplementedAgentServiceServer
 
-	addr     string
-	registry *AgentRegistry
-	grpcSrv  *grpc.Server
-	mu       sync.RWMutex
-	running  bool
+	addr           string
+	registry       *AgentRegistry
+	grpcSrv        *grpc.Server
+	commandStreams map[string]pb.AgentService_StreamCommandsServer // agentID -> stream
+	mu             sync.RWMutex
+	running        bool
 }
 
 // NewServer creates a new control plane server
 func NewServer(addr string) *Server {
 	return &Server{
-		addr:     addr,
-		registry: NewAgentRegistry(),
+		addr:           addr,
+		registry:       NewAgentRegistry(),
+		commandStreams: make(map[string]pb.AgentService_StreamCommandsServer),
 	}
 }
 
@@ -120,6 +122,16 @@ func (s *Server) RegisterAgent(ctx context.Context, req *pb.RegisterRequest) (*p
 func (s *Server) StreamCommands(stream pb.AgentService_StreamCommandsServer) error {
 	log.Printf("[ControlPlane] New command stream established")
 
+	var agentID string
+	defer func() {
+		if agentID != "" {
+			s.mu.Lock()
+			delete(s.commandStreams, agentID)
+			s.mu.Unlock()
+			log.Printf("[ControlPlane] Command stream closed for agent %s", agentID)
+		}
+	}()
+
 	// Wait for messages from agent
 	for {
 		msg, err := stream.Recv()
@@ -132,6 +144,15 @@ func (s *Server) StreamCommands(stream pb.AgentService_StreamCommandsServer) err
 		if msg.AgentId == "" {
 			log.Printf("[ControlPlane] Received message without agent ID")
 			continue
+		}
+
+		// Register the stream for this agent on first message
+		if agentID == "" {
+			agentID = msg.AgentId
+			s.mu.Lock()
+			s.commandStreams[agentID] = stream
+			s.mu.Unlock()
+			log.Printf("[ControlPlane] Registered command stream for agent %s", agentID)
 		}
 
 		switch payload := msg.Payload.(type) {
@@ -205,6 +226,29 @@ func (s *Server) handleCommandResponse(agentID string, response *pb.CommandRespo
 
 	log.Printf("[ControlPlane] Command response from %s: type=%s, success=%v, message=%s",
 		agentID, response.CommandType, response.Success, response.Message)
+}
+
+// SendCommandToAgent sends a command to a specific agent via its active stream
+func (s *Server) SendCommandToAgent(agentID string, cmd *pb.ControlPlaneMessage) error {
+	s.mu.RLock()
+	stream, exists := s.commandStreams[agentID]
+	s.mu.RUnlock()
+
+	if !exists {
+		return fmt.Errorf("no active command stream for agent %s", agentID)
+	}
+
+	log.Printf("[ControlPlane] Sending command to agent %s", agentID)
+
+	if err := stream.Send(cmd); err != nil {
+		// Remove the stream if send fails
+		s.mu.Lock()
+		delete(s.commandStreams, agentID)
+		s.mu.Unlock()
+		return fmt.Errorf("failed to send command to agent %s: %w", agentID, err)
+	}
+
+	return nil
 }
 
 // cleanupRoutine removes stale agents

@@ -9,12 +9,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Global registry instance for control plane handlers
+// Global registry and server instances for control plane handlers
 var registryInstance *controlplane.AgentRegistry
+var serverInstance *controlplane.Server
 
 // SetRegistry sets the agent registry instance for handlers to use
 func SetRegistry(registry *controlplane.AgentRegistry) {
 	registryInstance = registry
+}
+
+// SetServer sets the control plane server instance for handlers to use
+func SetServer(server *controlplane.Server) {
+	serverInstance = server
 }
 
 // GetRegistry returns the current registry instance
@@ -318,10 +324,36 @@ func AssignViewToDisplay(c *gin.Context) {
 		return
 	}
 
-	// TODO: Send command to agent via gRPC command stream
-	// For now, return accepted - actual implementation needs command streaming
-	c.JSON(http.StatusAccepted, gin.H{
-		"message":    "view assignment command queued",
+	// Check if server instance is available
+	if serverInstance == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "control plane server not available"})
+		return
+	}
+
+	// Build and send command to agent via gRPC stream
+	cmd := &pb.ControlPlaneMessage{
+		Payload: &pb.ControlPlaneMessage_AssignView{
+			AssignView: &pb.AssignViewCommand{
+				DisplayId:      displayID,
+				ViewType:       request.ViewID, // Using view_id as view_type for now
+				ViewConfigJson: "{}",           // Empty config for now, can be extended
+			},
+		},
+	}
+
+	// Send command to agent
+	err = serverInstance.SendCommandToAgent(agentID, cmd)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error":   "failed to send command to agent",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Command sent successfully
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "view assignment command sent",
 		"agent_id":   agentID,
 		"display_id": displayID,
 		"view_id":    request.ViewID,

@@ -17,6 +17,11 @@ func SetRegistry(registry *controlplane.AgentRegistry) {
 	handlers.SetRegistry(registry)
 }
 
+// SetServer sets the control plane server instance for the API handlers
+func SetServer(server *controlplane.Server) {
+	handlers.SetServer(server)
+}
+
 // RegisterRoutes sets up all the API routes
 func Router() *gin.Engine {
 	engine := gin.Default()

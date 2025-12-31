@@ -241,6 +241,46 @@ func (c *ControlPlaneClient) StartCommandStream(ctx context.Context) (<-chan *pb
 
 	c.commandStream = stream
 
+	// Send initial status message to register this stream with the control plane
+	// This allows the server to map agentID -> stream for command delivery
+	agentID := c.agent.GetID()
+	status := c.agent.GetStatus()
+
+	// Convert display statuses to protobuf format
+	pbDisplays := make([]*pb.DisplayStatus, 0, len(status.Displays))
+	for _, display := range status.Displays {
+		pbDisplays = append(pbDisplays, &pb.DisplayStatus{
+			DisplayId:   display.DisplayID,
+			CurrentView: display.CurrentView,
+			CurrentFps:  int32(display.CurrentFPS),
+			Active:      display.Active,
+		})
+	}
+
+	initialMsg := &pb.AgentMessage{
+		AgentId: agentID,
+		Payload: &pb.AgentMessage_Status{
+			Status: &pb.StatusUpdate{
+				AgentId: agentID,
+				Status: &pb.AgentStatus{
+					Health:           status.Health,
+					Displays:         pbDisplays,
+					UptimeSeconds:    status.UptimeSeconds,
+					MemoryUsageBytes: status.MemoryUsage,
+					ErrorMessage:     status.ErrorMessage,
+				},
+				Timestamp: time.Now().Unix(),
+			},
+		},
+	}
+
+	if err := stream.Send(initialMsg); err != nil {
+		c.streamCancel()
+		return nil, fmt.Errorf("failed to send initial status: %w", err)
+	}
+
+	log.Printf("[ControlPlaneClient] Sent initial status to register command stream")
+
 	// Create channel for commands
 	commandChan := make(chan *pb.ControlPlaneMessage, 10)
 

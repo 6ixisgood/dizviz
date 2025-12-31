@@ -361,16 +361,73 @@ func (a *Agent) handleCommand(msg *pb.ControlPlaneMessage) {
 
 // handleAssignView handles view assignment command
 func (a *Agent) handleAssignView(cmd *pb.AssignViewCommand) {
-	log.Printf("[Agent:%s] Received AssignView command: %s", a.name, cmd.ViewType)
+	log.Printf("[Agent:%s] Received AssignView command: type=%s, display=%s",
+		a.name, cmd.ViewType, cmd.DisplayId)
 
-	// TODO: Deserialize view_config_json and create appropriate view
-	// For now, just acknowledge the command
-	success := false
-	message := "View assignment not yet implemented"
-
-	if err := a.controlPlaneClient.SendCommandResponse(a.ctx, success, message, "AssignView"); err != nil {
-		log.Printf("[Agent:%s] Failed to send command response: %v", a.name, err)
+	// Validate display ID (for now, only "primary" is supported)
+	displayID := cmd.DisplayId
+	if displayID == "" {
+		displayID = "primary"
 	}
+
+	if displayID != "primary" {
+		a.sendCommandResponse(false,
+			fmt.Sprintf("display %s not found", displayID),
+			"AssignView")
+		return
+	}
+
+	// Fetch view definition by ID (following same pattern as DisplayViewById handler)
+	viewDefinition, err := viewCommon.GetViewDefinition(cmd.ViewType)
+	if err != nil {
+		log.Printf("[Agent:%s] View definition not found: %s", a.name, cmd.ViewType)
+		a.sendCommandResponse(false,
+			fmt.Sprintf("view definition %s not found: %v", cmd.ViewType, err),
+			"AssignView")
+		return
+	}
+
+	// Get the registered view type factory
+	regView, exists := viewCommon.RegisteredViews[viewDefinition.Type]
+	if !exists {
+		log.Printf("[Agent:%s] View type not registered: %s", a.name, viewDefinition.Type)
+		a.sendCommandResponse(false,
+			fmt.Sprintf("view type %s not registered", viewDefinition.Type),
+			"AssignView")
+		return
+	}
+
+	// Use config from command if provided, otherwise use stored config
+	config := viewDefinition.Config
+	if cmd.ViewConfigJson != "" && cmd.ViewConfigJson != "{}" {
+		config = cmd.ViewConfigJson
+	}
+
+	// Create view instance from config
+	newView, err := regView.NewView(config)
+	if err != nil {
+		log.Printf("[Agent:%s] Failed to create view: %v", a.name, err)
+		a.sendCommandResponse(false,
+			fmt.Sprintf("failed to create view: %v", err),
+			"AssignView")
+		return
+	}
+
+	// Change to the new view
+	if err := a.ChangeView(newView); err != nil {
+		log.Printf("[Agent:%s] Failed to change view: %v", a.name, err)
+		a.sendCommandResponse(false,
+			fmt.Sprintf("failed to change view: %v", err),
+			"AssignView")
+		return
+	}
+
+	// Success!
+	log.Printf("[Agent:%s] Successfully changed to view: %s (type: %s)",
+		a.name, viewDefinition.Id, viewDefinition.Type)
+	a.sendCommandResponse(true,
+		fmt.Sprintf("view %s assigned successfully to display %s", cmd.ViewType, displayID),
+		"AssignView")
 }
 
 // handleUpdateConfig handles configuration update command
@@ -432,6 +489,15 @@ func (a *Agent) handlePing(cmd *pb.PingCommand) {
 	message := fmt.Sprintf("Pong at %d", time.Now().Unix())
 	if err := a.controlPlaneClient.SendCommandResponse(a.ctx, true, message, "Ping"); err != nil {
 		log.Printf("[Agent:%s] Failed to send command response: %v", a.name, err)
+	}
+}
+
+// sendCommandResponse is a helper method for sending command responses to control plane
+func (a *Agent) sendCommandResponse(success bool, message, commandType string) {
+	if a.controlPlaneClient != nil {
+		if err := a.controlPlaneClient.SendCommandResponse(a.ctx, success, message, commandType); err != nil {
+			log.Printf("[Agent:%s] Failed to send command response: %v", a.name, err)
+		}
 	}
 }
 

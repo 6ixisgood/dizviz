@@ -20,7 +20,7 @@ agent:
 	@go build -o bin/agent cmd/agent/main.go
 
 controlplane:
-	@go build -o bin/controlplane cmd/controlplane/main.go
+	@go build -o bin/controlplane cmd/controlplane/*.go
 
 matrix:
 	@go build -o bin/matrix cmd/matrix/main.go
