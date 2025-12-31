@@ -1,4 +1,4 @@
-.PHONY: all proto agent controlplane matrix clean deps dev help
+.PHONY: all proto agent controlplane clean deps dev help
 
 # Load user-specific configuration if it exists
 -include Makefile.local
@@ -22,9 +22,6 @@ agent:
 controlplane:
 	@go build -o bin/controlplane cmd/controlplane/*.go
 
-matrix:
-	@go build -o bin/matrix cmd/matrix/main.go
-
 # Development mode (no build needed, uses stub display)
 dev:
 	@go run cmd/agent/main.go $(ARGS)
@@ -46,7 +43,6 @@ help:
 	@echo "  all          - Build agent and control plane (default)"
 	@echo "  agent        - Build agent binary"
 	@echo "  controlplane - Build control plane server binary"
-	@echo "  matrix       - Build matrix binary (legacy)"
 	@echo "  proto        - Generate protobuf code"
 	@echo "  dev          - Run agent without building (use ARGS for custom flags)"
 	@echo "  clean        - Remove build artifacts"

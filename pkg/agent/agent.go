@@ -7,11 +7,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/6ixisgood/matrix-ticker/pkg/app"
 	"github.com/6ixisgood/matrix-ticker/pkg/display"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	pb "github.com/6ixisgood/matrix-ticker/proto"
 )
+
+// DisplayInfo holds information about a single display managed by the agent
+type DisplayInfo struct {
+	manager     *display.Manager
+	display     display.Display
+	currentView viewCommon.View
+	currentFPS  int
+	active      bool
+	mu          sync.RWMutex
+}
 
 // Agent represents a display agent that runs views and connects to control plane
 type Agent struct {
@@ -23,9 +32,8 @@ type Agent struct {
 	config       Config
 	capabilities Capabilities
 
-	// Core application
-	application *app.Application
-	display     display.Display
+	// Multi-display management
+	displays map[string]*DisplayInfo
 
 	// Control plane connection
 	controlPlaneClient *ControlPlaneClient
@@ -38,10 +46,8 @@ type Agent struct {
 	mu        sync.RWMutex
 
 	// Status tracking
-	currentView string
-	currentFPS  int
-	health      string
-	errorMsg    string
+	health   string
+	errorMsg string
 }
 
 // New creates a new agent instance
@@ -50,17 +56,29 @@ func New(config Config, capabilities Capabilities) *Agent {
 		name:         config.AgentName,
 		config:       config,
 		capabilities: capabilities,
-		application:  app.New(),
-		currentFPS:   config.FPS,
+		displays:     make(map[string]*DisplayInfo),
 		health:       "initializing",
 	}
 }
 
-// SetDisplay sets the display device for this agent
-func (a *Agent) SetDisplay(disp display.Display) {
+// AddDisplay adds a display to the agent
+func (a *Agent) AddDisplay(displayID string, disp display.Display, fps, bufferSize int) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	a.display = disp
+
+	if _, exists := a.displays[displayID]; exists {
+		return fmt.Errorf("display %s already exists", displayID)
+	}
+
+	a.displays[displayID] = &DisplayInfo{
+		display:    disp,
+		manager:    display.NewManagerWithSettings(disp, fps, bufferSize),
+		currentFPS: fps,
+		active:     false,
+	}
+
+	log.Printf("[Agent:%s] Added display: %s", a.name, displayID)
+	return nil
 }
 
 // Start initializes and starts the agent
@@ -71,9 +89,9 @@ func (a *Agent) Start(displayConfig interface{}) error {
 		return fmt.Errorf("agent already running")
 	}
 
-	if a.display == nil {
+	if len(a.displays) == 0 {
 		a.mu.Unlock()
-		return fmt.Errorf("display not set")
+		return fmt.Errorf("no displays configured")
 	}
 
 	a.ctx, a.cancel = context.WithCancel(context.Background())
@@ -81,17 +99,22 @@ func (a *Agent) Start(displayConfig interface{}) error {
 	a.running = true
 	a.mu.Unlock()
 
-	// Start the display application with custom settings
-	if err := a.application.StartWithCustomSettings(
-		a.display,
-		a.config.FPS,
-		a.config.BufferSize,
-		displayConfig,
-	); err != nil {
-		return fmt.Errorf("failed to start application: %w", err)
+	// Start all display managers
+	for displayID, displayInfo := range a.displays {
+		displayInfo.mu.Lock()
+		// If there's an initial view set, start with it
+		if displayInfo.currentView != nil {
+			if err := displayInfo.manager.Start(displayInfo.currentView, displayConfig); err != nil {
+				displayInfo.mu.Unlock()
+				return fmt.Errorf("failed to start display %s: %w", displayID, err)
+			}
+			displayInfo.active = true
+		}
+		displayInfo.mu.Unlock()
+		log.Printf("[Agent:%s] Display %s started", a.name, displayID)
 	}
 
-	log.Printf("[Agent:%s] Application started", a.name)
+	log.Printf("[Agent:%s] Agent started with %d display(s)", a.name, len(a.displays))
 	a.setHealth("healthy", "")
 
 	// Connect to control plane if address is provided
@@ -131,33 +154,60 @@ func (a *Agent) Stop() {
 		a.controlPlaneClient.Disconnect()
 	}
 
-	// Stop application
-	a.application.Stop()
+	// Stop all display managers
+	for displayID, displayInfo := range a.displays {
+		displayInfo.mu.Lock()
+		if displayInfo.manager != nil {
+			displayInfo.manager.Stop()
+		}
+		displayInfo.active = false
+		displayInfo.mu.Unlock()
+		log.Printf("[Agent:%s] Display %s stopped", a.name, displayID)
+	}
 
 	log.Printf("[Agent:%s] Stopped", a.name)
 }
 
-// ChangeView switches to a new view
-func (a *Agent) ChangeView(view viewCommon.View) error {
-	if err := a.application.ChangeView(view); err != nil {
-		a.setHealth("degraded", fmt.Sprintf("failed to change view: %v", err))
+// ChangeView switches to a new view on a specific display
+func (a *Agent) ChangeView(displayID string, view viewCommon.View) error {
+	a.mu.RLock()
+	displayInfo, exists := a.displays[displayID]
+	a.mu.RUnlock()
+
+	if !exists {
+		return fmt.Errorf("display %s not found", displayID)
+	}
+
+	displayInfo.mu.Lock()
+	defer displayInfo.mu.Unlock()
+
+	if err := displayInfo.manager.ChangeView(view); err != nil {
+		a.setHealth("degraded", fmt.Sprintf("failed to change view on display %s: %v", displayID, err))
 		return err
 	}
 
-	a.mu.Lock()
-	a.currentView = fmt.Sprintf("%T", view)
-	a.mu.Unlock()
+	displayInfo.currentView = view
 
-	log.Printf("[Agent:%s] Changed to view: %s", a.name, a.currentView)
+	log.Printf("[Agent:%s] Changed display %s to view: %T", a.name, displayID, view)
 	return nil
 }
 
-// SetInitialView sets the view to display when agent starts
-func (a *Agent) SetInitialView(view viewCommon.View) {
-	a.application.SetInitialView(view)
-	a.mu.Lock()
-	a.currentView = fmt.Sprintf("%T", view)
-	a.mu.Unlock()
+// SetInitialView sets the view to display when a specific display starts
+func (a *Agent) SetInitialView(displayID string, view viewCommon.View) error {
+	a.mu.RLock()
+	displayInfo, exists := a.displays[displayID]
+	a.mu.RUnlock()
+
+	if !exists {
+		return fmt.Errorf("display %s not found", displayID)
+	}
+
+	displayInfo.mu.Lock()
+	displayInfo.currentView = view
+	displayInfo.mu.Unlock()
+
+	log.Printf("[Agent:%s] Set initial view for display %s", a.name, displayID)
+	return nil
 }
 
 // GetID returns the agent's ID (assigned by control plane)
@@ -177,6 +227,27 @@ func (a *Agent) GetCapabilities() Capabilities {
 	return a.capabilities
 }
 
+// GetDisplayIDs returns all display IDs managed by this agent
+func (a *Agent) GetDisplayIDs() []string {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	ids := make([]string, 0, len(a.displays))
+	for id := range a.displays {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+// GetDisplayInfo returns information about a specific display
+func (a *Agent) GetDisplayInfo(displayID string) (*DisplayInfo, bool) {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	info, exists := a.displays[displayID]
+	return info, exists
+}
+
 // GetStatus returns the current agent status
 func (a *Agent) GetStatus() Status {
 	a.mu.RLock()
@@ -187,14 +258,21 @@ func (a *Agent) GetStatus() Status {
 		uptime = time.Since(a.startTime)
 	}
 
-	// Build display statuses (for now, single display backward compat)
-	displays := []DisplayStatus{
-		{
-			DisplayID:   "primary",
-			CurrentView: a.currentView,
-			CurrentFPS:  a.currentFPS,
-			Active:      a.running,
-		},
+	// Build display statuses from all managed displays
+	displays := make([]DisplayStatus, 0, len(a.displays))
+	for displayID, displayInfo := range a.displays {
+		displayInfo.mu.RLock()
+		currentViewType := ""
+		if displayInfo.currentView != nil {
+			currentViewType = fmt.Sprintf("%T", displayInfo.currentView)
+		}
+		displays = append(displays, DisplayStatus{
+			DisplayID:   displayID,
+			CurrentView: currentViewType,
+			CurrentFPS:  displayInfo.currentFPS,
+			Active:      displayInfo.active,
+		})
+		displayInfo.mu.RUnlock()
 	}
 
 	return Status{
@@ -413,9 +491,9 @@ func (a *Agent) handleAssignView(cmd *pb.AssignViewCommand) {
 		return
 	}
 
-	// Change to the new view
-	if err := a.ChangeView(newView); err != nil {
-		log.Printf("[Agent:%s] Failed to change view: %v", a.name, err)
+	// Change to the new view on the specified display
+	if err := a.ChangeView(displayID, newView); err != nil {
+		log.Printf("[Agent:%s] Failed to change view on display %s: %v", a.name, displayID, err)
 		a.sendCommandResponse(false,
 			fmt.Sprintf("failed to change view: %v", err),
 			"AssignView")
@@ -423,8 +501,8 @@ func (a *Agent) handleAssignView(cmd *pb.AssignViewCommand) {
 	}
 
 	// Success!
-	log.Printf("[Agent:%s] Successfully changed to view: %s (type: %s)",
-		a.name, viewDefinition.Id, viewDefinition.Type)
+	log.Printf("[Agent:%s] Successfully changed display %s to view: %s (type: %s)",
+		a.name, displayID, viewDefinition.Id, viewDefinition.Type)
 	a.sendCommandResponse(true,
 		fmt.Sprintf("view %s assigned successfully to display %s", cmd.ViewType, displayID),
 		"AssignView")
@@ -441,10 +519,10 @@ func (a *Agent) handleUpdateConfig(cmd *pb.UpdateConfigCommand) {
 	if cmd.Fps != nil {
 		newFPS := int(*cmd.Fps)
 		a.mu.Lock()
-		a.currentFPS = newFPS
+		a.config.FPS = newFPS
 		a.mu.Unlock()
 		log.Printf("[Agent:%s] Updated FPS to %d", a.name, newFPS)
-		// TODO: Apply FPS change to running application
+		// Note: FPS is applied per display manager when started
 	}
 
 	// Update buffer size if provided
@@ -454,7 +532,7 @@ func (a *Agent) handleUpdateConfig(cmd *pb.UpdateConfigCommand) {
 		a.config.BufferSize = newBufferSize
 		a.mu.Unlock()
 		log.Printf("[Agent:%s] Updated buffer size to %d", a.name, newBufferSize)
-		// TODO: Apply buffer size change to running application
+		// Note: Buffer size is applied per display manager when started
 	}
 
 	if err := a.controlPlaneClient.SendCommandResponse(a.ctx, success, message, "UpdateConfig"); err != nil {

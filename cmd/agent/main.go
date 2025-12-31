@@ -198,7 +198,11 @@ func main() {
 
 	// Create agent
 	ag := agent.New(agentConfig, capabilities)
-	ag.SetDisplay(disp)
+
+	// Add the display to the agent
+	if err := ag.AddDisplay("primary", disp, agentConfig.FPS, agentConfig.BufferSize); err != nil {
+		log.Fatalf("Failed to add display to agent: %v", err)
+	}
 
 	// Set initial view (welcome message) BEFORE starting the agent
 	welcomeConfig := []byte(`{
@@ -226,7 +230,9 @@ func main() {
 		log.Fatalf("Failed to create welcome view: %v", err)
 	}
 
-	ag.SetInitialView(welcomeView)
+	if err := ag.SetInitialView("primary", welcomeView); err != nil {
+		log.Fatalf("Failed to set initial view: %v", err)
+	}
 
 	// Now start agent (will initialize the view properly)
 	if err := ag.Start(matrixConfig); err != nil {
