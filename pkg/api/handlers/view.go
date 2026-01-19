@@ -6,13 +6,18 @@ import (
 	"log"
 	"net/http"
 
+	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 )
 
 func GetAllViewDefinitions(c *gin.Context) {
-	definitions, err := viewCommon.GetAllViewDefinitions()
+	if storeServiceInstance == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"message": "Store service not available"})
+		return
+	}
+
+	definitions, err := storeServiceInstance.GetAllViewDefinitions()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Error retrieving view definitions"})
 		return
@@ -21,8 +26,13 @@ func GetAllViewDefinitions(c *gin.Context) {
 }
 
 func GetViewDefinition(c *gin.Context) {
+	if storeServiceInstance == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"message": "Store service not available"})
+		return
+	}
+
 	id := c.Param("id")
-	definition, err := viewCommon.GetViewDefinition(id)
+	definition, err := storeServiceInstance.GetViewDefinition(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"message": "View definition not found"})
 		return
@@ -31,6 +41,11 @@ func GetViewDefinition(c *gin.Context) {
 }
 
 func SaveViewDefinition(c *gin.Context) {
+	if storeServiceInstance == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"message": "Store service not available"})
+		return
+	}
+
 	var body viewCommon.ViewDefinitionRaw
 	if err := c.BindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad request body"})
@@ -62,7 +77,7 @@ func SaveViewDefinition(c *gin.Context) {
 		Config: configInstance,
 	}
 
-	err := viewCommon.SaveViewDefinition(definition)
+	err := storeServiceInstance.SaveViewDefinition(definition)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Error saving view definition"})
 		return
@@ -73,9 +88,14 @@ func SaveViewDefinition(c *gin.Context) {
 
 // DeleteViewDefinition handler function
 func DeleteViewDefinition(c *gin.Context) {
+	if storeServiceInstance == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"message": "Store service not available"})
+		return
+	}
+
 	id := c.Param("id") // Extract the ID from the URL parameter
 
-	err := viewCommon.DeleteViewDefinition(id)
+	err := storeServiceInstance.DeleteViewDefinition(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("Unable to delete ID: %s", id)})
 		return

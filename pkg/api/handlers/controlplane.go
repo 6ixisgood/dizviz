@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 // Global registry and server instances for control plane handlers
 var registryInstance *controlplane.AgentRegistry
 var serverInstance *controlplane.Server
+var storeServiceInstance *controlplane.StoreService
 
 // SetRegistry sets the agent registry instance for handlers to use
 func SetRegistry(registry *controlplane.AgentRegistry) {
@@ -23,9 +25,19 @@ func SetServer(server *controlplane.Server) {
 	serverInstance = server
 }
 
+// SetStoreService sets the store service instance for handlers to use
+func SetStoreService(storeService *controlplane.StoreService) {
+	storeServiceInstance = storeService
+}
+
 // GetRegistry returns the current registry instance
 func GetRegistry() *controlplane.AgentRegistry {
 	return registryInstance
+}
+
+// GetStoreService returns the current store service instance
+func GetStoreService() *controlplane.StoreService {
+	return storeServiceInstance
 }
 
 // ListAgents returns all registered agents
@@ -330,13 +342,39 @@ func AssignViewToDisplay(c *gin.Context) {
 		return
 	}
 
+	// Check if store service is available
+	if storeServiceInstance == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store service not available"})
+		return
+	}
+
+	// Fetch the view definition from the store
+	viewDefinition, err := storeServiceInstance.GetViewDefinition(request.ViewID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error":   "view definition not found",
+			"view_id": request.ViewID,
+		})
+		return
+	}
+
+	// Marshal the config to JSON string
+	configJSON, err := json.Marshal(viewDefinition.Config)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "failed to marshal view config",
+			"details": err.Error(),
+		})
+		return
+	}
+
 	// Build and send command to agent via gRPC stream
 	cmd := &pb.ControlPlaneMessage{
 		Payload: &pb.ControlPlaneMessage_AssignView{
 			AssignView: &pb.AssignViewCommand{
 				DisplayId:      displayID,
-				ViewType:       request.ViewID, // Using view_id as view_type for now
-				ViewConfigJson: "{}",           // Empty config for now, can be extended
+				ViewType:       viewDefinition.Type, // The registered view type (e.g., "text", "scoreboard")
+				ViewConfigJson: string(configJSON),  // Pass the full config to agent as JSON string
 			},
 		},
 	}

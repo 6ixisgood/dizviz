@@ -12,7 +12,6 @@ import (
 	"time"
 
 	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
-	"github.com/6ixisgood/matrix-ticker/pkg/store"
 )
 
 // View a structure to describe a layout of components at a given time
@@ -26,21 +25,6 @@ type View interface {
 	TemplateString() string
 	TemplateData() map[string]interface{}
 	Stop()
-}
-
-// ViewCommonConfig a set of global application configuration useful for rendering Views
-type ViewCommonConfig struct {
-	MatrixRows        int
-	MatrixCols        int
-	ImageDir          string
-	CacheDir          string
-	DefaultImageSizeX int
-	DefaultImageSizeY int
-	DefaultFontSize   int
-	DefaultFontColor  string
-	DefaultFontStyle  string
-	DefaultFontType   string
-	Store             *store.Store
 }
 
 // ViewConfig type alias to hold raw config definition for a View
@@ -69,13 +53,8 @@ type RegisteredView struct {
 }
 
 var (
-	CommonConfig    = &ViewCommonConfig{}
 	RegisteredViews = map[string]RegisteredView{}
 )
-
-func SetViewCommonConfig(config *ViewCommonConfig) {
-	CommonConfig = config
-}
 
 func RegisterView(name string, creator RegisteredView) {
 	RegisteredViews[name] = creator

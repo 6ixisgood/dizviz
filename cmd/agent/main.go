@@ -11,7 +11,6 @@ import (
 	"github.com/6ixisgood/matrix-ticker/pkg/agent"
 	_ "github.com/6ixisgood/matrix-ticker/pkg/component/types"
 	"github.com/6ixisgood/matrix-ticker/pkg/display"
-	"github.com/6ixisgood/matrix-ticker/pkg/store"
 	"github.com/6ixisgood/matrix-ticker/pkg/util"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	_ "github.com/6ixisgood/matrix-ticker/pkg/view/types"
@@ -102,12 +101,6 @@ func main() {
 	// Create agent
 	ag := agent.New(agentConfig, capabilities)
 
-	// Initialize store
-	st, err := store.NewStore(Config.Runtime.CacheDir)
-	if err != nil {
-		log.Fatalf("Failed to create store: %v", err)
-	}
-
 	// Configure utils for font/cache handling
 	util.SetUtilConfig(&util.UtilConfig{
 		CacheDir: Config.Runtime.CacheDir,
@@ -120,12 +113,11 @@ func main() {
 		dataSources[key] = value
 	}
 
-	// Build agent context
+	// Build agent context (no store - control plane owns persistence)
 	agentCtx := &viewCommon.AgentContext{
 		ImageDir:    Config.Runtime.ImagesDir,
 		CacheDir:    Config.Runtime.CacheDir,
 		FontsDir:    Config.Runtime.FontsDir,
-		Store:       st,
 		DataSources: dataSources,
 	}
 	ag.SetAgentContext(agentCtx)

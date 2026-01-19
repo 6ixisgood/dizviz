@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
@@ -476,47 +477,52 @@ func (a *Agent) handleAssignView(cmd *pb.AssignViewCommand) {
 	log.Printf("[Agent:%s] Received AssignView command: type=%s, display=%s",
 		a.name, cmd.ViewType, cmd.DisplayId)
 
-	// Validate display ID (for now, only "primary" is supported)
+	// Validate display ID
 	displayID := cmd.DisplayId
 	if displayID == "" {
 		displayID = "primary"
 	}
 
-	if displayID != "primary" {
+	a.mu.RLock()
+	_, exists := a.displays[displayID]
+	a.mu.RUnlock()
+
+	if !exists {
 		a.sendCommandResponse(false,
 			fmt.Sprintf("display %s not found", displayID),
 			"AssignView")
 		return
 	}
 
-	// Fetch view definition by ID (following same pattern as DisplayViewById handler)
-	viewDefinition, err := viewCommon.GetViewDefinition(cmd.ViewType)
-	if err != nil {
-		log.Printf("[Agent:%s] View definition not found: %s", a.name, cmd.ViewType)
-		a.sendCommandResponse(false,
-			fmt.Sprintf("view definition %s not found: %v", cmd.ViewType, err),
-			"AssignView")
-		return
-	}
-
 	// Get the registered view type factory
-	regView, exists := viewCommon.RegisteredViews[viewDefinition.Type]
+	regView, exists := viewCommon.RegisteredViews[cmd.ViewType]
 	if !exists {
-		log.Printf("[Agent:%s] View type not registered: %s", a.name, viewDefinition.Type)
+		log.Printf("[Agent:%s] View type not registered: %s", a.name, cmd.ViewType)
 		a.sendCommandResponse(false,
-			fmt.Sprintf("view type %s not registered", viewDefinition.Type),
+			fmt.Sprintf("view type %s not registered", cmd.ViewType),
 			"AssignView")
 		return
 	}
 
-	// Use config from command if provided, otherwise use stored config
-	config := viewDefinition.Config
-	if cmd.ViewConfigJson != "" && cmd.ViewConfigJson != "{}" {
-		config = cmd.ViewConfigJson
+	// Use config from command (control plane already resolved the view definition)
+	configJSON := cmd.ViewConfigJson
+	if configJSON == "" || configJSON == "{}" {
+		log.Printf("[Agent:%s] Warning: empty config provided for view type %s", a.name, cmd.ViewType)
+		configJSON = "{}" // Ensure we have valid JSON
 	}
 
-	// Create view instance from config
-	newView, err := regView.NewView(config)
+	// Create a typed config instance and unmarshal JSON into it
+	configInstance := regView.NewConfig()
+	if err := json.Unmarshal([]byte(configJSON), &configInstance); err != nil {
+		log.Printf("[Agent:%s] Failed to unmarshal view config: %v", a.name, err)
+		a.sendCommandResponse(false,
+			fmt.Sprintf("failed to unmarshal view config: %v", err),
+			"AssignView")
+		return
+	}
+
+	// Create view instance from typed config
+	newView, err := regView.NewView(configInstance)
 	if err != nil {
 		log.Printf("[Agent:%s] Failed to create view: %v", a.name, err)
 		a.sendCommandResponse(false,
@@ -555,8 +561,8 @@ func (a *Agent) handleAssignView(cmd *pb.AssignViewCommand) {
 	}
 
 	// Success!
-	log.Printf("[Agent:%s] Successfully changed display %s to view: %s (type: %s)",
-		a.name, displayID, viewDefinition.Id, viewDefinition.Type)
+	log.Printf("[Agent:%s] Successfully changed display %s to view type: %s",
+		a.name, displayID, cmd.ViewType)
 	a.sendCommandResponse(true,
 		fmt.Sprintf("view %s assigned successfully to display %s", cmd.ViewType, displayID),
 		"AssignView")

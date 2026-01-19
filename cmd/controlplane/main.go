@@ -10,6 +10,7 @@ import (
 	"github.com/6ixisgood/matrix-ticker/pkg/api"
 	_ "github.com/6ixisgood/matrix-ticker/pkg/component"
 	"github.com/6ixisgood/matrix-ticker/pkg/controlplane"
+	"github.com/6ixisgood/matrix-ticker/pkg/store"
 	_ "github.com/6ixisgood/matrix-ticker/pkg/view/types"
 )
 
@@ -35,14 +36,30 @@ func main() {
 	log.Printf("gRPC Server: %s", grpcAddr)
 	log.Printf("HTTP API: %s", httpAddr)
 
+	// Initialize store
+	storeDir := Config.Data.StoreDir
+	if storeDir == "" {
+		storeDir = "./data/store" // Default fallback
+	}
+	st, err := store.NewStore(storeDir)
+	if err != nil {
+		log.Fatalf("Failed to initialize store: %v", err)
+	}
+	log.Printf("[ControlPlane] Store initialized at: %s", storeDir)
+
+	// Create store service
+	storeService := controlplane.NewStoreService(st)
+	defer storeService.Close()
+
 	log.Println("[ControlPlane] System initialized")
 
-	// Create gRPC server
-	server := controlplane.NewServer(grpcAddr)
+	// Create gRPC server with store service
+	server := controlplane.NewServer(grpcAddr, storeService)
 
-	// Set up HTTP API with registry and server
+	// Set up HTTP API with registry, server, and store service
 	api.SetRegistry(server.GetRegistry())
 	api.SetServer(server)
+	api.SetStoreService(storeService)
 	router := api.Router()
 
 	// Handle graceful shutdown

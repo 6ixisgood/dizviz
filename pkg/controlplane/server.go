@@ -20,6 +20,7 @@ type Server struct {
 
 	addr           string
 	registry       *AgentRegistry
+	storeService   *StoreService
 	grpcSrv        *grpc.Server
 	commandStreams map[string]pb.AgentService_StreamCommandsServer // agentID -> stream
 	mu             sync.RWMutex
@@ -27,10 +28,11 @@ type Server struct {
 }
 
 // NewServer creates a new control plane server
-func NewServer(addr string) *Server {
+func NewServer(addr string, storeService *StoreService) *Server {
 	return &Server{
 		addr:           addr,
 		registry:       NewAgentRegistry(),
+		storeService:   storeService,
 		commandStreams: make(map[string]pb.AgentService_StreamCommandsServer),
 	}
 }
@@ -273,4 +275,9 @@ func (s *Server) cleanupRoutine() {
 // GetRegistry returns the agent registry
 func (s *Server) GetRegistry() *AgentRegistry {
 	return s.registry
+}
+
+// GetStoreService returns the store service
+func (s *Server) GetStoreService() *StoreService {
+	return s.storeService
 }

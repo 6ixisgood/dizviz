@@ -13,7 +13,8 @@ type ControlPlaneConfig struct {
 		HTTPPort string `yaml:"http_port"`
 	} `yaml:"server"`
 	Data struct {
-		Sleeper struct {
+		StoreDir string `yaml:"store_dir"`
+		Sleeper  struct {
 			BaseUrl string `yaml:"base_url"`
 		} `yaml:"sleeper"`
 		SportsFeed struct {

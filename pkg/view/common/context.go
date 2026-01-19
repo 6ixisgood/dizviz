@@ -1,12 +1,10 @@
 package common
 
-import "github.com/6ixisgood/matrix-ticker/pkg/store"
-
+// AgentContext contains agent-level resources shared across all displays
 type AgentContext struct {
 	ImageDir    string
 	CacheDir    string
 	FontsDir    string
-	Store       *store.Store
 	DataSources map[string]interface{}
 }
 

@@ -16,6 +16,11 @@ func SetServer(server *controlplane.Server) {
 	handlers.SetServer(server)
 }
 
+// SetStoreService sets the store service instance for the API handlers
+func SetStoreService(storeService *controlplane.StoreService) {
+	handlers.SetStoreService(storeService)
+}
+
 // Router sets up all the API routes for the control plane
 func Router() *gin.Engine {
 	engine := gin.Default()

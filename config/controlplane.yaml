@@ -3,6 +3,7 @@ server:
   http_port: "8080"
 
 data:
+  store_dir: ./store
   sleeper:
     base_url: "https://api.sleeper.app"
   

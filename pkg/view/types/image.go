@@ -2,6 +2,8 @@ package types
 
 import (
 	"errors"
+	"fmt"
+
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 )
 
@@ -18,6 +20,9 @@ type ImagePlayerViewConfig struct {
 func ImagePlayerViewCreate(viewConfig c.ViewConfig) (c.View, error) {
 	config, ok := viewConfig.(*ImagePlayerViewConfig)
 	if !ok {
+		fmt.Println("----------")
+		fmt.Println(config)
+		fmt.Println("----------")
 		return nil, errors.New("Error asserting type ImagePlayerViewConfig")
 	}
 
