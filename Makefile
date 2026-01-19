@@ -17,7 +17,7 @@ proto:
 
 # Build binaries
 agent:
-	@go build -o bin/agent cmd/agent/main.go
+	@go build -o bin/agent cmd/agent/*.go
 
 controlplane:
 	@go build -o bin/controlplane cmd/controlplane/*.go

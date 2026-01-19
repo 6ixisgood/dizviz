@@ -35,6 +35,10 @@ type Agent struct {
 	// Multi-display management
 	displays map[string]*DisplayInfo
 
+	// View contexts
+	agentContext    *viewCommon.AgentContext
+	displayContexts map[string]*viewCommon.DisplayContext
+
 	// Control plane connection
 	controlPlaneClient *ControlPlaneClient
 
@@ -53,16 +57,24 @@ type Agent struct {
 // New creates a new agent instance
 func New(config Config, capabilities Capabilities) *Agent {
 	return &Agent{
-		name:         config.AgentName,
-		config:       config,
-		capabilities: capabilities,
-		displays:     make(map[string]*DisplayInfo),
-		health:       "initializing",
+		name:            config.AgentName,
+		config:          config,
+		capabilities:    capabilities,
+		displays:        make(map[string]*DisplayInfo),
+		displayContexts: make(map[string]*viewCommon.DisplayContext),
+		health:          "initializing",
 	}
 }
 
-// AddDisplay adds a display to the agent
-func (a *Agent) AddDisplay(displayID string, disp display.Display, fps, bufferSize int) error {
+// SetAgentContext sets the agent-level context for views
+func (a *Agent) SetAgentContext(ctx *viewCommon.AgentContext) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.agentContext = ctx
+}
+
+// AddDisplay adds a display to the agent with optional font defaults
+func (a *Agent) AddDisplay(displayID string, disp display.Display, fps, bufferSize, rows, cols int, fontDefaults ...viewCommon.DisplayContext) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -77,7 +89,29 @@ func (a *Agent) AddDisplay(displayID string, disp display.Display, fps, bufferSi
 		active:     false,
 	}
 
-	log.Printf("[Agent:%s] Added display: %s", a.name, displayID)
+	// Create display context with defaults
+	displayCtx := &viewCommon.DisplayContext{
+		MatrixRows:        rows,
+		MatrixCols:        cols,
+		DefaultImageSizeX: cols,
+		DefaultImageSizeY: rows,
+		DefaultFontSize:   8,
+		DefaultFontColor:  "#FFFFFF",
+		DefaultFontStyle:  "regular",
+		DefaultFontType:   "default",
+	}
+
+	// Override with provided font defaults if given
+	if len(fontDefaults) > 0 {
+		displayCtx.DefaultFontSize = fontDefaults[0].DefaultFontSize
+		displayCtx.DefaultFontColor = fontDefaults[0].DefaultFontColor
+		displayCtx.DefaultFontStyle = fontDefaults[0].DefaultFontStyle
+		displayCtx.DefaultFontType = fontDefaults[0].DefaultFontType
+	}
+
+	a.displayContexts[displayID] = displayCtx
+
+	log.Printf("[Agent:%s] Added display: %s (%dx%d)", a.name, displayID, cols, rows)
 	return nil
 }
 
@@ -490,6 +524,26 @@ func (a *Agent) handleAssignView(cmd *pb.AssignViewCommand) {
 			"AssignView")
 		return
 	}
+
+	// Inject context before initializing
+	a.mu.RLock()
+	agentCtx := a.agentContext
+	displayCtx := a.displayContexts[displayID]
+	a.mu.RUnlock()
+
+	if agentCtx == nil || displayCtx == nil {
+		log.Printf("[Agent:%s] Context not set for display %s", a.name, displayID)
+		a.sendCommandResponse(false,
+			fmt.Sprintf("context not set for display %s", displayID),
+			"AssignView")
+		return
+	}
+
+	viewCtx := &viewCommon.ViewContext{
+		Agent:   agentCtx,
+		Display: displayCtx,
+	}
+	newView.SetContext(viewCtx)
 
 	// Change to the new view on the specified display
 	if err := a.ChangeView(displayID, newView); err != nil {

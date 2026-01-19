@@ -1,0 +1,16 @@
+server:
+  grpc_port: "50051"
+  http_port: "8080"
+
+data:
+  sleeper:
+    base_url: "https://api.sleeper.app"
+  
+  sportsfeed:
+    base_url: "https://api.mysportsfeeds.com"
+    username: ""
+    password: ""
+  
+  weather:
+    base_url: "https://api.openweathermap.org"
+    key: ""

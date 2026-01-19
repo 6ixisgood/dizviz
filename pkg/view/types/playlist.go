@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	"time"
+
+	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 )
 
 type PlaylistView struct {
@@ -15,8 +16,8 @@ type PlaylistView struct {
 	views       []c.View
 	activeIndex int
 	timings     []time.Duration
-	ctx      context.Context
-	cancel   context.CancelFunc
+	ctx         context.Context
+	cancel      context.CancelFunc
 }
 
 const (
@@ -128,10 +129,15 @@ func (v *PlaylistView) NextView() {
 		prevIndex := v.activeIndex
 		nextIndex := (v.activeIndex + 1) % len(v.views)
 
-		v.views[nextIndex].Init()
+		// Propagate context to child view before Init
+		childView := v.views[nextIndex]
+		if ctx := v.GetContext(); ctx != nil {
+			childView.SetContext(ctx)
+		}
+		childView.Init()
 
 		// set next view as active
-		v.SetTemplate(v.views[nextIndex].Template())
+		v.SetTemplate(childView.Template())
 		v.activeIndex = nextIndex
 
 		c.TemplateRefresh(v)
@@ -141,7 +147,7 @@ func (v *PlaylistView) NextView() {
 		}
 
 		// wait for next view
-		go func() {	
+		go func() {
 			time.Sleep(v.timings[v.activeIndex] * time.Second)
 			v.NextView()
 		}()
@@ -155,8 +161,6 @@ func (v *PlaylistView) Stop() {
 func (v *PlaylistView) Init() {
 	v.BaseView.Init()
 	v.ctx, v.cancel = context.WithCancel(context.Background())
-
-
 
 	v.NextView()
 }

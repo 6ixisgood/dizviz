@@ -18,6 +18,8 @@ import (
 // View a structure to describe a layout of components at a given time
 type View interface {
 	Init()
+	SetContext(*ViewContext)
+	GetContext() *ViewContext
 	Template() *compCommon.Template
 	SetTemplate(*compCommon.Template)
 	SetTemplateValue(compCommon.Template)
@@ -81,6 +83,12 @@ func RegisterView(name string, creator RegisteredView) {
 
 // TemplateRefresh static function to generate a View's template
 func TemplateRefresh(v View) {
+	// Get the view context
+	viewCtx := v.GetContext()
+	if viewCtx == nil {
+		log.Fatalf("View context is nil - SetContext must be called before TemplateRefresh")
+	}
+
 	// create the template object
 	tmpl := template.New("view-template")
 
@@ -130,9 +138,23 @@ func TemplateRefresh(v View) {
 		panic(err)
 	}
 
+	// Flatten context into a map for template access
+	ctxMap := map[string]interface{}{
+		"MatrixCols":        viewCtx.Display.MatrixCols,
+		"MatrixRows":        viewCtx.Display.MatrixRows,
+		"DefaultImageSizeX": viewCtx.Display.DefaultImageSizeX,
+		"DefaultImageSizeY": viewCtx.Display.DefaultImageSizeY,
+		"DefaultFontSize":   viewCtx.Display.DefaultFontSize,
+		"DefaultFontType":   viewCtx.Display.DefaultFontType,
+		"DefaultFontStyle":  viewCtx.Display.DefaultFontStyle,
+		"DefaultFontColor":  viewCtx.Display.DefaultFontColor,
+		"ImageDir":          viewCtx.Agent.ImageDir,
+		"CacheDir":          viewCtx.Agent.CacheDir,
+	}
+
 	// merge data maps
 	data := map[string]interface{}{
-		"Ctx": CommonConfig,
+		"Ctx": ctxMap,
 	}
 	maps.Copy(data, v.TemplateData())
 

@@ -1,11 +1,13 @@
 package common
 
 import (
-	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 	"time"
+
+	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
 )
 
 type BaseView struct {
+	context         *ViewContext
 	template        *compCommon.Template
 	dataRefresh     *time.Ticker
 	templateRefresh *time.Ticker
@@ -15,6 +17,14 @@ type BaseView struct {
 func (v *BaseView) Init() {
 	v.template = &compCommon.Template{}
 	v.template.Init()
+}
+
+func (v *BaseView) SetContext(ctx *ViewContext) {
+	v.context = ctx
+}
+
+func (v *BaseView) GetContext() *ViewContext {
+	return v.context
 }
 
 func (v *BaseView) Template() *compCommon.Template {

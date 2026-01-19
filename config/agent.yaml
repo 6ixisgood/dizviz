@@ -1,0 +1,40 @@
+agent:
+  name: "living-room-matrix"
+  control_plane_addr: "localhost:50051"
+  heartbeat_interval: 30s
+  reconnect_delay: 5s
+  auto_reconnect: true
+  version: "1.0.0"
+
+displays:
+  - id: "primary"
+    type: "matrix"
+    fps: 30
+    buffer_size: 2
+    hardware:
+      rows: 64
+      cols: 64
+      parallel: 1
+      chain: 1
+      brightness: 80
+      hardware_mapping: "adafruit-hat"
+      show_refresh: false
+      inverse_colors: false
+      disable_hardware_pulsing: false
+      gpio_slowdown: 1
+      rate_limit_hz: 0
+
+runtime:
+  images_dir: /home/andrew/.dizviz/images
+  cache_dir: /home/andrew/.dizviz/cache
+  fonts_dir: /home/andrew/.dizviz/fonts
+  data_sources:
+    sportsfeed:
+      api_key: "your-api-key-here"
+    sleeper:
+      league_id: "your-league-id-here"
+  defaults:
+    font_size: 8
+    font_color: "#FFFFFF"
+    font_style: "regular"
+    font_type: "default"
