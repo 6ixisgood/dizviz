@@ -10,6 +10,10 @@ type ImagePlayerView struct {
 	Src string `json:"src" spec:"required='true',min='1',label='Image Source (URL/Filepath)'"`
 }
 
+func (v *ImagePlayerView) Init(configJSON string, ctx c.ViewContext) error {
+	return c.InitViewFromJSON(v, configJSON, ctx)
+}
+
 func (v *ImagePlayerView) TemplateData() map[string]interface{} {
 	return map[string]interface{}{
 		"Src": v.Src,

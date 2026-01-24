@@ -358,14 +358,16 @@ func AssignViewToDisplay(c *gin.Context) {
 		return
 	}
 
-	// Marshal the config to JSON string
-	configJSON, err := json.Marshal(viewDefinition.Config)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "failed to marshal view config",
-			"details": err.Error(),
-		})
-		return
+	var configJSON string
+	if rawMsg, ok := viewDefinition.Config.(json.RawMessage); ok {
+		configJSON = string(rawMsg)
+	} else {
+		// Fallback for other types
+		bytes, err := json.Marshal(viewDefinition.Config)
+		if err != nil {
+			// handle error
+		}
+		configJSON = string(bytes)
 	}
 
 	// Build and send command to agent via gRPC stream
@@ -374,7 +376,7 @@ func AssignViewToDisplay(c *gin.Context) {
 			AssignView: &pb.AssignViewCommand{
 				DisplayId:      displayID,
 				ViewType:       viewDefinition.Type, // The registered view type (e.g., "text", "scoreboard")
-				ViewConfigJson: string(configJSON),  // Pass the full config to agent as JSON string
+				ViewConfigJson: configJSON,          // Pass the full config to agent as JSON string
 			},
 		},
 	}

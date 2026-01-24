@@ -100,8 +100,6 @@ func (m *Manager) ChangeView(view common.View) error {
 		return fmt.Errorf("manager not running")
 	}
 
-	log.Printf("Changing view")
-
 	// Note: View is already initialized by the agent before being passed here
 	// Refresh the template to ensure it's up to date
 	common.TemplateRefresh(view)
