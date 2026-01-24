@@ -52,16 +52,18 @@ func SaveViewDefinition(c *gin.Context) {
 		return
 	}
 
-	regView, exists := viewCommon.RegisteredViews[body.Type]
+	// Verify the view type exists
+	_, exists := viewCommon.RegisteredViews[body.Type]
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "View type does not exist"})
 		return
 	}
 
-	configInstance := regView.NewConfig()
-	if err := json.Unmarshal(body.Config, &configInstance); err != nil {
+	// Validate the config JSON is valid JSON
+	var configTest interface{}
+	if err := json.Unmarshal(body.Config, &configTest); err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Bad view config passed"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON in view config"})
 		return
 	}
 
@@ -70,11 +72,13 @@ func SaveViewDefinition(c *gin.Context) {
 		body.Id = uuid.New().String()
 	}
 
+	// Store the definition with Config as json.RawMessage
+	// The config will be validated when the view is actually created
 	definition := viewCommon.ViewDefinition{
 		Id:     body.Id,
 		Name:   body.Name,
 		Type:   body.Type,
-		Config: configInstance,
+		Config: body.Config, // Store as json.RawMessage
 	}
 
 	err := storeServiceInstance.SaveViewDefinition(definition)
@@ -106,8 +110,12 @@ func DeleteViewDefinition(c *gin.Context) {
 
 func GetAllViewConfigSpecs(c *gin.Context) {
 	configs := make(map[string]interface{})
-	for name, regView := range viewCommon.RegisteredViews {
-		configSpec := viewCommon.GenerateViewConfigSpecJson(regView.NewConfig())
+	for name, factory := range viewCommon.RegisteredViews {
+		// Create a view instance to introspect its config fields
+		view := factory()
+
+		// Generate spec from the view's structure (excluding BaseView context fields)
+		configSpec := viewCommon.GenerateViewConfigSpecJson(view)
 		configs[name] = configSpec
 	}
 	c.JSON(http.StatusOK, configs)

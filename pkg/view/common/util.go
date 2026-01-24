@@ -1,11 +1,66 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/6ixisgood/matrix-ticker/pkg/component/common"
 )
+
+// InitViewFromJSON initializes a view from JSON config and context map
+// This handles: context injection, JSON unmarshaling, and validation
+func InitViewFromJSON(view View, configJSON string, ctx ViewContext) error {
+	// STEP 1: Populate BaseView fields from context map
+	if err := populateBaseViewFromContext(view, ctx); err != nil {
+		return fmt.Errorf("failed to populate context: %w", err)
+	}
+
+	// STEP 2: Unmarshal JSON config into view fields
+	if err := json.Unmarshal([]byte(configJSON), view); err != nil {
+		return fmt.Errorf("invalid config JSON: %w", err)
+	}
+
+	view.SetTemplate(&common.Template{})
+
+	// STEP 3: Validate everything (both context and config fields)
+	if err := ValidateViewConfig(view); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
+	}
+
+	return nil
+}
+
+// populateBaseViewFromContext populates BaseView fields from context map
+func populateBaseViewFromContext(view View, ctx ViewContext) error {
+	viewValue := reflect.ValueOf(view)
+	if viewValue.Kind() == reflect.Ptr {
+		viewValue = viewValue.Elem()
+	}
+
+	baseViewField := viewValue.FieldByName("BaseView")
+	if !baseViewField.IsValid() {
+		return nil // View doesn't embed BaseView, skip
+	}
+
+	baseViewType := baseViewField.Type()
+
+	for i := 0; i < baseViewType.NumField(); i++ {
+		field := baseViewType.Field(i)
+
+		// Get value from context map using field name as key
+		if value, exists := ctx[field.Name]; exists {
+			fieldValue := baseViewField.Field(i)
+			if fieldValue.CanSet() {
+				fieldValue.Set(reflect.ValueOf(value))
+			}
+		}
+	}
+
+	return nil
+}
 
 // StructMetadata the tag metadata related to a specific struct and tag name
 type StructMetadata struct {

@@ -7,12 +7,12 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/google/uuid v1.6.0
-	github.com/linxGnu/grocksdb v1.9.1
+	github.com/linxGnu/grocksdb v1.10.4
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/sixisgoood/go-rpi-rgb-led-matrix v0.0.0-20180401002551-b26063b3169a
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.11.1
 	golang.org/x/image v0.5.0
 	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11

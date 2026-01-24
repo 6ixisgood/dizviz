@@ -96,32 +96,25 @@ func (s *StoreService) DeleteViewDefinition(id string) error {
 
 // unmarshalViewDefinition helper function to get a ViewDefinition from []byte
 func (s *StoreService) unmarshalViewDefinition(data []byte) (viewCommon.ViewDefinition, error) {
-	var definition viewCommon.ViewDefinition
-
-	// Unmarshal the whole object
-	err := json.Unmarshal(data, &definition)
+	// First unmarshal into ViewDefinitionRaw to get the config as json.RawMessage
+	var rawDef viewCommon.ViewDefinitionRaw
+	err := json.Unmarshal(data, &rawDef)
 	if err != nil {
-		return definition, err
+		return viewCommon.ViewDefinition{}, err
 	}
 
-	// Unmarshal into a map to get the raw config
-	var rawDef map[string]json.RawMessage
-	err = json.Unmarshal(data, &rawDef)
-	if err != nil {
-		return definition, err
+	// Verify the view type is registered
+	if _, ok := viewCommon.RegisteredViews[rawDef.Type]; !ok {
+		return viewCommon.ViewDefinition{}, fmt.Errorf("no registered view of type %s", rawDef.Type)
 	}
 
-	// Get the RegisteredView for this type
-	regView, ok := viewCommon.RegisteredViews[definition.Type]
-	if !ok {
-		return definition, fmt.Errorf("no registered view of type %s", definition.Type)
-	}
-
-	// Use the RegisteredView's NewConfig function to unmarshal the config
-	definition.Config = regView.NewConfig()
-	err = json.Unmarshal(rawDef["config"], &definition.Config)
-	if err != nil {
-		return definition, err
+	// Create the ViewDefinition with Config as json.RawMessage ([]byte)
+	// The config will be unmarshaled by the view's Init() method when the view is created
+	definition := viewCommon.ViewDefinition{
+		Id:     rawDef.Id,
+		Name:   rawDef.Name,
+		Type:   rawDef.Type,
+		Config: rawDef.Config, // Keep as json.RawMessage
 	}
 
 	return definition, nil

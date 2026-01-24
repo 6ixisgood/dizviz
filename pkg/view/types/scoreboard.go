@@ -1,7 +1,6 @@
 package types
 
 import (
-	"errors"
 	"time"
 
 	d "github.com/6ixisgood/matrix-ticker/pkg/data"
@@ -12,63 +11,48 @@ import (
 type NFLBoxView struct {
 	c.BaseView
 
-	Auto             bool
-	Matchup          string
-	Date             time.Time
+	Auto     bool          `json:"auto" spec:"required='true',label='Auto'"`
+	Matchup  string        `json:"matchup" spec:"label='Matchup'"`
+	Date     time.Time     `json:"date" spec:"label='Date'"`
+	Duration time.Duration `json:"duration" spec:"label='Duration (seconds)'"`
+
 	SportsFeedClient *d.SportsFeed
 	Game             d.NFLBoxScoreResponseFormatted
 	Games            []d.NFLBoxScoreResponseFormatted
-	Duration         time.Duration
 	gameIndex        int
 	Layout           string
 	refresh          *util.Refresher
 }
 
-type NFLBoxViewConfig struct {
-	Auto     bool      `json:"auto" spec:"required='true',label='Auto'"`
-	Matchup  string    `json:"matchup" spec:"required='false',label='Matchup'"`
-	Date     util.Date `json:"date" spec:"required='false',label='Date'"`
-	Duration int       `json:"duration" spec:"required='false',label='Duration'"`
-}
-
-func NFLBoxViewCreate(viewConfig c.ViewConfig) (c.View, error) {
-	config, ok := viewConfig.(*NFLBoxViewConfig)
-	if !ok {
-		return nil, errors.New("Error asserting type NFLBoxViewConfig")
+func (v *NFLBoxView) Init(configJSON string, ctx c.ViewContext) error {
+	// Call base init to populate context and unmarshal config
+	if err := c.InitViewFromJSON(v, configJSON, ctx); err != nil {
+		return err
 	}
 
-	if err := c.ValidateViewConfig(config); err != nil {
-		return nil, err
-	}
-
-	client := d.SportsFeedClient()
-
-	var d time.Time
-	if config.Auto {
-		d = time.Now()
-	} else {
-		d = config.Date.Time
-	}
-
-	if config.Duration == 0 {
-		if config.Auto {
-			config.Duration = 30
+	// Set defaults
+	if v.Duration == 0 {
+		if v.Auto {
+			v.Duration = 30 * time.Second
 		} else {
-			config.Duration = 60
+			v.Duration = 60 * time.Second
 		}
 	}
 
-	return &NFLBoxView{
-		Auto:             config.Auto,
-		Matchup:          config.Matchup,
-		Date:             d,
-		Duration:         time.Duration(config.Duration),
-		SportsFeedClient: client,
-	}, nil
-}
+	// Set date
+	var dateToUse time.Time
+	if v.Auto {
+		dateToUse = time.Now()
+	} else {
+		dateToUse = v.Date
+	}
+	v.Date = dateToUse
 
-func (v *NFLBoxView) Init() {
-	v.BaseView.Init()
+	// Initialize client
+	client := d.SportsFeedClient()
+	v.SportsFeedClient = client
+
+	// Initialize view logic
 	var f func()
 	if v.Auto {
 		// we're grabbing the current games and looping through them
@@ -83,6 +67,8 @@ func (v *NFLBoxView) Init() {
 	v.refresh = util.RefresherCreate(v.Duration*time.Second, f)
 	f()
 	v.refresh.Start()
+
+	return nil
 }
 
 func (v *NFLBoxView) RefreshGame() {
@@ -273,8 +259,5 @@ func (v *NFLBoxView) TemplateString() string {
 }
 
 func init() {
-	c.RegisterView("nflbox", c.RegisteredView{
-		NewConfig: func() c.ViewConfig { return &NFLBoxViewConfig{} },
-		NewView:   NFLBoxViewCreate,
-	})
+	c.RegisterView("nflbox", func() c.View { return &NFLBoxView{} })
 }

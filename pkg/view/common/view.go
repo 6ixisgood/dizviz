@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"html/template"
+	"image"
 	"log"
 	"maps"
 	"reflect"
@@ -16,16 +17,18 @@ import (
 
 // View a structure to describe a layout of components at a given time
 type View interface {
-	Init()
-	SetContext(*ViewContext)
-	GetContext() *ViewContext
+	Init(configJSON string, ctx ViewContext) error
 	Template() *compCommon.Template
 	SetTemplate(*compCommon.Template)
+	RenderTemplate() image.Image
 	SetTemplateValue(compCommon.Template)
 	TemplateString() string
 	TemplateData() map[string]interface{}
 	Stop()
 }
+
+// ViewContext is a map holding context values for view initialization
+type ViewContext map[string]interface{}
 
 // ViewConfig type alias to hold raw config definition for a View
 type ViewConfig interface{}
@@ -46,27 +49,29 @@ type ViewDefinitionRaw struct {
 	Config json.RawMessage `json:"config"`
 }
 
-// RegisteredView set of generic functions to a create a given View's config and the View itself
-type RegisteredView struct {
-	NewConfig func() ViewConfig
-	NewView   func(ViewConfig) (View, error)
-}
+// ViewFactory is a function that creates a new view instance
+type ViewFactory func() View
 
 var (
-	RegisteredViews = map[string]RegisteredView{}
+	RegisteredViews = map[string]ViewFactory{}
 )
 
-func RegisterView(name string, creator RegisteredView) {
-	RegisteredViews[name] = creator
+func RegisterView(name string, factory ViewFactory) {
+	RegisteredViews[name] = factory
 }
 
 // TemplateRefresh static function to generate a View's template
 func TemplateRefresh(v View) {
-	// Get the view context
-	viewCtx := v.GetContext()
-	if viewCtx == nil {
-		log.Fatalf("View context is nil - SetContext must be called before TemplateRefresh")
+	// Access BaseView fields directly through type assertion
+	type baseViewer interface {
+		getBaseView() *BaseView
 	}
+
+	bv, ok := v.(baseViewer)
+	if !ok {
+		log.Fatalf("View doesn't provide access to BaseView")
+	}
+	base := bv.getBaseView()
 
 	// create the template object
 	tmpl := template.New("view-template")
@@ -92,6 +97,18 @@ func TemplateRefresh(v View) {
 		},
 	}
 	tmpl = tmpl.Funcs(funcMap)
+
+	// Get context values from BaseView fields directly
+	matrixCols := base.MatrixCols
+	matrixRows := base.MatrixRows
+	defaultImageSizeX := base.DefaultImageSizeX
+	defaultImageSizeY := base.DefaultImageSizeY
+	defaultFontSize := base.DefaultFontSize
+	defaultFontType := base.DefaultFontType
+	defaultFontStyle := base.DefaultFontStyle
+	defaultFontColor := base.DefaultFontColor
+	imageDir := base.ImageDir
+	cacheDir := base.CacheDir
 
 	// construct the template string
 	tmplString := `
@@ -119,16 +136,16 @@ func TemplateRefresh(v View) {
 
 	// Flatten context into a map for template access
 	ctxMap := map[string]interface{}{
-		"MatrixCols":        viewCtx.Display.MatrixCols,
-		"MatrixRows":        viewCtx.Display.MatrixRows,
-		"DefaultImageSizeX": viewCtx.Display.DefaultImageSizeX,
-		"DefaultImageSizeY": viewCtx.Display.DefaultImageSizeY,
-		"DefaultFontSize":   viewCtx.Display.DefaultFontSize,
-		"DefaultFontType":   viewCtx.Display.DefaultFontType,
-		"DefaultFontStyle":  viewCtx.Display.DefaultFontStyle,
-		"DefaultFontColor":  viewCtx.Display.DefaultFontColor,
-		"ImageDir":          viewCtx.Agent.ImageDir,
-		"CacheDir":          viewCtx.Agent.CacheDir,
+		"MatrixCols":        matrixCols,
+		"MatrixRows":        matrixRows,
+		"DefaultImageSizeX": defaultImageSizeX,
+		"DefaultImageSizeY": defaultImageSizeY,
+		"DefaultFontSize":   defaultFontSize,
+		"DefaultFontType":   defaultFontType,
+		"DefaultFontStyle":  defaultFontStyle,
+		"DefaultFontColor":  defaultFontColor,
+		"ImageDir":          imageDir,
+		"CacheDir":          cacheDir,
 	}
 
 	// merge data maps

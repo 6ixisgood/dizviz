@@ -18,8 +18,3 @@ type DisplayContext struct {
 	DefaultFontStyle  string
 	DefaultFontType   string
 }
-
-type ViewContext struct {
-	Agent   *AgentContext
-	Display *DisplayContext
-}

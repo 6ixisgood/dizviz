@@ -1,7 +1,6 @@
 package types
 
 import (
-	"errors"
 	"strconv"
 	"time"
 
@@ -13,8 +12,11 @@ import (
 type SleeperMatchupsView struct {
 	c.BaseView
 
-	League        string
-	Week          int
+	LeagueID      string        `json:"league_id" spec:"required='true',label='League ID'"`
+	Week          int           `json:"week" spec:"required='true',min='1',max='18',label='Week'"`
+	PhaseDuration time.Duration `json:"phase_duration" spec:"label='Phase Duration (seconds)'"`
+	DataDuration  time.Duration `json:"data_duration" spec:"label='Data Duration (seconds)'"`
+
 	SleeperClient *d.Sleeper
 	matchups      [][]d.SleeperTeamFormatted
 	matchIndex    int
@@ -22,61 +24,39 @@ type SleeperMatchupsView struct {
 	dataRefresh   *util.Refresher
 	phaseRefresh  *util.Refresher
 	league        d.SleeperLeagueFormatted
-	phaseDuration time.Duration
-	dataDuration  time.Duration
 }
 
-type SleeperMatchupsViewConfig struct {
-	LeagueID      string `json:"league_id" spec:"required='true',label='League ID'"`
-	Week          int    `json:"week" spec:"required='true',min='1',max='18',label='Week'"`
-	PhaseDuration int    `json:"phase_duration" spec:"required='false',label='Phase Duration'"`
-	DataDuration  int    `json:"data_duration" spec:"required='false',label='Data Duration'"`
-}
-
-func SleeperMatchupsViewCreate(viewConfig c.ViewConfig) (c.View, error) {
-	config, ok := viewConfig.(*SleeperMatchupsViewConfig)
-	if !ok {
-		return nil, errors.New("Error asserting type SleeperMatchupsViewConfig")
+func (v *SleeperMatchupsView) Init(configJSON string, ctx c.ViewContext) error {
+	if err := c.InitViewFromJSON(v, configJSON, ctx); err != nil {
+		return err
 	}
 
-	if err := c.ValidateViewConfig(config); err != nil {
-		return nil, err
+	// Set defaults
+	if v.PhaseDuration == 0 {
+		v.PhaseDuration = 15 * time.Second
+	}
+	if v.DataDuration == 0 {
+		v.DataDuration = 60 * time.Second
 	}
 
+	// Initialize client
 	client := d.SleeperClient()
+	v.SleeperClient = client
+	v.Phase = 0
 
-	if config.PhaseDuration == 0 {
-		config.PhaseDuration = 15
-	}
-
-	if config.DataDuration == 0 {
-		config.DataDuration = 60
-	}
-
-	return &SleeperMatchupsView{
-		League:        config.LeagueID,
-		Week:          config.Week,
-		SleeperClient: client,
-		Phase:         0,
-		phaseDuration: time.Duration(config.PhaseDuration),
-		dataDuration:  time.Duration(config.DataDuration),
-	}, nil
-}
-
-func (v *SleeperMatchupsView) Init() {
-	v.BaseView.Init()
-	// init ticker and stop chan
-	v.dataRefresh = util.RefresherCreate(v.dataDuration*time.Second, v.RefreshData)
-	v.phaseRefresh = util.RefresherCreate(v.phaseDuration*time.Second, v.RefreshPhase)
+	// Init ticker and stop chan
+	v.dataRefresh = util.RefresherCreate(v.DataDuration, v.RefreshData)
+	v.phaseRefresh = util.RefresherCreate(v.PhaseDuration, v.RefreshPhase)
 	v.RefreshData()
 	v.dataRefresh.Start()
 	v.phaseRefresh.Start()
+
+	return nil
 }
 
 func (v *SleeperMatchupsView) RefreshData() {
-	v.matchups = v.SleeperClient.GetMatchupsFormatted(v.League, strconv.Itoa(v.Week))
-	v.league = v.SleeperClient.GetLeagueFormatted(v.League)
-
+	v.matchups = v.SleeperClient.GetMatchupsFormatted(v.LeagueID, strconv.Itoa(v.Week))
+	v.league = v.SleeperClient.GetLeagueFormatted(v.LeagueID)
 }
 
 func (v *SleeperMatchupsView) RefreshPhase() {
@@ -253,8 +233,5 @@ func (v *SleeperMatchupsView) TemplateString() string {
 }
 
 func init() {
-	c.RegisterView("sleeper-matchups", c.RegisteredView{
-		NewConfig: func() c.ViewConfig { return &SleeperMatchupsViewConfig{} },
-		NewView:   SleeperMatchupsViewCreate,
-	})
+	c.RegisterView("sleeper-matchups", func() c.View { return &SleeperMatchupsView{} })
 }

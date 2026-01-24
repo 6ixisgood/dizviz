@@ -1,38 +1,13 @@
 package types
 
 import (
-	"errors"
-	"fmt"
-
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 )
 
 type ImagePlayerView struct {
 	c.BaseView
 
-	Src string
-}
-
-type ImagePlayerViewConfig struct {
-	Src string `json:"src" spec:"required='true',label='Src (URL/Filepath)'"`
-}
-
-func ImagePlayerViewCreate(viewConfig c.ViewConfig) (c.View, error) {
-	config, ok := viewConfig.(*ImagePlayerViewConfig)
-	if !ok {
-		fmt.Println("----------")
-		fmt.Println(config)
-		fmt.Println("----------")
-		return nil, errors.New("Error asserting type ImagePlayerViewConfig")
-	}
-
-	if err := c.ValidateViewConfig(config); err != nil {
-		return nil, err
-	}
-
-	return &ImagePlayerView{
-		Src: config.Src,
-	}, nil
+	Src string `json:"src" spec:"required='true',min='1',label='Image Source (URL/Filepath)'"`
 }
 
 func (v *ImagePlayerView) TemplateData() map[string]interface{} {
@@ -50,8 +25,5 @@ func (v *ImagePlayerView) TemplateString() string {
 }
 
 func init() {
-	c.RegisterView("image", c.RegisteredView{
-		NewConfig: func() c.ViewConfig { return &ImagePlayerViewConfig{} },
-		NewView:   ImagePlayerViewCreate,
-	})
+	c.RegisterView("image", func() c.View { return &ImagePlayerView{} })
 }

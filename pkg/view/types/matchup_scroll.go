@@ -1,49 +1,30 @@
 package types
 
 import (
-	"errors"
 	"fmt"
-	"github.com/6ixisgood/matrix-ticker/pkg/util"
+	"time"
+
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	"github.com/6ixisgood/matrix-ticker/pkg/view/model"
-	"time"
 )
 
 type MatchupsScrollView struct {
 	c.BaseView
 
-	Date     time.Time
-	Matchups []model.Matchup
-	Layout   string
-	League   string
-}
-
-type MatchupsScrollViewConfig struct {
 	Layout string    `json:"layout" spec:"label='Layout'"`
-	Date   util.Date `json:"date" spec:"required='true',label='Date'"`
+	Date   time.Time `json:"date" spec:"required='true',label='Date'"`
 	League string    `json:"league" spec:"required='true',label='League'"`
+
+	Matchups []model.Matchup
 }
 
-func MatchupsScrollViewCreate(viewConfig c.ViewConfig) (c.View, error) {
-	config, ok := viewConfig.(*MatchupsScrollViewConfig)
-	if !ok {
-		return nil, errors.New("Error asserting type MatchupsScrollViewConfig")
+func (v *MatchupsScrollView) Init(configJSON string, ctx c.ViewContext) error {
+	if err := c.InitViewFromJSON(v, configJSON, ctx); err != nil {
+		return err
 	}
 
-	if err := c.ValidateViewConfig(config); err != nil {
-		return nil, err
-	}
-
-	return &MatchupsScrollView{
-		Date:   config.Date.Time,
-		Layout: config.Layout,
-		League: config.League,
-	}, nil
-}
-
-func (v *MatchupsScrollView) Init() {
-	v.BaseView.Init()
 	v.Refresh()
+	return nil
 }
 
 func (v *MatchupsScrollView) Refresh() {
@@ -98,8 +79,5 @@ func (v *MatchupsScrollView) TemplateString() string {
 }
 
 func init() {
-	c.RegisterView("matchups-scroll", c.RegisteredView{
-		NewConfig: func() c.ViewConfig { return &MatchupsScrollViewConfig{} },
-		NewView:   MatchupsScrollViewCreate,
-	})
+	c.RegisterView("matchups-scroll", func() c.View { return &MatchupsScrollView{} })
 }

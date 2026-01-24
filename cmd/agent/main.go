@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"log"
 	"os"
@@ -140,41 +139,38 @@ func main() {
 	}
 
 	// Set initial view (welcome message) BEFORE starting the agent
-	welcomeConfig := []byte(`{
+	welcomeConfig := `{
 		"text": "DizViz Agent Ready",
 		"alignment": "center",
 		"justify": "center",
 		"color": "#00FF00FF",
-		"bg-color": "#002288FF"
-	}`)
+		"bg_color": "#002288FF"
+	}`
 
-	regView := viewCommon.RegisteredViews["text"]
-	configInstance := regView.NewConfig()
-	if err := json.Unmarshal(welcomeConfig, &configInstance); err != nil {
-		log.Fatalf("Failed to unmarshal welcome view config: %v", err)
+	// Create welcome view with new API
+	factory := viewCommon.RegisteredViews["text"]
+	welcomeView := factory()
+
+	// Build context for welcome view
+	displayCtx := viewCommon.ViewContext{
+		"MatrixRows":        matrixRows,
+		"MatrixCols":        matrixCols,
+		"DefaultImageSizeX": matrixCols,
+		"DefaultImageSizeY": matrixRows,
+		"DefaultFontSize":   Config.Runtime.Defaults.FontSize,
+		"DefaultFontColor":  Config.Runtime.Defaults.FontColor,
+		"DefaultFontStyle":  Config.Runtime.Defaults.FontStyle,
+		"DefaultFontType":   Config.Runtime.Defaults.FontType,
+		"ImageDir":          agentCtx.ImageDir,
+		"CacheDir":          agentCtx.CacheDir,
+		"FontsDir":          agentCtx.FontsDir,
+		"DataSources":       agentCtx.DataSources,
 	}
 
-	welcomeView, err := regView.NewView(configInstance)
-	if err != nil {
-		log.Fatalf("Failed to create welcome view: %v", err)
+	// Initialize the welcome view
+	if err := welcomeView.Init(welcomeConfig, displayCtx); err != nil {
+		log.Fatalf("Failed to initialize welcome view: %v", err)
 	}
-
-	// Inject context into welcome view using defaults from config
-	displayCtx := &viewCommon.DisplayContext{
-		MatrixRows:        matrixRows,
-		MatrixCols:        matrixCols,
-		DefaultImageSizeX: matrixCols,
-		DefaultImageSizeY: matrixRows,
-		DefaultFontSize:   Config.Runtime.Defaults.FontSize,
-		DefaultFontColor:  Config.Runtime.Defaults.FontColor,
-		DefaultFontStyle:  Config.Runtime.Defaults.FontStyle,
-		DefaultFontType:   Config.Runtime.Defaults.FontType,
-	}
-	welcomeViewCtx := &viewCommon.ViewContext{
-		Agent:   agentCtx,
-		Display: displayCtx,
-	}
-	welcomeView.SetContext(welcomeViewCtx)
 
 	if err := ag.SetInitialView(displayConfig.ID, welcomeView); err != nil {
 		log.Fatalf("Failed to set initial view: %v", err)

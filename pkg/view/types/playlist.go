@@ -139,52 +139,45 @@ func (v *PlaylistView) TemplateData() map[string]interface{} {
 }
 
 func (v *PlaylistView) NextView() {
-	select {
-	case <-v.ctx.Done():
-		return
-	default:
-		prevIndex := v.activeIndex
-		nextIndex := (v.activeIndex + 1) % len(v.views)
+	// BROKEN: This entire function is non-functional with new architecture
+	// The playlist view needs a complete redesign
+	// See comments at top of PlaylistViewCreate for details
 
-		// Propagate context to child view before Init
-		childView := v.views[nextIndex]
-		if ctx := v.GetContext(); ctx != nil {
-			childView.SetContext(ctx)
-		}
-		childView.Init()
+	// select {
+	// case <-v.ctx.Done():
+	// 	return
+	// default:
+	// 	prevIndex := v.activeIndex
+	// 	nextIndex := (v.activeIndex + 1) % len(v.views)
 
-		// set next view as active
-		v.SetTemplate(childView.Template())
-		v.activeIndex = nextIndex
+	// 	childView := v.views[nextIndex]
+	// 	childView.Init("", nil) // Would need proper context and config
 
-		c.TemplateRefresh(v)
-		// stop active view
-		if prevIndex >= 0 {
-			v.views[prevIndex].Stop()
-		}
+	// 	v.SetTemplate(childView.Template())
+	// 	v.activeIndex = nextIndex
 
-		// wait for next view
-		go func() {
-			time.Sleep(v.timings[v.activeIndex] * time.Second)
-			v.NextView()
-		}()
-	}
+	// 	c.TemplateRefresh(v)
+	// 	if prevIndex >= 0 {
+	// 		v.views[prevIndex].Stop()
+	// 	}
+
+	// 	go func() {
+	// 		time.Sleep(v.timings[v.activeIndex] * time.Second)
+	// 		v.NextView()
+	// 	}()
+	// }
 }
 
 func (v *PlaylistView) Stop() {
 	v.cancel()
 }
 
-func (v *PlaylistView) Init() {
-	v.BaseView.Init()
-	v.ctx, v.cancel = context.WithCancel(context.Background())
-
-	v.NextView()
+func (v *PlaylistView) Init(configJSON string, ctx c.ViewContext) error {
+	// BROKEN: This view type is non-functional and needs complete redesign
+	// See comments at top of PlaylistViewCreate for details
+	return errors.New("playlist view is currently broken and needs redesign - see comments in playlist.go")
 }
 
 func init() {
-	c.RegisterView("playlist", c.RegisteredView{
-		NewConfig: PlaylistViewConfigCreate,
-		NewView:   PlaylistViewCreate,
-	})
+	c.RegisterView("playlist", func() c.View { return &PlaylistView{} })
 }

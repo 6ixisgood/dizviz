@@ -2,9 +2,9 @@ package agent
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
+	"reflect"
 	"sync"
 	"time"
 
@@ -494,8 +494,8 @@ func (a *Agent) handleAssignView(cmd *pb.AssignViewCommand) {
 		return
 	}
 
-	// Get the registered view type factory
-	regView, exists := viewCommon.RegisteredViews[cmd.ViewType]
+	// Get the registered view factory
+	factory, exists := viewCommon.RegisteredViews[cmd.ViewType]
 	if !exists {
 		log.Printf("[Agent:%s] View type not registered: %s", a.name, cmd.ViewType)
 		a.sendCommandResponse(false,
@@ -504,52 +504,27 @@ func (a *Agent) handleAssignView(cmd *pb.AssignViewCommand) {
 		return
 	}
 
-	// Use config from command (control plane already resolved the view definition)
+	// Create empty view instance
+	newView := factory()
+
+	// Build context map by introspecting view's context requirements
+	viewCtx := a.buildViewContext(newView, displayID)
+
+	// Get config JSON from command
 	configJSON := cmd.ViewConfigJson
 	if configJSON == "" || configJSON == "{}" {
 		log.Printf("[Agent:%s] Warning: empty config provided for view type %s", a.name, cmd.ViewType)
 		configJSON = "{}" // Ensure we have valid JSON
 	}
 
-	// Create a typed config instance and unmarshal JSON into it
-	configInstance := regView.NewConfig()
-	if err := json.Unmarshal([]byte(configJSON), &configInstance); err != nil {
-		log.Printf("[Agent:%s] Failed to unmarshal view config: %v", a.name, err)
+	// Initialize view (injects context, unmarshals config, validates)
+	if err := newView.Init(configJSON, viewCtx); err != nil {
+		log.Printf("[Agent:%s] Failed to initialize view: %v", a.name, err)
 		a.sendCommandResponse(false,
-			fmt.Sprintf("failed to unmarshal view config: %v", err),
+			fmt.Sprintf("failed to initialize view: %v", err),
 			"AssignView")
 		return
 	}
-
-	// Create view instance from typed config
-	newView, err := regView.NewView(configInstance)
-	if err != nil {
-		log.Printf("[Agent:%s] Failed to create view: %v", a.name, err)
-		a.sendCommandResponse(false,
-			fmt.Sprintf("failed to create view: %v", err),
-			"AssignView")
-		return
-	}
-
-	// Inject context before initializing
-	a.mu.RLock()
-	agentCtx := a.agentContext
-	displayCtx := a.displayContexts[displayID]
-	a.mu.RUnlock()
-
-	if agentCtx == nil || displayCtx == nil {
-		log.Printf("[Agent:%s] Context not set for display %s", a.name, displayID)
-		a.sendCommandResponse(false,
-			fmt.Sprintf("context not set for display %s", displayID),
-			"AssignView")
-		return
-	}
-
-	viewCtx := &viewCommon.ViewContext{
-		Agent:   agentCtx,
-		Display: displayCtx,
-	}
-	newView.SetContext(viewCtx)
 
 	// Change to the new view on the specified display
 	if err := a.ChangeView(displayID, newView); err != nil {
@@ -645,6 +620,97 @@ func (a *Agent) setHealth(health, errorMsg string) {
 	defer a.mu.Unlock()
 	a.health = health
 	a.errorMsg = errorMsg
+}
+
+// buildViewContext builds a ViewContext map by introspecting BaseView's context tags
+func (a *Agent) buildViewContext(view viewCommon.View, displayID string) viewCommon.ViewContext {
+	ctx := make(viewCommon.ViewContext)
+
+	// Get BaseView type
+	viewValue := reflect.ValueOf(view)
+	if viewValue.Kind() == reflect.Ptr {
+		viewValue = viewValue.Elem()
+	}
+
+	baseViewField := viewValue.FieldByName("BaseView")
+	if !baseViewField.IsValid() {
+		return ctx
+	}
+
+	baseViewType := baseViewField.Type()
+
+	a.mu.RLock()
+	displayCtx := a.displayContexts[displayID]
+	agentCtx := a.agentContext
+	a.mu.RUnlock()
+
+	// Helper to convert snake_case to PascalCase
+	snakeToPascal := func(s string) string {
+		parts := []string{}
+		for _, part := range []rune(s) {
+			if part == '_' {
+				continue
+			}
+			if len(parts) == 0 || s[len(parts)] == '_' {
+				parts = append(parts, string(part-32)) // Uppercase
+			} else {
+				parts = append(parts, string(part))
+			}
+		}
+		result := ""
+		inWord := false
+		for i, ch := range s {
+			if ch == '_' {
+				inWord = true
+				continue
+			}
+			if i == 0 || inWord {
+				result += string(ch - 32) // Make uppercase
+				inWord = false
+			} else {
+				result += string(ch)
+			}
+		}
+		return result
+	}
+
+	// Iterate through BaseView fields and populate from config using reflection
+	for i := 0; i < baseViewType.NumField(); i++ {
+		field := baseViewType.Field(i)
+		contextKey := field.Tag.Get("context")
+
+		if contextKey == "" {
+			continue
+		}
+
+		// Try to find the field in DisplayContext or AgentContext using the PascalCase version
+		pascalKey := snakeToPascal(contextKey)
+
+		var value interface{}
+
+		// Try DisplayContext first
+		if displayCtx != nil {
+			displayVal := reflect.ValueOf(*displayCtx)
+			if fieldVal := displayVal.FieldByName(pascalKey); fieldVal.IsValid() {
+				value = fieldVal.Interface()
+			}
+		}
+
+		// If not found, try AgentContext
+		if value == nil && agentCtx != nil {
+			agentVal := reflect.ValueOf(*agentCtx)
+			if fieldVal := agentVal.FieldByName(pascalKey); fieldVal.IsValid() {
+				value = fieldVal.Interface()
+			}
+		}
+
+		// Store using BaseView field name as key
+		if value != nil {
+			ctx[field.Name] = value
+		}
+	}
+
+	return ctx
 }
 
 // Status represents the current status of an agent

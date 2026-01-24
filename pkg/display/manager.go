@@ -53,8 +53,7 @@ func (m *Manager) Start(view common.View, displayConfig interface{}) error {
 		return fmt.Errorf("failed to start display: %w", err)
 	}
 
-	// Initialize the view
-	view.Init()
+	// view.Init()
 	common.TemplateRefresh(view)
 
 	// Stop the old view if it exists
@@ -103,8 +102,8 @@ func (m *Manager) ChangeView(view common.View) error {
 
 	log.Printf("Changing view")
 
-	// Initialize the new view
-	view.Init()
+	// Note: View is already initialized by the agent before being passed here
+	// Refresh the template to ensure it's up to date
 	common.TemplateRefresh(view)
 
 	// Stop the old view
@@ -156,7 +155,7 @@ func (m *Manager) composeFrame() image.Image {
 	}
 
 	// Render the view template
-	source := m.view.Template().Render()
+	source := m.view.RenderTemplate()
 	if source == nil {
 		return nil
 	}

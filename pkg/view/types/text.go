@@ -1,54 +1,33 @@
 package types
 
 import (
-	"errors"
-
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 )
 
 type TextView struct {
 	c.BaseView
 
-	Text      string
-	Alignment string
-	Justify   string
-	Color     string
-	BgColor   string
-}
-
-type TextViewConfig struct {
 	Text      string `json:"text" spec:"required='true',min='1',label='Text'"`
-	Alignment string `json:"alignment" spec:"required='false',label='Alignment'"`
-	Justify   string `json:"justify" spec:"required='false',label='Justify'"`
-	Color     string `json:"color" spec:"required='false',label='Color'"`
-	BgColor   string `json:"bg-color" spec:"required='false',label='Background Color'"`
+	Alignment string `json:"alignment" spec:"label='Alignment'"`
+	Justify   string `json:"justify" spec:"label='Justify'"`
+	Color     string `json:"color" spec:"label='Color'"`
+	BgColor   string `json:"bg_color" spec:"label='Background Color'"`
 }
 
-func TextViewCreate(viewConfig c.ViewConfig) (c.View, error) {
-	config, ok := viewConfig.(*TextViewConfig)
-	if !ok {
-		return nil, errors.New("Error asserting type TextViewConfig")
+func (v *TextView) Init(configJSON string, ctx c.ViewContext) error {
+	if err := c.InitViewFromJSON(v, configJSON, ctx); err != nil {
+		return err
 	}
 
-	if err := c.ValidateViewConfig(config); err != nil {
-		return nil, err
+	// Set defaults
+	if v.Color == "" {
+		v.Color = "#FFFFFFFF"
+	}
+	if v.BgColor == "" {
+		v.BgColor = "#00000FF"
 	}
 
-	if config.Color == "" {
-		config.Color = "#FFFFFFFF"
-	}
-
-	if config.BgColor == "" {
-		config.BgColor = "#00000FF"
-	}
-
-	return &TextView{
-		Text:      config.Text,
-		Justify:   config.Justify,
-		Alignment: config.Alignment,
-		Color:     config.Color,
-		BgColor:   config.BgColor,
-	}, nil
+	return nil
 }
 
 func (v *TextView) TemplateData() map[string]interface{} {
@@ -70,8 +49,5 @@ func (v *TextView) TemplateString() string {
 }
 
 func init() {
-	c.RegisterView("text", c.RegisteredView{
-		NewConfig: func() c.ViewConfig { return &TextViewConfig{} },
-		NewView:   TextViewCreate,
-	})
+	c.RegisterView("text", func() c.View { return &TextView{} })
 }
