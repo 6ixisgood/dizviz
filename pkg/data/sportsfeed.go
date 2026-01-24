@@ -45,6 +45,23 @@ func InitSportsFeedClient(config SportsFeedConfig) {
 
 }
 
+// NewSportsFeedClient creates a new SportsFeed client instance (non-singleton)
+func NewSportsFeedClient(baseURL, username, password string) *SportsFeed {
+	clientOptions := APIClientOptions{
+		BaseURL: baseURL,
+		BasicAuth: &BasicAuthCredentials{
+			Username: username,
+			Password: password,
+		},
+	}
+
+	client := NewAPIClient(clientOptions)
+
+	return &SportsFeed{
+		Client: client,
+	}
+}
+
 // sportsfeedDateFormat take in a time.Time and return the proper seasona and date format for sportsfeed
 func sportsfeedDateFormat(date time.Time) (string, string) {
 	// come up with date id for sportsfeed

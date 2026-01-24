@@ -40,6 +40,19 @@ func InitSleeperClient(config SleeperConfig) {
 
 }
 
+// NewSleeperClient creates a new Sleeper client instance (non-singleton)
+func NewSleeperClient(baseURL string) *Sleeper {
+	clientOptions := APIClientOptions{
+		BaseURL: baseURL,
+	}
+
+	client := NewAPIClient(clientOptions)
+
+	return &Sleeper{
+		Client: client,
+	}
+}
+
 // cache
 var sleperPlayers map[string]SleeperPlayer
 
@@ -156,7 +169,7 @@ type SleeperLeague struct {
 	PreviousLeagueID      string                       `json:"previous_league_id"`
 	Name                  string                       `json:"name"`
 	Metadata              SleeperLeagueMetadata        `json:"metadata"`
-	LoserBracketID        int64                          `json:"loser_bracket_id"`
+	LoserBracketID        int64                        `json:"loser_bracket_id"`
 	LeagueID              string                       `json:"league_id"`
 	LastReadID            string                       `json:"last_read_id"`
 	LastPinnedMessageID   string                       `json:"last_pinned_message_id"`
@@ -171,7 +184,7 @@ type SleeperLeague struct {
 	GroupID               string                       `json:"group_id"`
 	DraftID               string                       `json:"draft_id"`
 	CompanyID             string                       `json:"company_id"`
-	BracketID             int64                          `json:"bracket_id"`
+	BracketID             int64                        `json:"bracket_id"`
 	Avatar                interface{}                  `json:"avatar"`
 }
 
@@ -325,7 +338,7 @@ type SleeperLeagueFormatted struct {
 func (d *Sleeper) GetLeague(id string) SleeperLeague {
 	request := &APIRequest{
 		Method:   http.MethodGet,
-		Endpoint: fmt.Sprintf("/league/%s", id),
+		Endpoint: fmt.Sprintf("/v1/league/%s", id),
 	}
 
 	var responseData SleeperLeague
@@ -341,7 +354,7 @@ func (d *Sleeper) GetLeague(id string) SleeperLeague {
 func (d *Sleeper) GetUsers(league_id string) []SleeperLeagueUser {
 	request := &APIRequest{
 		Method:   http.MethodGet,
-		Endpoint: fmt.Sprintf("/league/%s/users", league_id),
+		Endpoint: fmt.Sprintf("/v1/league/%s/users", league_id),
 	}
 
 	var responseData []SleeperLeagueUser
@@ -357,7 +370,7 @@ func (d *Sleeper) GetUsers(league_id string) []SleeperLeagueUser {
 func (d *Sleeper) GetRosters(league_id string) []SleeperLeagueRoster {
 	request := &APIRequest{
 		Method:   http.MethodGet,
-		Endpoint: fmt.Sprintf("/league/%s/rosters", league_id),
+		Endpoint: fmt.Sprintf("/v1/league/%s/rosters", league_id),
 	}
 
 	var responseData []SleeperLeagueRoster
@@ -373,7 +386,7 @@ func (d *Sleeper) GetRosters(league_id string) []SleeperLeagueRoster {
 func (d *Sleeper) GetMatchups(league_id string, week string) []SleeperLeagueMatchup {
 	request := &APIRequest{
 		Method:   http.MethodGet,
-		Endpoint: fmt.Sprintf("/league/%s/matchups/%s", league_id, week),
+		Endpoint: fmt.Sprintf("/v1/league/%s/matchups/%s", league_id, week),
 	}
 
 	var responseData []SleeperLeagueMatchup

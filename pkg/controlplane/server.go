@@ -14,6 +14,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// DataSourceConfig holds configuration for external data sources
+type DataSourceConfig struct {
+	Sleeper struct {
+		BaseUrl string
+	}
+	SportsFeed struct {
+		BaseUrl  string
+		Username string
+		Password string
+	}
+	Weather struct {
+		BaseUrl string
+		Key     string
+	}
+}
+
 // Server is the control plane gRPC server
 type Server struct {
 	pb.UnimplementedAgentServiceServer
@@ -21,6 +37,7 @@ type Server struct {
 	addr           string
 	registry       *AgentRegistry
 	storeService   *StoreService
+	dataSourceCfg  *DataSourceConfig
 	grpcSrv        *grpc.Server
 	commandStreams map[string]pb.AgentService_StreamCommandsServer // agentID -> stream
 	mu             sync.RWMutex
@@ -28,11 +45,12 @@ type Server struct {
 }
 
 // NewServer creates a new control plane server
-func NewServer(addr string, storeService *StoreService) *Server {
+func NewServer(addr string, storeService *StoreService, dataSourceCfg *DataSourceConfig) *Server {
 	return &Server{
 		addr:           addr,
 		registry:       NewAgentRegistry(),
 		storeService:   storeService,
+		dataSourceCfg:  dataSourceCfg,
 		commandStreams: make(map[string]pb.AgentService_StreamCommandsServer),
 	}
 }
@@ -113,11 +131,61 @@ func (s *Server) RegisterAgent(ctx context.Context, req *pb.RegisterRequest) (*p
 
 	log.Printf("[ControlPlane] Agent registered: %s (ID: %s)", req.AgentName, agentID)
 
+	// Build runtime config from data source configuration
+	runtimeConfig := s.buildRuntimeConfig()
+
 	return &pb.RegisterResponse{
-		AgentId: agentID,
-		Success: true,
-		Message: "registration successful",
+		AgentId:       agentID,
+		Success:       true,
+		Message:       "registration successful",
+		RuntimeConfig: runtimeConfig,
 	}, nil
+}
+
+// buildRuntimeConfig creates AgentRuntimeConfig from the control plane's data source configuration
+func (s *Server) buildRuntimeConfig() *pb.AgentRuntimeConfig {
+	if s.dataSourceCfg == nil {
+		return nil
+	}
+
+	dataSources := make(map[string]*pb.DataSourceConfig)
+
+	// Sleeper configuration
+	if s.dataSourceCfg.Sleeper.BaseUrl != "" {
+		dataSources["sleeper"] = &pb.DataSourceConfig{
+			Type: "sleeper",
+			Config: map[string]string{
+				"base_url": s.dataSourceCfg.Sleeper.BaseUrl,
+			},
+		}
+	}
+
+	// SportsFeed configuration
+	if s.dataSourceCfg.SportsFeed.BaseUrl != "" {
+		dataSources["sportsfeed"] = &pb.DataSourceConfig{
+			Type: "sportsfeed",
+			Config: map[string]string{
+				"base_url": s.dataSourceCfg.SportsFeed.BaseUrl,
+				"username": s.dataSourceCfg.SportsFeed.Username,
+				"password": s.dataSourceCfg.SportsFeed.Password,
+			},
+		}
+	}
+
+	// Weather configuration
+	if s.dataSourceCfg.Weather.BaseUrl != "" {
+		dataSources["weather"] = &pb.DataSourceConfig{
+			Type: "weather",
+			Config: map[string]string{
+				"base_url": s.dataSourceCfg.Weather.BaseUrl,
+				"key":      s.dataSourceCfg.Weather.Key,
+			},
+		}
+	}
+
+	return &pb.AgentRuntimeConfig{
+		DataSources: dataSources,
+	}
 }
 
 // StreamCommands establishes a bidirectional stream for commands and status

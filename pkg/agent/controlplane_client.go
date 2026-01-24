@@ -83,15 +83,15 @@ func (c *ControlPlaneClient) Disconnect() {
 	}
 }
 
-// Register registers the agent with the control plane
-func (c *ControlPlaneClient) Register(ctx context.Context, name string, caps Capabilities, version string) (string, error) {
+// Register registers the agent with the control plane and returns agent ID and runtime config
+func (c *ControlPlaneClient) Register(ctx context.Context, name string, caps Capabilities, version string) (string, map[string]interface{}, error) {
 	c.mu.RLock()
 	connected := c.connected
 	client := c.client
 	c.mu.RUnlock()
 
 	if !connected {
-		return "", fmt.Errorf("not connected to control plane")
+		return "", nil, fmt.Errorf("not connected to control plane")
 	}
 
 	log.Printf("[ControlPlaneClient] Registering agent: %s", name)
@@ -120,15 +120,30 @@ func (c *ControlPlaneClient) Register(ctx context.Context, name string, caps Cap
 
 	resp, err := client.RegisterAgent(ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("registration failed: %w", err)
+		return "", nil, fmt.Errorf("registration failed: %w", err)
 	}
 
 	if !resp.Success {
-		return "", fmt.Errorf("registration rejected: %s", resp.Message)
+		return "", nil, fmt.Errorf("registration rejected: %s", resp.Message)
 	}
 
 	log.Printf("[ControlPlaneClient] Registration successful, ID: %s", resp.AgentId)
-	return resp.AgentId, nil
+
+	// Convert runtime config from protobuf to map
+	dataSources := make(map[string]interface{})
+	if resp.RuntimeConfig != nil && resp.RuntimeConfig.DataSources != nil {
+		for name, cfg := range resp.RuntimeConfig.DataSources {
+			// Convert protobuf DataSourceConfig to map[string]interface{}
+			configMap := make(map[string]interface{})
+			for k, v := range cfg.Config {
+				configMap[k] = v
+			}
+			dataSources[name] = configMap
+			log.Printf("[ControlPlaneClient] Received data source config: %s", name)
+		}
+	}
+
+	return resp.AgentId, dataSources, nil
 }
 
 // SendHeartbeat sends a heartbeat to the control plane

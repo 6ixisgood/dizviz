@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/6ixisgood/matrix-ticker/pkg/data"
 	"github.com/6ixisgood/matrix-ticker/pkg/display"
 	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
 	pb "github.com/6ixisgood/matrix-ticker/proto"
@@ -53,17 +54,22 @@ type Agent struct {
 	// Status tracking
 	health   string
 	errorMsg string
+
+	// Data source client cache
+	dataSourceClients map[string]interface{}
+	dataSourceMu      sync.RWMutex
 }
 
 // New creates a new agent instance
 func New(config Config, capabilities Capabilities) *Agent {
 	return &Agent{
-		name:            config.AgentName,
-		config:          config,
-		capabilities:    capabilities,
-		displays:        make(map[string]*DisplayInfo),
-		displayContexts: make(map[string]*viewCommon.DisplayContext),
-		health:          "initializing",
+		name:              config.AgentName,
+		config:            config,
+		capabilities:      capabilities,
+		displays:          make(map[string]*DisplayInfo),
+		displayContexts:   make(map[string]*viewCommon.DisplayContext),
+		dataSourceClients: make(map[string]interface{}),
+		health:            "initializing",
 	}
 }
 
@@ -337,13 +343,23 @@ func (a *Agent) connectToControlPlane() error {
 	a.controlPlaneClient = client
 
 	// Register with control plane
-	agentID, err := client.Register(a.ctx, a.name, a.capabilities, a.config.Version)
+	agentID, runtimeDataSources, err := client.Register(a.ctx, a.name, a.capabilities, a.config.Version)
 	if err != nil {
 		return fmt.Errorf("failed to register: %w", err)
 	}
 
 	a.mu.Lock()
 	a.id = agentID
+
+	// Merge runtime config from control plane with local config
+	// Control plane config takes precedence over local config
+	if runtimeDataSources != nil && len(runtimeDataSources) > 0 {
+		log.Printf("[Agent:%s] Applying runtime configuration from control plane", a.name)
+		for name, config := range runtimeDataSources {
+			a.agentContext.DataSources[name] = config
+			log.Printf("[Agent:%s] Updated data source: %s", a.name, name)
+		}
+	}
 	a.mu.Unlock()
 
 	log.Printf("[Agent:%s] Registered with control plane, assigned ID: %s", a.name, agentID)
@@ -550,12 +566,13 @@ func (a *Agent) handleUpdateConfig(cmd *pb.UpdateConfigCommand) {
 	success := true
 	message := "Configuration updated"
 
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
 	// Update FPS if provided
 	if cmd.Fps != nil {
 		newFPS := int(*cmd.Fps)
-		a.mu.Lock()
 		a.config.FPS = newFPS
-		a.mu.Unlock()
 		log.Printf("[Agent:%s] Updated FPS to %d", a.name, newFPS)
 		// Note: FPS is applied per display manager when started
 	}
@@ -563,11 +580,32 @@ func (a *Agent) handleUpdateConfig(cmd *pb.UpdateConfigCommand) {
 	// Update buffer size if provided
 	if cmd.BufferSize != nil {
 		newBufferSize := int(*cmd.BufferSize)
-		a.mu.Lock()
 		a.config.BufferSize = newBufferSize
-		a.mu.Unlock()
 		log.Printf("[Agent:%s] Updated buffer size to %d", a.name, newBufferSize)
 		// Note: Buffer size is applied per display manager when started
+	}
+
+	// Update runtime config (data sources) if provided
+	if cmd.RuntimeConfig != nil && cmd.RuntimeConfig.DataSources != nil {
+		log.Printf("[Agent:%s] Applying runtime configuration update from control plane", a.name)
+		for name, cfg := range cmd.RuntimeConfig.DataSources {
+			// Convert protobuf DataSourceConfig to map[string]interface{}
+			configMap := make(map[string]interface{})
+			for k, v := range cfg.Config {
+				configMap[k] = v
+			}
+			a.agentContext.DataSources[name] = configMap
+
+			// Invalidate cached client so next view gets fresh one
+			a.dataSourceMu.Lock()
+			if _, exists := a.dataSourceClients[name]; exists {
+				delete(a.dataSourceClients, name)
+				log.Printf("[Agent:%s] Invalidated cached client for data source: %s", a.name, name)
+			}
+			a.dataSourceMu.Unlock()
+
+			log.Printf("[Agent:%s] Updated data source: %s", a.name, name)
+		}
 	}
 
 	if err := a.controlPlaneClient.SendCommandResponse(a.ctx, success, message, "UpdateConfig"); err != nil {
@@ -623,15 +661,31 @@ func (a *Agent) setHealth(health, errorMsg string) {
 }
 
 // buildViewContext builds a ViewContext map by introspecting BaseView's context tags
+// and injects data source clients based on datasource tags
 func (a *Agent) buildViewContext(view viewCommon.View, displayID string) viewCommon.ViewContext {
 	ctx := make(viewCommon.ViewContext)
 
-	// Get BaseView type
+	// Get view value for datasource injection
 	viewValue := reflect.ValueOf(view)
 	if viewValue.Kind() == reflect.Ptr {
 		viewValue = viewValue.Elem()
 	}
 
+	// First, handle datasource tag injection into view fields
+	viewType := viewValue.Type()
+	for i := 0; i < viewType.NumField(); i++ {
+		field := viewType.Field(i)
+		dsName := field.Tag.Get("datasource")
+
+		if dsName != "" {
+			// Inject data source client directly into view field
+			if err := a.injectDataSource(viewValue, field, dsName); err != nil {
+				log.Printf("[Agent:%s] Failed to inject datasource %s: %v", a.name, dsName, err)
+			}
+		}
+	}
+
+	// Get BaseView field for context tag processing
 	baseViewField := viewValue.FieldByName("BaseView")
 	if !baseViewField.IsValid() {
 		return ctx
@@ -711,6 +765,130 @@ func (a *Agent) buildViewContext(view viewCommon.View, displayID string) viewCom
 	}
 
 	return ctx
+}
+
+// injectDataSource initializes and injects a data source client into a view field
+func (a *Agent) injectDataSource(viewValue reflect.Value, field reflect.StructField, dsName string) error {
+	a.mu.RLock()
+	dsConfig, exists := a.agentContext.DataSources[dsName]
+	a.mu.RUnlock()
+
+	if !exists {
+		return fmt.Errorf("data source %s not configured", dsName)
+	}
+
+	// Get or create the client
+	client, err := a.getOrCreateDataSourceClient(dsName, dsConfig)
+	if err != nil {
+		return err
+	}
+
+	// Inject into view field
+	fieldValue := viewValue.FieldByName(field.Name)
+	if !fieldValue.IsValid() || !fieldValue.CanSet() {
+		return fmt.Errorf("cannot set field %s", field.Name)
+	}
+
+	clientValue := reflect.ValueOf(client)
+	if !clientValue.Type().AssignableTo(fieldValue.Type()) {
+		return fmt.Errorf("client type mismatch for %s: expected %v, got %v",
+			field.Name, fieldValue.Type(), clientValue.Type())
+	}
+
+	fieldValue.Set(clientValue)
+	return nil
+}
+
+// getOrCreateDataSourceClient returns a cached client or creates a new one
+func (a *Agent) getOrCreateDataSourceClient(dsName string, config interface{}) (interface{}, error) {
+	// Check cache first
+	a.dataSourceMu.RLock()
+	if client, exists := a.dataSourceClients[dsName]; exists {
+		a.dataSourceMu.RUnlock()
+		return client, nil
+	}
+	a.dataSourceMu.RUnlock()
+
+	// Create new client
+	a.dataSourceMu.Lock()
+	defer a.dataSourceMu.Unlock()
+
+	// Double-check (another goroutine might have created it)
+	if client, exists := a.dataSourceClients[dsName]; exists {
+		return client, nil
+	}
+
+	// Factory pattern based on datasource type
+	client, err := a.createDataSourceClient(dsName, config)
+	if err != nil {
+		return nil, err
+	}
+
+	a.dataSourceClients[dsName] = client
+	log.Printf("[Agent:%s] Initialized data source client: %s", a.name, dsName)
+
+	return client, nil
+}
+
+// createDataSourceClient creates a new data source client based on type and config
+func (a *Agent) createDataSourceClient(dsName string, config interface{}) (interface{}, error) {
+	configMap, ok := config.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid config format for %s", dsName)
+	}
+
+	switch dsName {
+	case "sportsfeed":
+		return a.createSportsFeedClient(configMap)
+	case "weather":
+		return a.createWeatherClient(configMap)
+	case "sleeper":
+		return a.createSleeperClient(configMap)
+	default:
+		return nil, fmt.Errorf("unknown datasource type: %s", dsName)
+	}
+}
+
+// createSportsFeedClient creates a SportsFeed client from config
+func (a *Agent) createSportsFeedClient(config map[string]interface{}) (interface{}, error) {
+	baseURL, ok := config["base_url"].(string)
+	if !ok {
+		return nil, fmt.Errorf("sportsfeed: base_url is required")
+	}
+	username, ok := config["username"].(string)
+	if !ok {
+		return nil, fmt.Errorf("sportsfeed: username is required")
+	}
+	password, ok := config["password"].(string)
+	if !ok {
+		return nil, fmt.Errorf("sportsfeed: password is required")
+	}
+
+	return data.NewSportsFeedClient(baseURL, username, password), nil
+}
+
+// createWeatherClient creates a Weather client from config
+func (a *Agent) createWeatherClient(config map[string]interface{}) (interface{}, error) {
+	baseURL, ok := config["base_url"].(string)
+	if !ok {
+		baseURL = "https://api.weatherapi.com" // Default
+	}
+	key, ok := config["key"].(string)
+	if !ok {
+		return nil, fmt.Errorf("weather: key is required")
+	}
+
+	return data.NewWeatherClient(baseURL, key), nil
+}
+
+// createSleeperClient creates a Sleeper client from config
+func (a *Agent) createSleeperClient(config map[string]interface{}) (interface{}, error) {
+	baseURL, ok := config["base_url"].(string)
+	if !ok {
+		return nil, fmt.Errorf("sleeper: base_url is required")
+	}
+
+	return data.NewSleeperClient(baseURL), nil
 }
 
 // Status represents the current status of an agent

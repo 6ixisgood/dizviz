@@ -16,7 +16,7 @@ type NFLBoxView struct {
 	Date     time.Time     `json:"date" spec:"label='Date'"`
 	Duration time.Duration `json:"duration" spec:"label='Duration (seconds)'"`
 
-	SportsFeedClient *d.SportsFeed
+	SportsFeedClient *d.SportsFeed `datasource:"sportsfeed"`
 	Game             d.NFLBoxScoreResponseFormatted
 	Games            []d.NFLBoxScoreResponseFormatted
 	gameIndex        int
@@ -47,10 +47,6 @@ func (v *NFLBoxView) Init(configJSON string, ctx c.ViewContext) error {
 		dateToUse = v.Date
 	}
 	v.Date = dateToUse
-
-	// Initialize client
-	client := d.SportsFeedClient()
-	v.SportsFeedClient = client
 
 	// Initialize view logic
 	var f func()

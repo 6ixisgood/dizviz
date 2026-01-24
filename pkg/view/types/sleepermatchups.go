@@ -17,7 +17,7 @@ type SleeperMatchupsView struct {
 	PhaseDuration time.Duration `json:"phase_duration" spec:"label='Phase Duration (seconds)'"`
 	DataDuration  time.Duration `json:"data_duration" spec:"label='Data Duration (seconds)'"`
 
-	SleeperClient *d.Sleeper
+	SleeperClient *d.Sleeper `datasource:"sleeper"`
 	matchups      [][]d.SleeperTeamFormatted
 	matchIndex    int
 	Phase         int
@@ -39,9 +39,7 @@ func (v *SleeperMatchupsView) Init(configJSON string, ctx c.ViewContext) error {
 		v.DataDuration = 60 * time.Second
 	}
 
-	// Initialize client
-	client := d.SleeperClient()
-	v.SleeperClient = client
+	// start from phase 0
 	v.Phase = 0
 
 	// Init ticker and stop chan

@@ -53,8 +53,33 @@ func main() {
 
 	log.Println("[ControlPlane] System initialized")
 
-	// Create gRPC server with store service
-	server := controlplane.NewServer(grpcAddr, storeService)
+	// Build data source config from loaded config
+	dataSourceCfg := &controlplane.DataSourceConfig{
+		Sleeper: struct {
+			BaseUrl string
+		}{
+			BaseUrl: Config.Data.Sleeper.BaseUrl,
+		},
+		SportsFeed: struct {
+			BaseUrl  string
+			Username string
+			Password string
+		}{
+			BaseUrl:  Config.Data.SportsFeed.BaseUrl,
+			Username: Config.Data.SportsFeed.Username,
+			Password: Config.Data.SportsFeed.Password,
+		},
+		Weather: struct {
+			BaseUrl string
+			Key     string
+		}{
+			BaseUrl: Config.Data.Weather.BaseUrl,
+			Key:     Config.Data.Weather.Key,
+		},
+	}
+
+	// Create gRPC server with store service and data source config
+	server := controlplane.NewServer(grpcAddr, storeService, dataSourceCfg)
 
 	// Set up HTTP API with registry, server, and store service
 	api.SetRegistry(server.GetRegistry())

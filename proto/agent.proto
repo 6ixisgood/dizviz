@@ -26,11 +26,23 @@ message RegisterRequest {
   string version = 3;
 }
 
-// RegisterResponse contains assigned agent ID
+// RegisterResponse contains assigned agent ID and runtime config
 message RegisterResponse {
   string agent_id = 1;
   bool success = 2;
   string message = 3;
+  AgentRuntimeConfig runtime_config = 4;  // Configuration from control plane
+}
+
+// AgentRuntimeConfig contains centrally-managed agent configuration
+message AgentRuntimeConfig {
+  map<string, DataSourceConfig> data_sources = 1;
+}
+
+// DataSourceConfig contains configuration for a data source
+message DataSourceConfig {
+  string type = 1;  // "sleeper", "sportsfeed", "weather", etc.
+  map<string, string> config = 2;  // API keys, endpoints, etc.
 }
 
 // Capabilities describes what the agent can do
@@ -119,6 +131,7 @@ message AssignViewCommand {
 message UpdateConfigCommand {
   optional int32 fps = 1;
   optional int32 buffer_size = 2;
+  optional AgentRuntimeConfig runtime_config = 3;  // Update data sources, etc.
 }
 
 // StopCommand instructs agent to shut down

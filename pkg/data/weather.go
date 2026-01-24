@@ -12,6 +12,20 @@ type WeatherRequestConfig struct {
 	Key string
 }
 
+// Weather represents a weather API client
+type Weather struct {
+	Config *WeatherRequestConfig
+}
+
+// NewWeatherClient creates a new Weather client instance (non-singleton)
+func NewWeatherClient(baseURL, key string) *Weather {
+	return &Weather{
+		Config: &WeatherRequestConfig{
+			Key: key,
+		},
+	}
+}
+
 const (
 	weatherForecastURL = "https://api.weatherapi.com/v1/forecast.json?key=%v&q=%v&days=%v&aqi=no&alerts=no"
 )

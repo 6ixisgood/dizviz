@@ -163,12 +163,9 @@ func TemplateRefresh(v View) {
 		panic(err)
 	}
 
-	// convert to string
-	tmplStr := buf.String()
-
 	// unmarshall the string
 	t := compCommon.Template{}
-	err = xml.Unmarshal([]byte(tmplStr), &t)
+	err = xml.Unmarshal(buf.Bytes(), &t)
 	if err != nil {
 		log.Fatalf("Unable to unmarshal xml content: '%v'", err)
 	}
