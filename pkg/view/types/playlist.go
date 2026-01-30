@@ -2,7 +2,10 @@ package types
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"time"
 
 	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
@@ -11,171 +14,188 @@ import (
 type PlaylistView struct {
 	c.BaseView
 
+	// Config fields (same pattern as other views like ImagePlayerView)
+	Views            []PlaylistViewConfigView `json:"views" spec:"label='Views',min='1'"`
+	GlobalDuration   int                      `json:"global_duration,omitempty" spec:"label='Global Duration (seconds)',min='1',default='60'"`
+	TransitionEffect string                   `json:"transition_effect,omitempty" spec:"label='Transition Effect',default='none'"`
+
+	// Runtime fields (not part of config)
 	views       []c.View
 	activeIndex int
-	timings     []time.Duration
 	ctx         context.Context
 	cancel      context.CancelFunc
+	ticker      *time.Ticker
 }
 
 const (
-	DefaultPlayTime = 60
+	DefaultPlayTime = 60 // seconds
 )
 
+// PlaylistViewConfigView represents a single view in a playlist.
+// This struct supports two formats:
+// 1. UI format (for creation/storage): { "viewId": "abc123", "duration": 60 }
+// 2. Agent format (after expansion): { "duration": 60, ...view fields... }
+// The control plane expands format 1 to format 2 before sending to agents.
+// In the expanded format, all fields from the referenced view definition are merged in.
 type PlaylistViewConfigView struct {
-	ViewId   string                     `json:"viewId" spec:"label='The View ID in the store'"`
-	Settings PlaylistViewConfigSettings `json:"settings" spec:"label='Settings'"`
+	// ViewId is used by UI/control plane to reference stored view definitions (format 1)
+	ViewId string `json:"viewId,omitempty" spec:"label='View Definition ID'"`
+
+	// Duration controls how long this view is shown (overrides global duration)
+	Duration int `json:"duration,omitempty" spec:"label='Duration (seconds)',default='0'"`
 }
 
-type PlaylistViewConfigSettings struct {
-	Time time.Duration `json:"time" spec:"label='Duration(s)'"`
+func (v *PlaylistView) Init(configJSON string, ctx c.ViewContext) error {
+	// Initialize base view and unmarshal config directly into v (same as other views)
+	if err := c.InitViewFromJSON(v, configJSON, ctx); err != nil {
+		return err
+	}
+
+	// Validate we have at least one view
+	if len(v.Views) == 0 {
+		return errors.New("playlist must contain at least one view")
+	}
+
+	// Set default global duration if not specified
+	if v.GlobalDuration == 0 {
+		v.GlobalDuration = DefaultPlayTime
+	}
+
+	// Create context for lifecycle management
+	v.ctx, v.cancel = context.WithCancel(context.Background())
+
+	// We need to re-parse the config to get the raw view data with type information
+	// The Views field in v only captures viewId and duration, but the expanded config
+	// has type and all child view fields merged in
+	var rawConfig struct {
+		Views []map[string]interface{} `json:"views"`
+	}
+	if err := json.Unmarshal([]byte(configJSON), &rawConfig); err != nil {
+		return fmt.Errorf("failed to parse raw playlist config: %w", err)
+	}
+
+	// Initialize all child views
+	v.views = make([]c.View, 0, len(rawConfig.Views))
+	for i, viewData := range rawConfig.Views {
+		// Extract type from the expanded view data
+		viewType, ok := viewData["type"].(string)
+		if !ok || viewType == "" {
+			return fmt.Errorf("view at index %d has no type - playlist config must be expanded by control plane before reaching agent", i)
+		}
+
+		// Get factory for this view type
+		factory, exists := c.RegisteredViews[viewType]
+		if !exists {
+			return fmt.Errorf("unknown view type '%s' at index %d", viewType, i)
+		}
+
+		// Create view instance
+		childView := factory()
+
+		// Build child config by removing playlist-specific fields
+		childConfigMap := make(map[string]interface{})
+		for key, value := range viewData {
+			// Skip playlist-specific fields
+			if key != "viewId" && key != "type" && key != "duration" {
+				childConfigMap[key] = value
+			}
+		}
+
+		// Marshal the child config to JSON
+		childConfigJSON, err := json.Marshal(childConfigMap)
+		if err != nil {
+			return fmt.Errorf("failed to marshal config for view %d: %w", i, err)
+		}
+
+		// Initialize child view with same context as parent
+		if err := childView.Init(string(childConfigJSON), ctx); err != nil {
+			return fmt.Errorf("failed to initialize view %d (%s): %w", i, viewType, err)
+		}
+
+		v.views = append(v.views, childView)
+	}
+
+	// Start with first view
+	v.activeIndex = 0
+	v.SetTemplate(v.views[0].Template())
+
+	// Start rotation ticker
+	duration := v.getDuration(0)
+	v.ticker = time.NewTicker(time.Duration(duration) * time.Second)
+	go v.rotationLoop()
+
+	log.Printf("Playlist view initialized with %d views", len(v.views))
+	return nil
 }
 
-type PlaylistViewConfig struct {
-	Views    []PlaylistViewConfigView   `json:"views" spec:"label='Views',min='1'"`
-	Settings PlaylistViewConfigSettings `json:"settings" spec:"label='Global Settings'"`
+// getDuration returns the duration for a specific view index
+func (v *PlaylistView) getDuration(index int) int {
+	viewDuration := v.Views[index].Duration
+	if viewDuration > 0 {
+		return viewDuration
+	}
+	return v.GlobalDuration
 }
 
-func PlaylistViewConfigCreate() c.ViewConfig {
-	return &PlaylistViewConfig{
-		Views:    make([]PlaylistViewConfigView, 0),
-		Settings: PlaylistViewConfigSettings{},
+// rotationLoop handles automatic view rotation
+func (v *PlaylistView) rotationLoop() {
+	for {
+		select {
+		case <-v.ctx.Done():
+			return
+		case <-v.ticker.C:
+			v.NextView()
+		}
 	}
 }
 
-func PlaylistViewCreate(viewConfig c.ViewConfig) (c.View, error) {
-	config, ok := viewConfig.(*PlaylistViewConfig)
-	if !ok {
-		return nil, errors.New("Error asserting type PlaylistViewConfig")
-	}
+func (v *PlaylistView) NextView() {
+	prevIndex := v.activeIndex
+	nextIndex := (v.activeIndex + 1) % len(v.views)
 
-	if err := c.ValidateViewConfig(config); err != nil {
-		return nil, err
-	}
+	// Update active index
+	v.activeIndex = nextIndex
 
-	// parse global settings
-	// var defaultTime time.Duration = DefaultPlayTime
-	// if config.Settings.Time > 0 {
-	// 	defaultTime = config.Settings.Time
-	// }
+	// Update template to next view
+	v.SetTemplate(v.views[nextIndex].Template())
 
-	var views []c.View
-	var timings []time.Duration
+	// Trigger template refresh
+	c.TemplateRefresh(v)
 
-	// BROKEN: Playlist views are currently non-functional after control plane store refactor
-	// This view type calls GetViewDefinition() which has been removed.
-	// GetViewDefinition was deleted because agents no longer have store access.
-	// The store is now owned exclusively by the control plane.
-	//
-	// To fix this, we need to redesign playlist views with one of these approaches:
-	// 1. Control plane expands playlist definitions before sending to agent
-	//    - When assigning playlist, control plane resolves all child view IDs
-	//    - Sends a modified playlist config with full child view configs embedded
-	// 2. Change playlist config to contain full child view definitions, not just IDs
-	//    - Playlist config would be much larger (nested view definitions)
-	//    - No need for store lookups
-	// 3. Add a gRPC endpoint for agents to request view definitions
-	//    - Agent calls control plane when it needs a child view definition
-	//    - Adds network overhead but keeps playlist simple
-	//
-	// For now, attempting to create a playlist view will fail at this point.
-	// TODO: Implement one of the above solutions
+	// Update ticker for next view's duration
+	duration := v.getDuration(nextIndex)
+	v.ticker.Reset(time.Duration(duration) * time.Second)
 
-	// for _, v := range config.Views {
-	// 	// This will fail - GetViewDefinition no longer exists
-	// 	viewDef, err := c.GetViewDefinition(v.ViewId)
-	// 	if err != nil {
-	// 		return nil, errors.New(fmt.Sprintf("Error fetching view definition from store"))
-	// 	}
-
-	// 	regView, exists := c.RegisteredViews[viewDef.Type]
-	// 	if !exists {
-	// 		return nil, errors.New(fmt.Sprintf("View type %s does not exist", viewDef.Type))
-	// 	}
-
-	// 	// go from the ViewConfig (map[string]interface{}) to []byte
-	// 	jsonConfig, err := json.Marshal(viewDef.Config)
-	// 	if err != nil {
-	// 		return nil, errors.New(fmt.Sprintf("Error marshaling generic ViewConfig to []byte"))
-	// 	}
-
-	// 	// go from []byte to specific ViewConfig type
-	// 	configInstance := regView.NewConfig()
-	// 	if err := json.Unmarshal(jsonConfig, &configInstance); err != nil {
-	// 		return nil, errors.New(fmt.Sprintf("Config for view type %s is invalid", viewDef.Type))
-	// 	}
-
-	// 	newView, err := regView.NewView(configInstance)
-	// 	if err != nil {
-	// 		return nil, errors.New(fmt.Sprintf("Failed to create view of type %s with given config\nError: %s", viewDef.Type, err))
-	// 	}
-
-	// 	views = append(views, newView)
-	// 	time := defaultTime
-	// 	if v.Settings.Time > 0 {
-	// 		time = v.Settings.Time
-	// 	}
-	// 	timings = append(timings, time)
-
-	// }
-
-	// if len(views) == 0 {
-	// 	return nil, errors.New("No views supplied in playlist config")
-	// }
-
-	return &PlaylistView{
-		views:       views,
-		timings:     timings,
-		activeIndex: -1,
-	}, nil
+	log.Printf("Playlist: switched from view %d to view %d (duration: %ds)",
+		prevIndex, nextIndex, duration)
 }
 
 func (v *PlaylistView) TemplateString() string {
+	if v.activeIndex < 0 || v.activeIndex >= len(v.views) {
+		return ""
+	}
 	return v.views[v.activeIndex].TemplateString()
 }
 
 func (v *PlaylistView) TemplateData() map[string]interface{} {
+	if v.activeIndex < 0 || v.activeIndex >= len(v.views) {
+		return map[string]interface{}{}
+	}
 	return v.views[v.activeIndex].TemplateData()
 }
 
-func (v *PlaylistView) NextView() {
-	// BROKEN: This entire function is non-functional with new architecture
-	// The playlist view needs a complete redesign
-	// See comments at top of PlaylistViewCreate for details
-
-	// select {
-	// case <-v.ctx.Done():
-	// 	return
-	// default:
-	// 	prevIndex := v.activeIndex
-	// 	nextIndex := (v.activeIndex + 1) % len(v.views)
-
-	// 	childView := v.views[nextIndex]
-	// 	childView.Init("", nil) // Would need proper context and config
-
-	// 	v.SetTemplate(childView.Template())
-	// 	v.activeIndex = nextIndex
-
-	// 	c.TemplateRefresh(v)
-	// 	if prevIndex >= 0 {
-	// 		v.views[prevIndex].Stop()
-	// 	}
-
-	// 	go func() {
-	// 		time.Sleep(v.timings[v.activeIndex] * time.Second)
-	// 		v.NextView()
-	// 	}()
-	// }
-}
-
 func (v *PlaylistView) Stop() {
-	v.cancel()
-}
-
-func (v *PlaylistView) Init(configJSON string, ctx c.ViewContext) error {
-	// BROKEN: This view type is non-functional and needs complete redesign
-	// See comments at top of PlaylistViewCreate for details
-	return errors.New("playlist view is currently broken and needs redesign - see comments in playlist.go")
+	if v.cancel != nil {
+		v.cancel()
+	}
+	if v.ticker != nil {
+		v.ticker.Stop()
+	}
+	// Stop all child views
+	for _, view := range v.views {
+		view.Stop()
+	}
+	log.Printf("Playlist view stopped")
 }
 
 func init() {

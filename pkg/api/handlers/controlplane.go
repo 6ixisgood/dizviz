@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -358,14 +359,32 @@ func AssignViewToDisplay(c *gin.Context) {
 		return
 	}
 
+	// Check if this is a playlist view and expand if needed
+	config := viewDefinition.Config
+	if viewDefinition.Type == "playlist" {
+		expandedConfig, err := expandPlaylistConfig(storeServiceInstance, config)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "failed to expand playlist configuration",
+				"details": err.Error(),
+			})
+			return
+		}
+		config = expandedConfig
+	}
+
 	var configJSON string
-	if rawMsg, ok := viewDefinition.Config.(json.RawMessage); ok {
+	if rawMsg, ok := config.(json.RawMessage); ok {
 		configJSON = string(rawMsg)
 	} else {
 		// Fallback for other types
-		bytes, err := json.Marshal(viewDefinition.Config)
+		bytes, err := json.Marshal(config)
 		if err != nil {
-			// handle error
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "failed to marshal config",
+				"details": err.Error(),
+			})
+			return
 		}
 		configJSON = string(bytes)
 	}
@@ -438,4 +457,84 @@ func GetDisplayCurrentView(c *gin.Context) {
 		"current_fps":  displayStatus.CurrentFps,
 		"active":       displayStatus.Active,
 	})
+}
+
+// expandPlaylistConfig expands a playlist configuration by resolving view IDs to full view definitions
+func expandPlaylistConfig(store *controlplane.StoreService, config interface{}) (interface{}, error) {
+	// Marshal to JSON and parse as playlist config with viewIds
+	configBytes, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	var playlistConfig struct {
+		Views []struct {
+			ViewId   string `json:"viewId"`
+			Duration int    `json:"duration"`
+		} `json:"views"`
+		GlobalDuration   int    `json:"global_duration"`
+		TransitionEffect string `json:"transition_effect"`
+	}
+
+	if err := json.Unmarshal(configBytes, &playlistConfig); err != nil {
+		return nil, err
+	}
+
+	// Build expanded config with full view definitions
+	// Each view will have type + duration + all the view-specific fields at top level
+	expandedViews := make([]map[string]interface{}, 0, len(playlistConfig.Views))
+
+	// Resolve each view ID to its full definition
+	for _, viewRef := range playlistConfig.Views {
+		if viewRef.ViewId == "" {
+			return nil, fmt.Errorf("empty viewId in playlist views")
+		}
+
+		// Fetch child view definition from store
+		childViewDef, err := store.GetViewDefinition(viewRef.ViewId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch view definition for viewId %s: %w", viewRef.ViewId, err)
+		}
+
+		// The Config field is already a map[string]interface{} or similar
+		// We need to extract the fields from it
+		var childConfigMap map[string]interface{}
+
+		// If Config is already a map, use it directly
+		if configMap, ok := childViewDef.Config.(map[string]interface{}); ok {
+			childConfigMap = configMap
+		} else {
+			// Otherwise, marshal and unmarshal to convert to map
+			configBytes, err := json.Marshal(childViewDef.Config)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal config for viewId %s: %w", viewRef.ViewId, err)
+			}
+			if err := json.Unmarshal(configBytes, &childConfigMap); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal config for viewId %s: %w", viewRef.ViewId, err)
+			}
+		}
+
+		// Create expanded view with type, duration, and all child config fields at top level
+		expandedView := make(map[string]interface{})
+		expandedView["type"] = childViewDef.Type
+
+		// Add duration if specified for this view
+		if viewRef.Duration > 0 {
+			expandedView["duration"] = viewRef.Duration
+		}
+
+		// Merge all child config fields into the expanded view
+		for key, value := range childConfigMap {
+			expandedView[key] = value
+		}
+
+		expandedViews = append(expandedViews, expandedView)
+	}
+
+	// Return the complete expanded config
+	return map[string]interface{}{
+		"views":             expandedViews,
+		"global_duration":   playlistConfig.GlobalDuration,
+		"transition_effect": playlistConfig.TransitionEffect,
+	}, nil
 }

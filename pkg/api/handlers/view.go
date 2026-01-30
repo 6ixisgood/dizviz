@@ -20,6 +20,7 @@ func GetAllViewDefinitions(c *gin.Context) {
 	definitions, err := storeServiceInstance.GetAllViewDefinitions()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Error retrieving view definitions"})
+		log.Println(err)
 		return
 	}
 	c.JSON(http.StatusOK, definitions)
