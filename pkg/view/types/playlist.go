@@ -117,6 +117,9 @@ func (v *PlaylistView) Init(configJSON string, ctx c.ViewContext) error {
 
 	// Start with first view
 	v.activeIndex = 0
+
+	// Refresh the first view's template to ensure it's properly rendered
+	c.TemplateRefresh(v.views[0])
 	v.SetTemplate(v.views[0].Template())
 
 	// Start rotation ticker
@@ -156,10 +159,13 @@ func (v *PlaylistView) NextView() {
 	// Update active index
 	v.activeIndex = nextIndex
 
+	// Refresh the next view's template to ensure it's properly rendered
+	c.TemplateRefresh(v.views[nextIndex])
+
 	// Update template to next view
 	v.SetTemplate(v.views[nextIndex].Template())
 
-	// Trigger template refresh
+	// Trigger template refresh on the playlist view itself
 	c.TemplateRefresh(v)
 
 	// Update ticker for next view's duration
