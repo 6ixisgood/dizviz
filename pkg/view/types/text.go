@@ -14,7 +14,7 @@ type TextView struct {
 	BgColor   string `json:"bg_color" spec:"label='Background Color'"`
 	FontSize  int    `json:"font_size" spec:"label='Font Size'"`
 	FontType  string `json:"font_type" spec:"label='Font Type'"`
-	FontStyle string `json:"font_style" spec:"label='Font Style',default='Regular'"`
+	FontStyle string `json:"font_style" spec:"label='Font Style'"`
 	Rainbow   bool   `json:"raindow" spec:"label='Rainbow?'"`
 }
 
@@ -54,7 +54,7 @@ func (v *TextView) TemplateData() map[string]interface{} {
 		"BgColor":   v.BgColor,
 		"FontSize":  v.FontSize,
 		"FontType":  v.FontType,
-		"FontSytle": v.FontStyle,
+		"FontStyle": v.FontStyle,
 		"Rainbow":   v.Rainbow,
 	}
 }
