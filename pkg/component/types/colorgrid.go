@@ -6,7 +6,7 @@ import (
 	"image/color"
 	"math"
 
-	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
+	c "github.com/6ixisgood/disco/pkg/component/common"
 )
 
 type ColorGrid struct {

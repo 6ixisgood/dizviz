@@ -8,7 +8,7 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/6ixisgood/matrix-ticker/pkg/util"
+	"github.com/6ixisgood/disco/pkg/util"
 )
 
 type Sleeper struct {

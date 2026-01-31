@@ -1,5 +1,5 @@
 package component
 
 import (
-	_ "github.com/6ixisgood/matrix-ticker/pkg/component/types"
+	_ "github.com/6ixisgood/disco/pkg/component/types"
 )

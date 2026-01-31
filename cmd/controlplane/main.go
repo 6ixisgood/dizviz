@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/6ixisgood/matrix-ticker/pkg/api"
-	_ "github.com/6ixisgood/matrix-ticker/pkg/component"
-	"github.com/6ixisgood/matrix-ticker/pkg/controlplane"
-	"github.com/6ixisgood/matrix-ticker/pkg/store"
-	_ "github.com/6ixisgood/matrix-ticker/pkg/view/types"
+	"github.com/6ixisgood/disco/pkg/api"
+	_ "github.com/6ixisgood/disco/pkg/component"
+	"github.com/6ixisgood/disco/pkg/controlplane"
+	"github.com/6ixisgood/disco/pkg/store"
+	_ "github.com/6ixisgood/disco/pkg/view/types"
 )
 
 func main() {
@@ -32,7 +32,7 @@ func main() {
 		httpAddr = "localhost:8080"
 	}
 
-	log.Println("=== DizViz Control Plane ===")
+	log.Println("=== Disco Control Plane ===")
 	log.Printf("gRPC Server: %s", grpcAddr)
 	log.Printf("HTTP API: %s", httpAddr)
 

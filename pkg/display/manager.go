@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	"github.com/6ixisgood/disco/pkg/view/common"
 )
 
 // Manager coordinates view rendering and display hardware

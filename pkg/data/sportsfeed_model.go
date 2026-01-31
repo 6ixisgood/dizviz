@@ -3,7 +3,7 @@ package data
 import (
 	"time"
 
-	"github.com/6ixisgood/matrix-ticker/pkg/util"
+	"github.com/6ixisgood/disco/pkg/util"
 )
 
 // DailyGamesNHLResponse represents daily NHL games response from Sportsfeed

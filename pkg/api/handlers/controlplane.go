@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/6ixisgood/matrix-ticker/pkg/controlplane"
-	pb "github.com/6ixisgood/matrix-ticker/proto"
+	"github.com/6ixisgood/disco/pkg/controlplane"
+	pb "github.com/6ixisgood/disco/proto"
 	"github.com/gin-gonic/gin"
 )
 

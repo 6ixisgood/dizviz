@@ -2,9 +2,9 @@ package view
 
 import (
 	"context"
-	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
-	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
-	_ "github.com/6ixisgood/matrix-ticker/pkg/view/types"
+	compCommon "github.com/6ixisgood/disco/pkg/component/common"
+	viewCommon "github.com/6ixisgood/disco/pkg/view/common"
+	_ "github.com/6ixisgood/disco/pkg/view/types"
 	"image"
 	"image/draw"
 	"log"

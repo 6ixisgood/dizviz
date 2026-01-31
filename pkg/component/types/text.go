@@ -9,8 +9,8 @@ import (
 	"math"
 	"strings"
 
-	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
-	"github.com/6ixisgood/matrix-ticker/pkg/util"
+	c "github.com/6ixisgood/disco/pkg/component/common"
+	"github.com/6ixisgood/disco/pkg/util"
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"

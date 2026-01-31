@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
-	"github.com/6ixisgood/matrix-ticker/pkg/util"
+	c "github.com/6ixisgood/disco/pkg/component/common"
+	"github.com/6ixisgood/disco/pkg/util"
 	"github.com/srwiley/oksvg"
 	"github.com/srwiley/rasterx"
 )

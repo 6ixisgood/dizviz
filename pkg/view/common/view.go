@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"time"
 
-	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
+	compCommon "github.com/6ixisgood/disco/pkg/component/common"
 )
 
 // View a structure to describe a layout of components at a given time

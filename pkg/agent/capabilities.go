@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"github.com/6ixisgood/matrix-ticker/pkg/display"
+	"github.com/6ixisgood/disco/pkg/display"
 )
 
 // Capabilities describes what an agent can do

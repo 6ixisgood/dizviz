@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	viewCommon "github.com/6ixisgood/disco/pkg/view/common"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )

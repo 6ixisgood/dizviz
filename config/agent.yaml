@@ -25,9 +25,9 @@ displays:
       rate_limit_hz: 0
 
 runtime:
-  images_dir: /home/andrew/.dizviz/images
-  cache_dir: /home/andrew/.dizviz/cache
-  fonts_dir: /home/andrew/.dizviz/fonts
+  images_dir: /home/andrew/.disco/images
+  cache_dir: /home/andrew/.disco/cache
+  fonts_dir: /home/andrew/.disco/fonts
   data_sources:
     sportsfeed:
       api_key: "your-api-key-here"

@@ -37,7 +37,7 @@ deps:
 
 # Help
 help:
-	@echo "DizViz Makefile"
+	@echo "Disco Makefile"
 	@echo ""
 	@echo "Targets:"
 	@echo "  all          - Build agent and control plane (default)"

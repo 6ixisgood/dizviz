@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"time"
 
-	d "github.com/6ixisgood/matrix-ticker/pkg/data"
-	"github.com/6ixisgood/matrix-ticker/pkg/util"
-	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	d "github.com/6ixisgood/disco/pkg/data"
+	"github.com/6ixisgood/disco/pkg/util"
+	c "github.com/6ixisgood/disco/pkg/view/common"
 )
 
 type SleeperMatchupsView struct {

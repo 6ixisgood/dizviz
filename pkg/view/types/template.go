@@ -1,7 +1,7 @@
 package types
 
 import (
-	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	c "github.com/6ixisgood/disco/pkg/view/common"
 )
 
 type TemplateView struct {

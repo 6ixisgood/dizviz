@@ -1,8 +1,8 @@
 package store
 
 import (
-	view "github.com/6ixisgood/matrix-ticker/pkg/view/common"
-	viewT "github.com/6ixisgood/matrix-ticker/pkg/view/types"
+	view "github.com/6ixisgood/disco/pkg/view/common"
+	viewT "github.com/6ixisgood/disco/pkg/view/types"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"

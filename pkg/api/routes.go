@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/6ixisgood/matrix-ticker/pkg/api/handlers"
-	"github.com/6ixisgood/matrix-ticker/pkg/controlplane"
+	"github.com/6ixisgood/disco/pkg/api/handlers"
+	"github.com/6ixisgood/disco/pkg/controlplane"
 	"github.com/gin-gonic/gin"
 )
 

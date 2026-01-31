@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	pb "github.com/6ixisgood/matrix-ticker/proto"
+	pb "github.com/6ixisgood/disco/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

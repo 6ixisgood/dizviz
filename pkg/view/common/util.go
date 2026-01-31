@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/6ixisgood/matrix-ticker/pkg/component/common"
+	"github.com/6ixisgood/disco/pkg/component/common"
 )
 
 // InitViewFromJSON initializes a view from JSON config and context map

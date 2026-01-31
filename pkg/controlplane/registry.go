@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	pb "github.com/6ixisgood/matrix-ticker/proto"
+	pb "github.com/6ixisgood/disco/proto"
 	"github.com/google/uuid"
 )
 

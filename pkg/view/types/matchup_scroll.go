@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
-	"github.com/6ixisgood/matrix-ticker/pkg/view/model"
+	c "github.com/6ixisgood/disco/pkg/view/common"
+	"github.com/6ixisgood/disco/pkg/view/model"
 )
 
 type MatchupsScrollView struct {

@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	c "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	c "github.com/6ixisgood/disco/pkg/view/common"
 )
 
 type PlaylistView struct {

@@ -31,7 +31,7 @@ type Config struct {
 // DefaultConfig returns a configuration with sensible defaults
 func DefaultConfig() Config {
 	return Config{
-		AgentName:           "dizviz-agent",
+		AgentName:           "disco-agent",
 		Version:             "1.0.0",
 		ControlPlaneAddr:    "localhost:50051",
 		ReconnectDelay:      5 * time.Second,

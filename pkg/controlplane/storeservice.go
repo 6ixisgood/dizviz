@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/6ixisgood/matrix-ticker/pkg/store"
-	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
+	"github.com/6ixisgood/disco/pkg/store"
+	viewCommon "github.com/6ixisgood/disco/pkg/view/common"
 )
 
 const (

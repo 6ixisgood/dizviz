@@ -1,4 +1,4 @@
-module github.com/6ixisgood/matrix-ticker
+module github.com/6ixisgood/disco
 
 go 1.24.0
 

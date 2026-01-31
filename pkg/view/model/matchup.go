@@ -1,7 +1,7 @@
 package model
 
 import (
-	data "github.com/6ixisgood/matrix-ticker/pkg/data"
+	data "github.com/6ixisgood/disco/pkg/data"
 	"strconv"
 	"time"
 )

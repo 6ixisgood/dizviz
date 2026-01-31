@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	compCommon "github.com/6ixisgood/matrix-ticker/pkg/component/common"
+	compCommon "github.com/6ixisgood/disco/pkg/component/common"
 )
 
 type BaseView struct {

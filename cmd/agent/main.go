@@ -7,12 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/6ixisgood/matrix-ticker/pkg/agent"
-	_ "github.com/6ixisgood/matrix-ticker/pkg/component/types"
-	"github.com/6ixisgood/matrix-ticker/pkg/display"
-	"github.com/6ixisgood/matrix-ticker/pkg/util"
-	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
-	_ "github.com/6ixisgood/matrix-ticker/pkg/view/types"
+	"github.com/6ixisgood/disco/pkg/agent"
+	_ "github.com/6ixisgood/disco/pkg/component/types"
+	"github.com/6ixisgood/disco/pkg/display"
+	"github.com/6ixisgood/disco/pkg/util"
+	viewCommon "github.com/6ixisgood/disco/pkg/view/common"
+	_ "github.com/6ixisgood/disco/pkg/view/types"
 	rgbmatrix "github.com/sixisgoood/go-rpi-rgb-led-matrix"
 )
 
@@ -26,7 +26,7 @@ func main() {
 	// Load agent configuration
 	LoadConfig(configFilePath)
 
-	log.Printf("=== DizViz Agent ===")
+	log.Printf("=== Disco Agent ===")
 	log.Printf("Agent Name: %s", Config.Agent.Name)
 	log.Printf("Control Plane: %s", Config.Agent.ControlPlaneAddr)
 	log.Printf("Displays: %d configured", len(Config.Displays))
@@ -140,7 +140,7 @@ func main() {
 
 	// Set initial view (welcome message) BEFORE starting the agent
 	welcomeConfig := `{
-		"text": "DizViz Agent Ready",
+		"text": "Disco Agent Ready",
 		"alignment": "center",
 		"justify": "center",
 		"color": "#00FF00FF",

@@ -2,7 +2,7 @@ package types
 
 import (
 	"encoding/xml"
-	c "github.com/6ixisgood/matrix-ticker/pkg/component/common"
+	c "github.com/6ixisgood/disco/pkg/component/common"
 	"image"
 	"image/color"
 	"math/rand"

@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package dizviz.agent;
+package disco.agent;
 
-option go_package = "github.com/6ixisgood/matrix-ticker/proto/agent";
+option go_package = "github.com/6ixisgood/disco/proto/agent";
 
 // AgentService defines the gRPC interface between agents and control plane
 service AgentService {

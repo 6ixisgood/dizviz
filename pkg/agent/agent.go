@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/6ixisgood/matrix-ticker/pkg/data"
-	"github.com/6ixisgood/matrix-ticker/pkg/display"
-	viewCommon "github.com/6ixisgood/matrix-ticker/pkg/view/common"
-	pb "github.com/6ixisgood/matrix-ticker/proto"
+	"github.com/6ixisgood/disco/pkg/data"
+	"github.com/6ixisgood/disco/pkg/display"
+	viewCommon "github.com/6ixisgood/disco/pkg/view/common"
+	pb "github.com/6ixisgood/disco/proto"
 )
 
 // DisplayInfo holds information about a single display managed by the agent
