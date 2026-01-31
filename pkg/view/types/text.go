@@ -12,6 +12,8 @@ type TextView struct {
 	Justify   string `json:"justify" spec:"label='Justify'"`
 	Color     string `json:"color" spec:"label='Color'"`
 	BgColor   string `json:"bg_color" spec:"label='Background Color'"`
+	FontSize  int    `json:"font_size" spec:"label='Font Size'"`
+	Rainbow   bool   `json:"raindow" spec:"label='Rainbow?'"`
 }
 
 func (v *TextView) Init(configJSON string, ctx c.ViewContext) error {
@@ -27,6 +29,10 @@ func (v *TextView) Init(configJSON string, ctx c.ViewContext) error {
 		v.BgColor = "#00000FF"
 	}
 
+	if v.FontSize == 0 {
+		v.FontSize = v.BaseView.DefaultFontSize
+	}
+
 	return nil
 }
 
@@ -37,13 +43,15 @@ func (v *TextView) TemplateData() map[string]interface{} {
 		"Alignment": v.Alignment,
 		"Color":     v.Color,
 		"BgColor":   v.BgColor,
+		"FontSize":  v.FontSize,
+		"Rainbow":   v.Rainbow,
 	}
 }
 
 func (v *TextView) TemplateString() string {
 	return `
 		<template dir="col" justify="{{ .Justify }}" align="{{ .Alignment }}" size-x="{{ $MatrixSizex }}" size-y="{{ $MatrixSizey }}" bg-color="{{ .BgColor }}" overflow-x="scroll-ease" scroll-speed="15">
-			<text font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ .Color }}" size="{{ $DefaultFontSize }}">{{ .Text }}</text>
+			<text rainbow="{{ .Rainbow }}" font="{{ $DefaultFontType }}" style="{{ $DefaultFontStyle }}" color="{{ .Color }}" size="{{ .FontSize }}">{{ .Text }}</text>
 		</template>
 	`
 }
